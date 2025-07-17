@@ -7,6 +7,7 @@ from utils.reductions import add_all_reductions
 from utils.unique_names import unique_names
 from utils.benchmark_sdfg import instrument_sdfg
 from utils.compile_if_propagated_sdfgs import compile_if_propagated_sdfgs
+from utils.make_flattened_data_to_input import make_flattened_data_to_non_transient_cpu_input, make_flattened_data_to_non_transient_gpu_input
 import os
 
 dace.config.Config.set('compiler', 'cuda', 'max_concurrent_streams', value="10")
@@ -66,14 +67,44 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
 
   dace.Config.set('compiler', 'cuda', 'default_block_size', value="256,1,1")
   dace.Config.set('compiler', 'cuda', 'max_concurrent_streams', value="1")
+  _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
+
   if lib:
     assert stage == 9
+    if _build_for_integration:
+      for sdfg in sdfgs:
+        make_flattened_data_to_non_transient_gpu_input(sdfg)
     compile_if_propagated_sdfgs(
         sdfgs, gpu=True,
         release=release,
         generate_code=True,
         lib=True,
         main_name=None,
+        stage=stage,
+        debuginfo=False,
+        allocation_names_to_comment_out=allocation_names_to_comment_out,
+        use_openacc_stream=False,
+      )
+  elif stage == 8:
+    if _build_for_integration:
+      compile_if_propagated_sdfgs(
+        sdfgs, gpu=True,
+        release=release,
+        generate_code=True,
+        lib=True,
+        main_name=None,
+        stage=stage,
+        debuginfo=False,
+        allocation_names_to_comment_out=allocation_names_to_comment_out,
+        use_openacc_stream=False,
+      )
+    else:
+      compile_if_propagated_sdfgs(
+        sdfgs, gpu=True,
+        release=release,
+        generate_code=True,
+        lib=False,
+        main_name="main.cu",
         stage=stage,
         debuginfo=False,
         allocation_names_to_comment_out=allocation_names_to_comment_out,
@@ -105,40 +136,47 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
       )
   else:
     assert stage == 1
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=False,
-        main_name="main.cu",
-        stage=stage,
-        debuginfo=True,
-        allocation_names_to_comment_out=None,
-        use_openacc_stream=False,
-      )
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=True,
-        main_name=None,
-        stage=stage,
-        debuginfo=True,
-        allocation_names_to_comment_out=None,
-        use_openacc_stream=False,
-      )
+    if not _build_for_integration:
+      compile_if_propagated_sdfgs(
+          sdfgs, gpu=True,
+          release=release,
+          generate_code=True,
+          lib=False,
+          main_name="main.cu",
+          stage=stage,
+          debuginfo=True,
+          allocation_names_to_comment_out=None,
+          use_openacc_stream=False,
+        )
+    else:
+      for sdfg in sdfgs:
+        make_flattened_data_to_non_transient_cpu_input(sdfg)
+      compile_if_propagated_sdfgs(
+          sdfgs, gpu=True,
+          release=release,
+          generate_code=True,
+          lib=True,
+          main_name=None,
+          stage=stage,
+          debuginfo=True,
+          allocation_names_to_comment_out=None,
+          use_openacc_stream=False,
+        )
+
   opt_suffix = '_release' if release else '_debug'
   _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
   integration_suffix = '_solve_nh_integration' if _build_for_integration else '_standalone'
-  if stage == 1:
-      binpath = Path('velocity_gpu')
-      assert binpath.exists()
-      binpath = binpath.rename(f"{binpath.name}.stage{stage}{integration_suffix}{opt_suffix}")
-      print(f"Binary available: {binpath}")
-      libpath = Path('libvelocity_gpu.so')
-      assert libpath.exists()
-      libpath = libpath.rename(f"libvelocity_gpu_stage{stage}{integration_suffix}{opt_suffix}.so")
-      print(f"Library available: {libpath}")
+  if stage == 1 or stage == 8:
+      if not _build_for_integration:
+        binpath = Path('velocity_gpu')
+        assert binpath.exists()
+        binpath = binpath.rename(f"{binpath.name}.stage{stage}{integration_suffix}{opt_suffix}")
+        print(f"Binary available: {binpath}")
+      else:
+        libpath = Path('libvelocity_gpu.so')
+        assert libpath.exists()
+        libpath = libpath.rename(f"libvelocity_gpu_stage{stage}{integration_suffix}{opt_suffix}.so")
+        print(f"Library available: {libpath}")
   else:
     if not lib:
       binpath = Path('velocity_gpu')

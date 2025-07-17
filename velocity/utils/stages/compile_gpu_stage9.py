@@ -4,6 +4,9 @@ import utils.stages.common as common
 from utils.change_flatten_lib_to_shallow_copy import change_flatten_lib_to_shallow_copy
 from utils.input_to_gpu import input_to_gpu
 from utils.add_set_zero import add_set_zero
+from utils.make_flattened_data_to_input import make_flattened_data_to_non_transient_cpu_input, make_flattened_data_to_non_transient_gpu_input
+
+from utils.profiling_patches import remove_profiling_states, remove_sync_states, remove_sync_and_profiling_states, set_default_stream, insert_pre_reduction_sync, rm_reduntant_copies
 STAGE_ID = 9
 
 _allocation_names_to_comment_out = set()
@@ -24,6 +27,17 @@ def optimization_action(sdfg):
     input_to_gpu(sdfg, "z_kin_hor_e")
     input_to_gpu(sdfg, "z_vt_ie")
     sdfg.validate()
+
+    _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
+    assert _build_for_integration is True, "This stage is only for building the library for SolveNH integration."
+    if _build_for_integration:
+        make_flattened_data_to_non_transient_gpu_input(sdfg)
+        sdfg.validate()
+
+    set_default_stream(sdfg)
+    remove_sync_and_profiling_states(sdfg)
+    insert_pre_reduction_sync(sdfg)
+    rm_reduntant_copies(sdfg)
     return sdfg
 
 def main():
