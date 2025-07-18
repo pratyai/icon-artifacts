@@ -136,33 +136,28 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
       )
   else:
     assert stage == 1
-    if not _build_for_integration:
-      compile_if_propagated_sdfgs(
-          sdfgs, gpu=True,
-          release=release,
-          generate_code=True,
-          lib=False,
-          main_name="main.cu",
-          stage=stage,
-          debuginfo=True,
-          allocation_names_to_comment_out=None,
-          use_openacc_stream=False,
-        )
-    else:
-      for sdfg in sdfgs:
-        make_flattened_data_to_non_transient_cpu_input(sdfg)
-      compile_if_propagated_sdfgs(
-          sdfgs, gpu=True,
-          release=release,
-          generate_code=True,
-          lib=True,
-          main_name=None,
-          stage=stage,
-          debuginfo=True,
-          allocation_names_to_comment_out=None,
-          use_openacc_stream=False,
-        )
-
+    compile_if_propagated_sdfgs(
+        sdfgs, gpu=True,
+        release=release,
+        generate_code=True,
+        lib=True,
+        main_name=None,
+        stage=stage,
+        debuginfo=True,
+        allocation_names_to_comment_out=None,
+        use_openacc_stream=False,
+      )
+    compile_if_propagated_sdfgs(
+        sdfgs, gpu=True,
+        release=release,
+        generate_code=True,
+        lib=False,
+        main_name="main.cu",
+        stage=stage,
+        debuginfo=True,
+        allocation_names_to_comment_out=None,
+        use_openacc_stream=False,
+      )
   opt_suffix = '_release' if release else '_debug'
   _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
   integration_suffix = '_solve_nh_integration' if _build_for_integration else '_standalone'
