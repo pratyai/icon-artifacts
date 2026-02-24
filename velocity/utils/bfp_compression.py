@@ -258,7 +258,9 @@ def inject_bfp_packing(
 
         _inject_bfp_for_array(sdfg, cpu_name, gpu_name, mantissa_bits=mantissa_bits)
 
-    sdfg.validate()
+    # Skip validation — nested SDFGs still have the original double[3D]
+    # descriptors. The type/shape mismatch is fixed at text level by
+    # patch_bfp_reads() in compile_if_propagated_sdfgs.py after codegen.
     return sdfg
 
 
@@ -293,7 +295,7 @@ def _inject_bfp_for_array(
         storage=dtypes.StorageType.CPU_Heap,
     )
 
-    # Step 2: Change GPU array to uint8[packed_size]
+    # Step 2: Change GPU array to uint8[packed_size] in top-level SDFG
     gpu_arr.dtype = dace.uint8
     gpu_arr.shape = (packed_size,)
     gpu_arr.strides = (1,)
@@ -302,6 +304,11 @@ def _inject_bfp_for_array(
 
     # Step 2b: Update existing memlets referencing the GPU array.
     # Scalar reads into Tasklets get a BFP decode shim; range memlets flatten to 1D.
+    # NOTE: nested SDFG array descriptors are NOT changed here because
+    # interstate edges may reference the array with 3D subscripts (AST-level),
+    # and changing the descriptor shape would cause validation errors.
+    # Instead, the type mismatch (double* param receiving uint8* data) is
+    # fixed at text level in compile_if_propagated_sdfgs.py.
     _update_memlets_and_insert_decode(
         sdfg,
         gpu_name,

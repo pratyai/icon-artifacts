@@ -9,30 +9,27 @@ from dace.sdfg import infer_types
 from utils.config import fix_out_val_0, rm_syncs
 from utils.prune_names import prune_names, compare_structs
 
-use_cuda_events = os.getenv('_USE_CUDA_EVENTS', '0').lower() in ('1', 'true', 'yes')
+use_cuda_events = os.getenv("_USE_CUDA_EVENTS", "0").lower() in ("1", "true", "yes")
 
-# Replace cpp with cu
+
+# --- Source Management ---
+
+
 def _replace_cpp_with_cu(directory):
-    directory = Path(directory)  # Convert to Path object
-    for file in directory.rglob("*.cpp"):  # Find all .cpp files
-        new_name = file.with_suffix(".cu")  # Change the suffix to .cu
-        file.rename(new_name)  # Rename the file
-        print(f"Renamed: {file} -> {new_name}")
-    for file in directory.rglob("*.cc"):
-        new_name = file.with_suffix(".cu")  # Change the suffix to .cu
-        file.rename(new_name)  # Rename the file
-        print(f"Renamed: {file} -> {new_name}")
+    directory = Path(directory)
+    for ext in ["*.cpp", "*.cc"]:
+        for file in directory.rglob(ext):
+            new_name = file.with_suffix(".cu")
+            file.rename(new_name)
+            print(f"Renamed: {file} -> {new_name}")
 
 
 def modify_files_in_directory(directory):
     pattern = re.compile(r"^(\s*)int tmp_struct_symbol")
-
     for root, _, files in os.walk(directory):
         for file in files:
             file_path = os.path.join(root, file)
-            if file_path.endswith(
-                (".c", ".h", ".cpp", ".cu")
-            ):  # Adjust extensions as needed
+            if file_path.endswith((".c", ".h", ".cpp", ".cu")):
                 modify_file(file_path, pattern)
 
 
@@ -46,195 +43,106 @@ def modify_file(file_path, pattern):
         if pattern.match(line):
             line = pattern.sub(r"\1static int tmp_struct_symbol", line)
             modified = True
-        line = re.sub(
-            r'\bint\s+(__(f2dace_[a-zA-Z0-9_]+));',
-            r'static int \1;',
-            line
-        )
-
+        line = re.sub(r"\bint\s+(__(f2dace_[a-zA-Z0-9_]+));", r"static int \1;", line)
         new_lines.append(line)
 
     if modified:
         with open(file_path, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
-        # print(f"Modified: {file_path}")
 
 
-import re
+# --- Basic String Helpers ---
 
 
-def _insert_measure_time(filename, path, hash):
-    return
-    with open(filename, "r") as f:
+def repl_in_file(file_path: str, src: str, dst: str):
+    with open(file_path, "r") as f:
+        code = f.read()
+    with open(file_path, "w") as f:
+        f.write(code.replace(src, dst))
+
+
+def repl_in_file_per_line_with_cond(
+    file_path: str, src: str, dst: str, condition: callable
+):
+    with open(file_path, "r") as f:
         lines = f.readlines()
-
-    pattern = re.compile(r"nrdmax_jg =")
-    pattern2 = re.compile(r"p_diag_out_max_vcfl_dyn =")  # Final tasklet
-    pattern3 = re.compile(r"__state->report.reset")
-    new_lines = []
-
-    for line in lines:
-        if not pattern3.search(line):
-            new_lines.append(line)
-        else:
-            new_lines.append(f"//" + line)
-        if pattern.search(line) or pattern2.search(line):
-            # if pattern.search(line):
-            #    new_lines.append(f'__state->report.init("{path}", "{hash}");\n')
-            new_lines.append('measure_time("Kernels"); // Measure time\n')
-            if pattern2.search(line):
-                new_lines.append(f'__state->report.save("{path}", "{hash}");\n')
-    with open(filename, "w") as f:
-        f.writelines(new_lines)
-
-
-def fix_out_val_0_call(filepath, pattern):
-    with open(filepath, "r") as file:
-        lines = file.readlines()
-    replacement = pattern.replace("out_val_0", "out_val_0[_for_it_35]")
-    with open(filepath, "w") as file:
-        for line in lines:
-            if pattern in line:
-                line = line.replace(pattern, replacement)
-            file.write(line)
-
-def _process_folder(directory, sdfg: dace.SDFG, instrument: bool = False):
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".cpp") or file.endswith(".cu"):
-                filepath = os.path.join(root, file)
-                # print(filepath)
-                if instrument:
-                    try:
-                        os.mkdir(os.path.join(os.path.abspath(root), "../../../perf"))
-                    except FileExistsError:
-                        pass
-                    _insert_measure_time(
-                        filepath,
-                        os.path.join(os.path.abspath(root), "../../../perf"),
-                        sdfg.hash_sdfg(),
-                    )
-
-
-def insert_measure_time_calls(path, sdfg: dace.SDFG, instrument: bool = False):
-    # this file is at utils/../.dacecache
-    if path is None:
-        script_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", ".dacecache"
+    with open(file_path, "w") as f:
+        f.writelines(
+            [line.replace(src, dst) if condition(line) else line for line in lines]
         )
-    else:
-        script_dir = path
-    _process_folder(script_dir, sdfg, instrument)
+
 
 def set_default_stream(file_path: str):
-    src = "__state->gpu_context->streams[0]"
-    dst = "nullptr"
+    repl_in_file(file_path, "__state->gpu_context->streams[0]", "nullptr")
+
+
+# --- Complex Code Patching ---
+
+
+def add_timers(file_path: str, gpu: bool, stage: int, use_openacc_stream: bool = False):
     with open(file_path, "r") as f:
         code = f.read()
 
-    code = code.replace(src, dst)
-
-    with open(file_path, "w") as f:
-        f.write(code)
-
-
-def repl_in_file(file_path: str, src:str, dst:str):
-    with open(file_path, "r") as f:
-        code = f.read()
-
-    code = code.replace(src, dst)
-
-    with open(file_path, "w") as f:
-        f.write(code)
-
-
-def repl_in_file_per_line_with_cond(file_path: str, src: str, dst: str, condition: callable):
-    with open(file_path, "r") as f:
-        lines = f.readlines()
-
-    for i, line in enumerate(lines):
-        if condition(line):
-            line = line.replace(src, dst) if condition(line) else line
-        lines[i] = line
-
-    with open(file_path, "w") as f:
-        f.writelines(lines)
-
-
-def add_timers(file_path: str, gpu: bool, stage:int, use_openacc_stream: bool = False):
-
-    with open(file_path, "r") as f:
-        code = f.read()
-
-    # Pattern 1: Insert BEFORE `nrdmax_jg = __CG_global_data__m_nrdmax[0];`
     if stage < 7:
-        pattern1 = r'^\s*nrdmax_jg\s*=\s*__CG_global_data__m_nrdmax\[0\];\s*$'
+        pattern1 = r"^\s*nrdmax_jg\s*=\s*__CG_global_data__m_nrdmax\[0\];\s*$"
     else:
-        pattern1 = r'^\s*nflatlev_jg\s*=\s*__CG_global_data__m_nflatlev\[0\];\s*$'
-    if gpu is False:
+        pattern1 = r"^\s*nflatlev_jg\s*=\s*__CG_global_data__m_nflatlev\[0\];\s*$"
+
+    if not gpu:
         replacement1 = ' measure_time("Run"); \n\\g<0>'
     else:
-        if stage > 5 and stage < 9:
+        if 5 < stage < 9:
             if use_cuda_events:
-                # Stage 6 adds it before cudaStreamSynchronize
                 replacement1 = '   cudaStreamSynchronize(__state->gpu_context->streams[0]); //EntryStreamSync\n      cudaEvent_t start1, stop1;\n    cudaEventCreate(&start1);\n    cudaEventCreate(&stop1);\n    cudaEventRecord(start1); \n //measure_time("Run");\n \\g<0>'
             else:
                 replacement1 = '   cudaStreamSynchronize(__state->gpu_context->streams[0]); //EntryStreamSync\n      //cudaEvent_t start1, stop1;\n    //cudaEventCreate(&start1);\n    //cudaEventCreate(&stop1);\n    //cudaEventRecord(start1); \n measure_time("Run");\n \\g<0>'
         elif stage == 9:
-            if use_openacc_stream:
-                # Stage 8 adds it after open acc stream
-                replacement1 = '\\g<0>'
-            else:
-                replacement1 = '   cudaDeviceSynchronize(); //EntryStreamSync\n      //cudaEvent_t start1, stop1;\n    //cudaEventCreate(&start1);\n    //cudaEventCreate(&stop1);\n    //cudaEventRecord(start1); \n measure_time("Run");\n \\g<0>'
+            replacement1 = (
+                "\\g<0>"
+                if use_openacc_stream
+                else '   cudaDeviceSynchronize(); //EntryStreamSync\n      //cudaEvent_t start1, stop1;\n    //cudaEventCreate(&start1);\n    //cudaEventCreate(&stop1);\n    //cudaEventRecord(start1); \n measure_time("Run");\n \\g<0>'
+            )
         else:
-            assert stage <= 5
+            prefix = "   cudaDeviceSynchronize(); //EntryStreamSync\n      "
             if use_cuda_events:
-                replacement1 = '   cudaDeviceSynchronize(); //EntryStreamSync\n      cudaEvent_t start1, stop1;\n    cudaEventCreate(&start1);\n    cudaEventCreate(&stop1);\n    cudaEventRecord(start1); \n //measure_time("Run");\n \\g<0>'
+                replacement1 = f'{prefix}cudaEvent_t start1, stop1;\n    cudaEventCreate(&start1);\n    cudaEventCreate(&stop1);\n    cudaEventRecord(start1); \n //measure_time("Run");\n \\g<0>'
             else:
-                replacement1 = '   cudaDeviceSynchronize(); //EntryStreamSync\n      //cudaEvent_t start1, stop1;\n    //cudaEventCreate(&start1);\n    //cudaEventCreate(&stop1);\n    //cudaEventRecord(start1); \n measure_time("Run");\n \\g<0>'
-    pattern2 = r'^\s*double p_diag_out_max_vcfl_dyn;\s*$'
-    if gpu is True:
-        if stage > 5 and stage < 9:
+                replacement1 = f'{prefix}//cudaEvent_t start1, stop1;\n    //cudaEventCreate(&start1);\n    //cudaEventCreate(&stop1);\n    //cudaEventRecord(start1); \n measure_time("Run");\n \\g<0>'
+
+    pattern2 = r"^\s*double p_diag_out_max_vcfl_dyn;\s*$"
+    if gpu:
+        if 5 < stage < 9:
             if not use_cuda_events:
                 replacement2 = '\\g<0>  //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    //cudaStreamSynchronize(__state->gpu_context->streams[0]); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
             else:
                 replacement2 = '\\g<0>  cudaEventRecord(stop1);\n    cudaEventSynchronize(stop1);\n    float milliseconds1 = 0;\n    cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     //measure_time("Host Based C++ Timer"); \n  cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    cudaStreamSynchronize(__state->gpu_context->streams[0]); \n  std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
         elif stage == 9:
-            if use_openacc_stream:
-                replacement2 = '\\g<0>  cudaStreamSynchronize(__state->gpu_context->streams[0]);\n    //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    //cudaDeviceSynchronize(); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
-            else:
-                replacement2 = '\\g<0>  cudaStreamSynchronize(__state->gpu_context->streams[0]);\n    //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    cudaDeviceSynchronize(); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
+            sync = "cudaStreamSynchronize(__state->gpu_context->streams[0]);"
+            final_sync = (
+                "//cudaDeviceSynchronize();"
+                if use_openacc_stream
+                else "cudaDeviceSynchronize();"
+            )
+            replacement2 = f'\\g<0>  {sync}\n    //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    {final_sync} \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
         else:
             if use_cuda_events:
                 replacement2 = '\\g<0>  cudaEventRecord(stop1);\n    cudaEventSynchronize(stop1);\n    float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     //measure_time("Host Based C++ Timer"); \n  cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    cudaDeviceSynchronize(); \n  std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
             else:
-                replacement2 = '\\g<0>  //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    //cudaDeviceSynchronize(); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
+                replacement2 = '\\g<0>  //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    cudaDeviceSynchronize(); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
     else:
         replacement2 = '\\g<0>  measure_time("Run");\n'
-    # Apply replacements
+
     code = re.sub(pattern1, replacement1, code, flags=re.MULTILINE)
     code = re.sub(pattern2, replacement2, code, flags=re.MULTILINE)
 
-    if gpu is True:
-        if stage > 5:
-            pattern4 = """dace::CopyNDDynamic<double, 1, false, 1>::template ConstDst<1>::Copy(
+    if gpu and stage > 5:
+        pattern4 = """dace::CopyNDDynamic<double, 1, false, 1>::template ConstDst<1>::Copy(
             __state->__0_gpu_vcflmax, __state->__0_vcflmax, tmp_struct_symbol_12, 1);"""
-
-            replacement4 = "DACE_GPU_CHECK(cudaMemcpyAsync((void*)__state->__0_vcflmax, (void*)__state->__0_gpu_vcflmax, static_cast<size_t>(tmp_struct_symbol_12) * sizeof(double), cudaMemcpyDeviceToHost, __state->gpu_context->streams[0]));"
-
-            code = code.replace(pattern4, replacement4)
-
-            pattern5 = r'(^\s*double\s*.*\s*in_arr\s*=.*vcflmax.*;)'
-            replacement5 = r'cudaStreamSynchronize(__state->gpu_context->streams[0]);//ExitStreamSync\n\1'
-            test_line = "double* in_arr = &__state->__0_vcflmax[(replaced_var_6 - 1)];"
-
-            if re.match(pattern5, test_line):
-                #print("Pattern matches!")
-                pass
-            else:
-                #print("Pattern doesn't match")
-                assert False
-            code = re.sub(pattern5, replacement5, code, flags=re.MULTILINE)
+        replacement4 = "DACE_GPU_CHECK(cudaMemcpyAsync((void*)__state->__0_vcflmax, (void*)__state->__0_gpu_vcflmax, static_cast<size_t>(tmp_struct_symbol_12) * sizeof(double), cudaMemcpyDeviceToHost, __state->gpu_context->streams[0]));"
+        code = code.replace(pattern4, replacement4)
+        pattern5 = r"(^\s*double\s*.*\s*in_arr\s*=.*vcflmax.*;)"
+        replacement5 = r"cudaStreamSynchronize(__state->gpu_context->streams[0]);//ExitStreamSync\n\1"
+        code = re.sub(pattern5, replacement5, code, flags=re.MULTILINE)
 
     with open(file_path, "w") as f:
         f.write(code)
@@ -244,246 +152,194 @@ def change_to_openacc_stream(host_file_path: str, dev_file_path: str, gpu: bool)
     assert gpu is True
     stream_decl = """
 // This part is generated by the IconGrounds velocity utils.
-// It is used to declare the openacc stream for the GPU code.
-// START
 #include <cuda_runtime.h>
 #include <openacc.h>
 static cudaStream_t open_acc_stream;
-// END
 """
     host_check = "void __program_velocity_no_nproma_if_prop"
     dev_check = "DACE_EXPORTED int __dace_init_cuda_"
-    for (file_path, check) in [
-        (host_file_path, host_check),
-        (dev_file_path, dev_check),
-    ]:
+    for file_path, check in [(host_file_path, host_check), (dev_file_path, dev_check)]:
         with open(file_path, "r") as f:
             lines = f.readlines()
-
-        modified_lines = [stream_decl]
+        modified = [stream_decl]
         i = 0
-
-        def _process_line(line:str) -> str:
-            if "__dace_current_stream = __state->gpu_context->streams" in line:
-                _l = "cudaStream_t __dace_current_stream = open_acc_stream;\n"
-            elif (
-                "cudaStreamCreateWithFlags" in line or
-                "cudaStreamDestroy" in line or
-                "cudaEventCreateWithFlags" in line or
-                "cudaEventDestroy" in line or
-                "__state->gpu_context->internal_streams[" in line) and (
-                    "cudaLaunchKernel" not in line
-                ):
-                _l = "//" + line
-            elif "__state->gpu_context->streams[0]" in line:
-                _l = line.replace("__state->gpu_context->streams[0]", "open_acc_stream")
-            else:
-                _l = line
-            return _l
-
-        c = False
         while i < len(lines):
             line = lines[i]
-
-            # Check if line starts with the target function name
-            if check in line:
-                modified_lines.append(_process_line(line))
-                i += 1
-
-                is_host_check = (check == host_check)
-                #raise Exception(is_host_check, check, host_check)
-                if is_host_check:
-                    if "_internal" in line:
-                        if check in line and check == host_check and ("{" not in line) and (";" not in line) and ("DACE_EXPORTED" not in line):
-                            c = True
-                            print(line, check)
-                            if i < len(lines) and lines[i].strip() == "{":
-                                modified_lines.append(_process_line("{\n"))  # Add the opening brace
-
-                                # Add the stream declarations after the opening brace
-                                modified_lines.append("open_acc_stream = (cudaStream_t) acc_get_cuda_stream(1);\n")
-                                modified_lines.append("cudaStreamSynchronize(open_acc_stream); //EntryStreamSync\n")
-                                if use_cuda_events:
-                                    modified_lines.append(
-                                        """    cudaEvent_t start1, stop1;\n    cudaEventCreate(&start1);\n    cudaEventCreate(&stop1);\n    cudaEventRecord(start1); \n """
-                                    )
-                                else:
-                                    modified_lines.append('measure_time("Run");\n')
-
-                            i += 1
-                            #raise Exception(line, check)
-                elif not is_host_check:
-                    if check in line and check == dev_check and check != host_check and "{" in line:
-                        modified_lines.append("open_acc_stream = (cudaStream_t) acc_get_cuda_stream(1);\n")
-
+            if "__dace_current_stream = __state->gpu_context->streams" in line:
+                modified.append(
+                    "cudaStream_t __dace_current_stream = open_acc_stream;\n"
+                )
+            elif (
+                any(
+                    x in line
+                    for x in [
+                        "cudaStreamCreate",
+                        "cudaStreamDestroy",
+                        "cudaEventCreate",
+                        "cudaEventDestroy",
+                        "internal_streams[",
+                    ]
+                )
+                and "cudaLaunchKernel" not in line
+            ):
+                modified.append("//" + line)
+            elif "__state->gpu_context->streams[0]" in line:
+                modified.append(
+                    line.replace("__state->gpu_context->streams[0]", "open_acc_stream")
+                )
+            elif check in line:
+                modified.append(line)
+                if (
+                    check == host_check
+                    and "_internal" in line
+                    and "{" not in line
+                    and ";" not in line
+                    and "DACE_EXPORTED" not in line
+                ):
+                    i += 1
+                    if i < len(lines) and lines[i].strip() == "{":
+                        modified.append(
+                            "{\nopen_acc_stream = (cudaStream_t) acc_get_cuda_stream(1);\ncudaStreamSynchronize(open_acc_stream); //EntryStreamSync\n"
+                        )
+                        if use_cuda_events:
+                            modified.append(
+                                "    cudaEvent_t start1, stop1;\n    cudaEventCreate(&start1);\n    cudaEventCreate(&stop1);\n    cudaEventRecord(start1); \n"
+                            )
+                        else:
+                            modified.append('measure_time("Run");\n')
+                elif check == dev_check and "{" in line:
+                    modified.append(
+                        "open_acc_stream = (cudaStream_t) acc_get_cuda_stream(1);\n"
+                    )
             else:
-                modified_lines.append(_process_line(line))
-                i += 1
-
-        # Write the modified content back to the file
+                modified.append(line)
+            i += 1
         with open(file_path, "w") as f:
-            f.writelines(modified_lines)
+            f.writelines(modified)
 
 
-def fix_levelmask_calls(filepath: str, host : bool, stage: int):
-    if stage <= 5:
-        with open(filepath, "r") as file:
-            lines = file.readlines()
-        with open(filepath, "w") as file:
-            i = 0
-            while i < len(lines):
-                line = lines[i]
-                if host:
-                    p1 = "uint8_t  gpu_levelmask, double *"
-                    r1 = "uint8_t* __restrict__  gpu_levelmask, double *"
-                    p2 = "gpu_levelmask, &"
-                    r2 = "&gpu_levelmask[0], &"
-                else:
-                    p1 = "uint8_t  gpu_levelmask, double *"
-                    r1 = "uint8_t* __restrict__  gpu_levelmask, double *"
-                    p2 = "gpu_levelmask, &"
-                    r2 = "gpu_levelmask[0], &"
-                    #p3 = ", gpu_cfl_clipping, &"
-                    #p4 = "(gpu_cfl_clipping, &"
-                    p5 = "uint8_t in_arr = gpu_cfl_clipping;"
-                    r5 = "uint8_t in_arr = gpu_cfl_clipping[((_for_it_22 + (tmp_struct_symbol_14 * (_for_it_35 - 1))) - 1)];"
-                    p6 = "uint8_t  gpu_cfl_clipping,"
-                    r6 = "uint8_t* __restrict__  gpu_cfl_clipping,"
-                    line = line.replace(p5, r5).replace(p6, r6)
-                line2 = line.replace(p1, r1).replace(p2, r2)
-                file.write(line2)
-                i += 1
-    else:
-        with open(filepath, "r") as file:
-            lines = file.readlines()
-        with open(filepath, "w") as file:
-            i = 0
-            while i < len(lines):
-                line = lines[i]
-                if host:
-                    p1 = "uint8_t  gpu_levelmask, double *"
-                    r1 = "uint8_t* __restrict__  gpu_levelmask, double *"
-                    p2 = "__state->__0_gpu_levelmask, &"
-                    r2 = "&__state->__0_gpu_levelmask[0], &"
-                else:
-                    p1 = "uint8_t gpu_levelmask, double *"
-                    r1 = "uint8_t* __restrict__  gpu_levelmask, double *"
-                    p2 = "&__state->__0_gpu_levelmask, &"
-                    r2 = "&__state->__0_gpu_levelmask[0], &"
-                    #p3 = ", gpu_cfl_clipping, &"
-                    #p4 = "(gpu_cfl_clipping, &"
-                    p5 = "uint8_t in_arr = gpu_cfl_clipping;"
-                    r5 = "uint8_t in_arr = gpu_cfl_clipping[((_for_it_22 + (tmp_struct_symbol_14 * (_for_it_35 - 1))) - 1)];"
-                    p6 = "uint8_t  gpu_cfl_clipping,"
-                    r6 = "uint8_t* __restrict__  gpu_cfl_clipping,"
-                    line = line.replace(p5, r5).replace(p6, r6)
-                p7 = ", &gpu_levelmask,"
-                r7 = ", &gpu_levelmask[0],"
-                line2 = line.replace(p1, r1).replace(p2, r2).replace(p7, r7)
-                file.write(line2)
-                i += 1
-
-def add_reduce_clean_up_calls(filepath: str):
-    pattern1 = "DACE_EXPORTED int __dace_exit_velocity_no_nproma_if_prop"
-    with open(filepath, "r") as file:
-        lines = file.readlines()
-    with open(filepath, "w") as file:
-        i = 0
-        while i < len(lines):
-            if pattern1 in lines[i]:
-                # Found the function, find the opening brace
-                line = lines[i]
-                file.write(line)
-                i += 1
-                while i < len(lines) and "{" not in lines[i]:
-                    file.write(lines[i])
-                    i += 1
-                if i < len(lines):
-                    file.write(lines[i]) # write the line with {
-                    # Get indentation from the brace line or the function line
-                    indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
-                    file.write(f"{indent}  cleanup_reduce_sum_gpu();\n")
-                    file.write(f"{indent}  cleanup_reduce_maxZ_gpu();\n")
-                    i += 1
-            else:
-                line = lines[i]
-                file.write(line)
-                i += 1
-
-def comment_out_syncs(filepath: str, gpu: bool):
-    # comment out (prepend //) any line containing cudaStreamSynchronize
-    vcflmax_count = 0
-    added_one = False
+def fix_levelmask_calls(filepath: str, host: bool, stage: int):
     with open(filepath, "r") as file:
         lines = file.readlines()
     with open(filepath, "w") as file:
         for line in lines:
-            if ("cudaStreamSynchronize" in line) or ("EventRecord" in line) or ("StreamWaitEvent" in line):
-                if ("stop" in line) or ("start" in line):
-                    # or ("ExitStreamSync" in line) or ("EntryStreamSync" in line)
-                    line = line
-                else:
+            if stage <= 5:
+                p1, r1 = (
+                    "uint8_t  gpu_levelmask, double *",
+                    "uint8_t* __restrict__  gpu_levelmask, double *",
+                )
+                p2, r2 = (
+                    "gpu_levelmask, &",
+                    ("&gpu_levelmask[0], &" if host else "gpu_levelmask[0], &"),
+                )
+            else:
+                p1, r1 = (
+                    (
+                        "uint8_t  gpu_levelmask, double *"
+                        if host
+                        else "uint8_t gpu_levelmask, double *"
+                    ),
+                    "uint8_t* __restrict__  gpu_levelmask, double *",
+                )
+                p2, r2 = (
+                    (
+                        "__state->__0_gpu_levelmask, &"
+                        if host
+                        else "&__state->__0_gpu_levelmask, &"
+                    ),
+                    "&__state->__0_gpu_levelmask[0], &",
+                )
+            line = line.replace(p1, r1).replace(p2, r2)
+            if not host:
+                line = line.replace(
+                    "uint8_t in_arr = gpu_cfl_clipping;",
+                    "uint8_t in_arr = gpu_cfl_clipping[((_for_it_22 + (tmp_struct_symbol_14 * (_for_it_35 - 1))) - 1)];",
+                )
+                line = line.replace(
+                    "uint8_t  gpu_cfl_clipping,",
+                    "uint8_t* __restrict__  gpu_cfl_clipping,",
+                )
+            file.write(line.replace(", &gpu_levelmask,", ", &gpu_levelmask[0],"))
+
+
+def add_reduce_clean_up_calls(filepath: str):
+    pattern = "DACE_EXPORTED int __dace_exit_velocity_no_nproma_if_prop"
+    with open(filepath, "r") as file:
+        lines = file.readlines()
+    new_lines = []
+    i = 0
+    while i < len(lines):
+        new_lines.append(lines[i])
+        if pattern in lines[i]:
+            while i < len(lines) and "{" not in lines[i]:
+                i += 1
+                new_lines.append(lines[i])
+            if i < len(lines):
+                indent = lines[i][: len(lines[i]) - len(lines[i].lstrip())]
+                new_lines.append(
+                    f"{indent}  cleanup_reduce_sum_gpu();\n{indent}  cleanup_reduce_maxZ_gpu();\n"
+                )
+        i += 1
+    with open(filepath, "w") as file:
+        file.writelines(new_lines)
+
+
+def comment_out_syncs(filepath: str, gpu: bool):
+    with open(filepath, "r") as file:
+        lines = file.readlines()
+    with open(filepath, "w") as file:
+        for line in lines:
+            if any(
+                x in line
+                for x in ["cudaStreamSynchronize", "EventRecord", "StreamWaitEvent"]
+            ):
+                if not any(x in line for x in ["stop", "start"]):
                     line = "//" + line
             if "tmp_call_18 = -1.7976931348623157e+308;" in line:
-                if gpu:
-                    line = "DACE_GPU_CHECK(cudaStreamSynchronize(__state->gpu_context->streams[0]));\n" + line
-                else:
-                    line = "//" + line
+                line = (
+                    (
+                        "DACE_GPU_CHECK(cudaStreamSynchronize(__state->gpu_context->streams[0]));\n"
+                        + line
+                    )
+                    if gpu
+                    else "//" + line
+                )
             file.write(line)
 
+
 def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
-    with open(filepath, 'r') as file:
+    with open(filepath, "r") as file:
         lines = file.readlines()
+    with open(filepath, "w") as file:
+        for line in lines:
+            if line.strip().startswith("//"):
+                file.write(line)
+                continue
+            should_comment = False
+            for name in name_set:
+                if (
+                    any(
+                        x in line
+                        for x in ["delete[]", "delete", "cudaFree", "cudaMalloc"]
+                    )
+                    and name in line
+                ):
+                    should_comment = True
+                    break
+                if (
+                    name in line
+                    and "=" in line
+                    and "new" in line
+                    and "DACE_ALIGN" in line
+                ):
+                    should_comment = True
+                    break
+            if should_comment:
+                indent = line[: len(line) - len(line.lstrip())]
+                file.write(indent + "//" + line.lstrip())
+            else:
+                file.write(line)
 
-    modified_lines = []
-    lines_to_comment = set()  # Track which line indices to comment out
-
-    for i, line in enumerate(lines):
-        line_stripped = line.strip()
-
-        # Skip if line is already commented out
-        if line_stripped.startswith('//'):
-            continue
-
-        should_comment = False
-
-        for name in name_set:
-            # Pattern 1: delete[] name;
-            if ('delete[]' in line or 'delete' in line) and name in line and ';' in line:
-                should_comment = True
-                break
-
-            # Pattern 2: cudaFree(name)
-            if 'cudaFree' in line and name in line and '(' in line and ')' in line:
-                should_comment = True
-                break
-
-            # Pattern 3: cudaMalloc with name
-            if 'cudaMalloc' in line and name in line and '(' in line and ')' in line:
-                should_comment = True
-                break
-
-            # Pattern 4: name = new
-            if name in line and '=' in line and 'new' in line and 'DACE_ALIGN' in line:
-                should_comment = True
-                break
-
-        if should_comment:
-            lines_to_comment.add(i)  # Comment current line
-
-    # Build the modified lines
-    for i, line in enumerate(lines):
-        if i in lines_to_comment:
-            # Preserve original indentation and add // comment
-            leading_whitespace = line[:len(line) - len(line.lstrip())]
-            commented_line = leading_whitespace + '//' + line.lstrip()
-            modified_lines.append(commented_line)
-        else:
-            modified_lines.append(line)
-
-    # Write back to file
-    with open(filepath, 'w') as file:
-        file.writelines(modified_lines)
 
 def use_solve_nh_struct_definitions(filepath: str):
     struct_names = {
@@ -502,105 +358,86 @@ def use_solve_nh_struct_definitions(filepath: str):
         "t_grid_vertices",
         "t_patch",
     }
-
-    """
-    Script to remove struct definitions and forward declarations for specified struct names.
-    Usage: python struct_cleaner.py <file_path> <struct_name1> <struct_name2> ...
-    """
-
-    def filter_structs(content, struct_names):
-        """Remove struct definitions and forward declarations for specified struct names."""
-        lines = content.split('\n')
-        filtered_lines = []
-        struct_set = set(struct_names)
-
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            stripped = line.strip()
-
-            # Check for forward declaration: struct name;
-            fwd_match = re.match(r'\s*struct\s+(\w+)\s*;', line)
-            if fwd_match and fwd_match.group(1) in struct_set:
-                i += 1
-                continue
-
-            # Check for struct definition: struct name {
-            def_match = re.search(r'\bstruct\s+(\w+)\s*\{', line)
-            if def_match and def_match.group(1) in struct_set:
-                # Skip until we find };
-                i += 1
-                while i < len(lines) and lines[i].strip() != '};':
-                    i += 1
-                i += 1  # Skip the }; line too
-                continue
-
-            filtered_lines.append(line)
+    with open(filepath, "r") as f:
+        lines = f.read().split("\n")
+    filtered = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if (
+            re.match(r"\s*struct\s+(\w+)\s*;", line)
+            and re.match(r"\s*struct\s+(\w+)\s*;", line).group(1) in struct_names
+        ):
             i += 1
+            continue
+        if (
+            re.search(r"\bstruct\s+(\w+)\s*\{", line)
+            and re.search(r"\bstruct\s+(\w+)\s*\{", line).group(1) in struct_names
+        ):
+            i += 1
+            while i < len(lines) and lines[i].strip() != "};":
+                i += 1
+            i += 1
+            continue
+        filtered.append(line)
+        i += 1
+    with open(filepath, "w") as f:
+        f.write('#include "shared_struct_defs.h"\n' + "\n".join(filtered))
 
-        return '\n'.join(filtered_lines)
 
-
-    with open(filepath, 'r') as f:
+def replace_pass_by_copy_to_pass_by_ref(path: str):
+    with open(path, "r") as f:
         content = f.read()
-
-    filtered_content = filter_structs(content, struct_names)
-
-    with open(filepath, 'w') as f:
-        f.write('#include "shared_struct_defs.h"\n')
-        f.write(filtered_content)
-
-
-pass_by_copy_to_pass_by_ref_tuples = [
-    ("double", "__CG_p_diag__m_max_vcfl_dyn"),
-]
-
-def _replace_pass_by_copy_to_pass_by_ref_impl(path, type_name_tuples):
-    with open(path, 'r') as f:
-        content = f.read()
-
-    for type_name, name in type_name_tuples:
-        pattern = rf' {re.escape(type_name)} {re.escape(name)},'
-        content = re.sub(pattern, rf'{type_name}& {name},', content)
-    for type_name, name in type_name_tuples:
-        pattern = rf' {re.escape(type_name)} {re.escape(name)}[)]'
-        content = re.sub(pattern, rf'{type_name}& {name})', content)
-
-    with open(path, 'w') as f:
+    content = re.sub(
+        r" double __CG_p_diag__m_max_vcfl_dyn,",
+        r" double& __CG_p_diag__m_max_vcfl_dyn,",
+        content,
+    )
+    content = re.sub(
+        r" double __CG_p_diag__m_max_vcfl_dyn[)]",
+        r" double& __CG_p_diag__m_max_vcfl_dyn)",
+        content,
+    )
+    with open(path, "w") as f:
         f.write(content)
 
 
 def fix_mixed_precision_ambiguity(file_path: Path):
+    """Inject fp16_operators.h to resolve double/half operator ambiguity."""
     with open(file_path, "r") as f:
         content = f.read()
 
-    # Target division ambiguity: (expr) / gpu_array[index]
-    # We wrap the denominator in a float cast to force promotion and resolve operator ambiguity.
-    pattern = r"/\s*((?:gpu___CG_p_|gpu_z_)[a-zA-Z0-9_]+\[[^\]]+\])"
-    replacement = r"/ static_cast<float>(\1)"
+    include = '#include "fp16_operators.h"'
+    if include in content:
+        return
 
-    new_content = re.sub(pattern, replacement, content)
+    # Insert after the first #include line
+    new_content = re.sub(
+        r"(#include\s+[<\"][^>\"]+[>\"])",
+        rf"\1\n{include}",
+        content,
+        count=1,
+    )
 
     if new_content != content:
         with open(file_path, "w") as f:
             f.write(new_content)
 
 
-def patch_bfp_reads(
-    code: str, bfp_gpu_names: list[str], block_size: int = 32, mantissa_bits: int = 16
-) -> str:
+def patch_bfp_reads(code: str, bfp_gpu_names: list[str], block_size: int = 32) -> str:
     """Text-level BFP patching: fix parameter types and replace array reads
     with bfp_decode calls for GPU arrays that were BFP-packed at the top level
     but whose nested SDFG descriptors still say double*.
 
     Patches:
-      - `(const) double *__restrict__ gpu_NAME` → `const uint8_t *__restrict__ gpu_NAME`
+      - `(const) double *(__restrict__) gpu_NAME` → `const uint8_t *__restrict__ gpu_NAME`
       - `gpu_NAME[(index)]` → `bfp_decode<BS, MB>(gpu_NAME, (int)(index))`
     """
     for gpu_name in bfp_gpu_names:
-        # 1. Fix parameter / declaration types
+        # 1. Fix parameter / declaration types (more robust regex for double*)
+        # Matches: double* gpu_NAME, const double * __restrict__ gpu_NAME, etc.
         code = re.sub(
-            rf"(const\s+)?double\s*\*\s*__restrict__\s*{re.escape(gpu_name)}\b",
+            rf"(const\s+)?double\s*\*\s*(__restrict__\s+)?{re.escape(gpu_name)}\b",
             f"const uint8_t *__restrict__ {gpu_name}",
             code,
         )
@@ -647,7 +484,7 @@ def patch_bfp_reads(
                 result.append(code[pos:j])
             else:
                 result.append(
-                    f"bfp_decode<{block_size}, {mantissa_bits}>({gpu_name}, (int)({index_expr}))"
+                    f"bfp_decode<{block_size}>({gpu_name}, (int)({index_expr}))"
                 )
             i = j
         code = "".join(result)
@@ -681,102 +518,54 @@ def _add_bfp_include(file_path: Path):
 
 
 def compile_if_propagated_sdfgs(
-    sdfgs: typing.List[dace.SDFG],
-    gpu: bool,
-    release: bool,
-    generate_code: bool,
-    lib: bool,
-    main_name: None | str,
-    stage: int,
-    debuginfo: bool,
-    allocation_names_to_comment_out: set | None,
-    use_openacc_stream: bool,
+    sdfgs,
+    gpu,
+    release,
+    generate_code,
+    lib,
+    main_name,
+    stage,
+    debuginfo,
+    allocation_names_to_comment_out,
+    use_openacc_stream,
 ):
-    compare_structs(sdfgs)
+    from utils.generate_storage_types import (
+        generate_velocity_tendencies_h,
+        patch_shared_struct_defs_h,
+    )
 
-    use_nvhpc = os.getenv('_USE_NVHPC', '0').lower() in ('1', 'true', 'yes')
-    dace.Config.set('compiler', 'cuda', 'max_concurrent_streams', value="1")
-    sources = set()
-    sources.add("src/reductions.cpp")
-    sources.add("src/timer.cpp")
+    patch_shared_struct_defs_h(sdfgs=sdfgs)
+
+    if os.getenv("SINGLE_THREADED", "0").lower() in ("1", "true", "yes"):
+        dace.config.Config.set("compiler", "num_threads", value="1")
+
+    compare_structs(sdfgs)
+    sources = {"src/reductions.cpp", "src/timer.cpp"}
     if gpu:
         sources.add("src/reductions_kernel.cu")
-
-    headers = set()
-    headers.add("-Iinclude")
     from dace.codegen import codegen, compiler
 
     for sdfg in sdfgs:
-        sdfg_name = sdfg.name
-        build_loc = sdfg.build_folder
+        build_loc = Path(sdfg.build_folder)
         if generate_code:
-            try:
-                # Fill in scope entry/exit connectors
-                sdfg.fill_scope_connectors()
-                infer_types.infer_connector_types(sdfg)
+            sdfg.fill_scope_connectors()
+            infer_types.infer_connector_types(sdfg)
+            infer_types.set_default_schedule_and_storage_types(sdfg, None)
+            sdfg.expand_library_nodes()
+            infer_types.infer_connector_types(sdfg)
+            infer_types.set_default_schedule_and_storage_types(sdfg, None)
+            sdfg.save(sdfg.name + "_concretized.sdfgz", compress=True)
 
-                # Set default storage/schedule types in SDFG
-                infer_types.set_default_schedule_and_storage_types(sdfg, None)
+            if os.getenv("_PERMUTE_DIMENSIONS", "0").lower() in ("1", "true", "yes"):
+                from utils.reshape_kernels import update_gpu_block_size
 
-                # Recursively expand library nodes that have not yet been expanded
-                sdfg.expand_library_nodes()
+                update_gpu_block_size(sdfg, [32, 32, 1])
 
-                # After expansion, run another pass of connector/type inference
-                infer_types.infer_connector_types(sdfg)
-                infer_types.set_default_schedule_and_storage_types(sdfg, None)
-                """
-                for node, graph in sdfg.all_nodes_recursive():
-                    if "vcflmax" in graph.sdfg.arrays:
-                        graph.sdfg.arrays["vcflmax"].storage = dace.dtypes.StorageType.CPU_Heap
-                        assert graph.sdfg.arrays["vcflmax"].storage == dace.dtypes.StorageType.CPU_Heap
-                    if "gpu_vcflmax" in graph.sdfg.arrays:
-                        graph.sdfg.arrays["gpu_vcflmax"].storage = dace.dtypes.StorageType.GPU_Global
-                        assert graph.sdfg.arrays["gpu_vcflmax"].storage == dace.dtypes.StorageType.GPU_Global
-                """
-                # Set the LibNode schedules back to GPU if input/output is GPU global
-                """
-                from utils.reductions import LibNode
-                b = False
-                for node, graph in sdfg.all_nodes_recursive():
-                    if isinstance(node, LibNode) or isinstance(node, dace.nodes.LibraryNode) or isinstance(node, dace.nodes.Tasklet) or isinstance(node, dace.nodes.CodeNode):
-                        in_array_names = [e.src.data for e in graph.in_edges(node) if isinstance(e.src, dace.nodes.AccessNode)]
-                        out_array_names = [e.dst.data for e in graph.out_edges(node) if isinstance(e.dst, dace.nodes.AccessNode)]
-                        arrays = set()
-                        for in_name in in_array_names:
-                            arrays.add(graph.sdfg.arrays[in_name])
-                        for out_name in out_array_names:
-                            arrays.add(graph.sdfg.arrays[out_name])
-                        real_arrays = set([array for array in arrays if isinstance(array, dace.data.Array)])
-                        all_gpu = all(
-                            (isinstance(array, dace.data.Array) and array.storage == dace.dtypes.StorageType.GPU_Global) for array in real_arrays
-                        )
-                        if all_gpu:
-                            b = True
-                            node.schedule = dace.dtypes.ScheduleType.GPU_Device
-                assert b, "No GPU LibNode found in SDFG"
-                """
-                sdfg.save(sdfg.name + "_concretized.sdfgz", compress=True)
-                #sdfg.validate() # Schedule problem here
-
-                # Generate code for the program by traversing the SDFG state by state
-                program_objects = codegen.generate_code(sdfg, validate=False)
-            except Exception:
-                fpath = os.path.join("_dacegraphs", "failing.sdfgz")
-                sdfg.save(fpath, compress=True)
-                print(f"Failing SDFG saved for inspection in {os.path.abspath(fpath)}")
-                raise
-
-            # Generate the program folder and write the source files
+            program_objects = codegen.generate_code(sdfg, validate=False)
             compiler.generate_program_folder(sdfg, program_objects, sdfg.build_folder)
-
             modify_files_in_directory(build_loc)
 
-            if os.getenv("_LOWPREC", "fp64").lower() in (
-                "fp16",
-                "f16",
-                "bfp8",
-                "bfp16",
-            ):
+            if os.getenv("_LOWPREC", "fp64").lower() in ("fp16", "f16", "bfp16"):
                 for cu_file in build_loc.rglob("*.cu"):
                     fix_mixed_precision_ambiguity(cu_file)
 
@@ -791,10 +580,20 @@ def compile_if_propagated_sdfgs(
             # allocation; nested SDFGs (GPU kernels) still emit double*.
             _lowprec = os.getenv("_LOWPREC", "fp64").lower()
             if _lowprec.startswith("bfp"):
-                from utils.stages.compile_gpu_stage8 import BFP_ARRAYS
+                # Precision Autodiscovery: check descriptors for the BFP_PACKED tag
+                _bfp_gpu_names = [
+                    n
+                    for n, arr in sdfg.arrays.items()
+                    if arr.debuginfo and arr.debuginfo.filename == "BFP_PACKED"
+                ]
 
-                _bfp_gpu_names = [f"gpu_{n}" for n in BFP_ARRAYS]
+                if _bfp_gpu_names:
+                    print(
+                        f"BFP: Autodiscovered {len(_bfp_gpu_names)} arrays for patching: {_bfp_gpu_names}"
+                    )
+
                 _bfp_mbits = {"bfp8": 8, "bfp16": 16, "bfp32": 16}.get(_lowprec, 16)
+
                 for src_file in (
                     list(build_loc.rglob("*.cu"))
                     + list(build_loc.rglob("*.cpp"))
@@ -802,10 +601,13 @@ def compile_if_propagated_sdfgs(
                 ):
                     with open(src_file, "r") as f:
                         content = f.read()
+
                     patched = patch_bfp_reads(
                         content, _bfp_gpu_names, mantissa_bits=_bfp_mbits
                     )
+
                     if patched != content:
+                        print(f"BFP: Patched {src_file}")
                         with open(src_file, "w") as f:
                             f.write(patched)
 
@@ -816,178 +618,313 @@ def compile_if_propagated_sdfgs(
         if gpu:
             _replace_cpp_with_cu(build_loc)
             if stage > 5 and rm_syncs:
-                comment_out_syncs(f"{build_loc}/src/cpu/{sdfg_name}.cu", gpu)
-            #assert allocation_names_to_comment_out is not None, "Allocation names to comment out must be provided for GPU code generation"
-            #assert use_openacc_stream is True
-            if allocation_names_to_comment_out is not None:
-                assert stage == 9, "Allocation names to comment out are only supported in stage 9"
-                comment_out_allocs_and_frees(f"{build_loc}/src/cpu/{sdfg_name}.cu", allocation_names_to_comment_out)
-            if use_openacc_stream:
-                assert stage == 9, "OpenACC stream is only supported in stage 9"
-                assert gpu is True, "OpenACC stream is only supported for GPU code"
-                change_to_openacc_stream(
-                    f"{build_loc}/src/cpu/{sdfg_name}.cu",
-                    f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu",
-                    gpu
+                comment_out_syncs(cpu_src, gpu)
+            if allocation_names_to_comment_out and stage == 9:
+                comment_out_allocs_and_frees(cpu_src, allocation_names_to_comment_out)
+            if use_openacc_stream and stage == 9:
+                change_to_openacc_stream(cpu_src, dev_src, gpu)
+            add_reduce_clean_up_calls(cpu_src)
+            fix_levelmask_calls(cpu_src, True, stage)
+            if stage > 5:
+                with open(cpu_src, "r") as f:
+                    code = f.read()
+                # Zero maxvcfl_arr at the start of each __program call.
+                # It's only written for cells where cfl_clipping is true,
+                # so stale values from prior calls would contaminate the
+                # per-block MAX reduction.
+                # Extract the size expression from the existing cudaMemset in __dace_init.
+                m = re.search(
+                    r"cudaMemset\(__state->__0_gpu_maxvcfl_arr, 0,\s*\n?\s*(.*?)\s*\*\s*\n?\s*sizeof\(double\)\)",
+                    code,
+                    re.DOTALL,
                 )
-            add_reduce_clean_up_calls(f"{build_loc}/src/cpu/{sdfg_name}.cu")
-            #This fix is needed for uint8_t
-            fix_levelmask_calls(f"{build_loc}/src/cpu/{sdfg_name}.cu", True, stage)
-            if stage > 5:
-                fix_levelmask_calls(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu", False, stage)
-
-            if stage > 5:
-                with open(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu", "r") as file:
-                    main_cu_code = file.read()
-                with open(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu", "w") as file:
-                    file.write(
-                        '#include "reductions_device.cuh"\n#define __REDUCE_DEVICE__\n'
-                        + main_cu_code
+                if m:
+                    size_expr = " ".join(m.group(1).split())
+                    code = code.replace(
+                        "nflatlev_jg = __CG_global_data__m_nflatlev[0];",
+                        f"nflatlev_jg = __CG_global_data__m_nflatlev[0];\n"
+                        f"  DACE_GPU_CHECK(cudaMemset(__state->__0_gpu_maxvcfl_arr, 0, {size_expr} * sizeof(double)));",
                     )
-                repl_in_file(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu", "const const", "const")
-                repl_in_file(f"{build_loc}/src/cpu/{sdfg_name}.cu", "const const", "const")
+                # CFL patches — commented out to isolate kernel crash
+                # Zero-initialize vcflmax (GPU and CPU) — blocks outside the
+                # per-block loop range are never written, so the final reduction
+                # would read uninitialized memory.
+                code = re.sub(
+                    r"(DACE_GPU_CHECK\(cudaMalloc\(\(void \*\*\)&__state->__0_gpu_vcflmax,\s*\n?\s*(\w+) \* sizeof\(double\)\)\);)",
+                    r"\1\n  DACE_GPU_CHECK(cudaMemset(__state->__0_gpu_vcflmax, 0, \2 * sizeof(double)));",
+                    code,
+                )
+                code = re.sub(
+                    r"(__state->__0_vcflmax = new double DACE_ALIGN\(64\)\[(\w+)\];)",
+                    r"\1\n  memset(__state->__0_vcflmax, 0, \2 * sizeof(double));",
+                    code,
+                )
+                # Fix max_vcfl_dyn: the SDFG lost the MAX(old, new) — it just
+                # overwrites with the reduction result. Restore the MAX.
+                code = code.replace(
+                    "p_diag_out_max_vcfl_dyn = max_vcfl_dyn_var_152_0_in;",
+                    "p_diag_out_max_vcfl_dyn = (max_vcfl_dyn_var_152_0_in > __CG_p_diag__m_max_vcfl_dyn) ? max_vcfl_dyn_var_152_0_in : __CG_p_diag__m_max_vcfl_dyn;",
+                )
+                # Fix scalar reduce: the SDFG doesn't wrap this block with
+                # #define __REDUCE_GPU__, so it falls through to _cpu —
+                # but the data lives on GPU. Replace the #ifdef block with
+                # a direct GPU call and point at the GPU buffer.
+                code = code.replace(
+                    "&__state->__0_vcflmax[",
+                    "&__state->__0_gpu_vcflmax[",
+                )
+                code = re.sub(
+                    r"#ifdef __REDUCE_DEVICE__\s*\n\s*out = reduce_maxZ_to_scalar_device\(in_arr, in_size\);\s*\n"
+                    r"\s*#elif defined\(__REDUCE_GPU__\)\s*\n"
+                    r"\s*out = reduce_maxZ_to_scalar_gpu\(in_arr, in_size, __dace_current_stream\);\s*\n"
+                    r"\s*#else\s*\n"
+                    r"\s*out = reduce_maxZ_to_scalar_cpu\(in_arr, in_size\);\s*\n"
+                    r"\s*#endif",
+                    "out = reduce_maxZ_to_scalar_gpu(in_arr, in_size,\n"
+                    "          __state->gpu_context->streams[0]);",
+                    code,
+                )
+                # Floatify bare double literals in branch conditions (interstate
+                # edges).  The SDFG-level floatify only touches tasklet source,
+                # but DaCe codegen emits double literals for interstate edge
+                # conditions like `vcfl < -0.85`.
+                # Match literals NOT already suffixed with 'f' or wrapped in float().
+                for _val in ["0.85", "0.5", "1.0", "0.0", "0.05", "0.65", "1.15"]:
+                    code = re.sub(
+                        rf"(?<!float\()(?<![0-9]){re.escape(_val)}(?!f)(?![0-9])",
+                        f"{_val}f",
+                        code,
+                    )
 
+                # Safety net: replace any remaining dace::math::ipow(x, 2) with (x)*(x)
+                # These come from Python tasklets where ** 2 is converted by DaCe codegen.
+                code = re.sub(
+                    r"dace::math::ipow\(([^,]+),\s*2\)",
+                    r"((\1) * (\1))",
+                    code,
+                )
+                # Fix ambiguous overload: CFL tasklets mix fp16 scalars with
+                # float/double literals.  Wrap fp16 vars in static_cast<float>
+                # to avoid device-only __half operators.
+                # Patterns may have raw literals, f-suffixed, or float()-wrapped
+                # depending on whether floatify ran on CPP or Python tasklets.
+                _F = r"(?:float\()?0\.65f?\)?"  # matches 0.65, 0.65f, float(0.65)
+                code = re.sub(
+                    rf"\({_F} / dtime_0_in\)",
+                    "(0.65f / static_cast<float>(dtime_0_in))",
+                    code,
+                )
+                _F05 = r"(?:float\()?0\.05f?\)?"
+                _F85 = r"(?:float\()?0\.85f?\)?"
+                code = re.sub(
+                    rf"\({_F05} / \(dtime_0_in \* \({_F85} - \(cfl_w_limit_0_in \* dtime_1_in\)\)\)\)",
+                    "(0.05f / (static_cast<float>(dtime_0_in) * (0.85f - (static_cast<float>(cfl_w_limit_0_in) * static_cast<float>(dtime_1_in)))))",
+                    code,
+                )
+                # ABI fix: non-transient scalars are lowered internally but
+                # Fortran passes double by reference.  Rename the parameter
+                # to __abi_X (double) and shadow with a lowered local.
+                _ABI_SCALARS = ["dtime", "dt_linintp_ubc"]
+                # Detect the lowered type from generated code
+                _lowered_ctype = None
+                for _lt in ["dace::float16", "float"]:
+                    if f"{_lt} {_ABI_SCALARS[0]}," in code:
+                        _lowered_ctype = _lt
+                        break
+                if _lowered_ctype:
+                    # Only patch the 3 Fortran-facing functions, not __dace_runkernel_*
+                    _ext_fns = [
+                        f"__dace_init_{sdfg.name}(",
+                        f"__program_{sdfg.name}(",
+                        f"__program_{sdfg.name}_internal(",
+                    ]
+                    for _fn in _ext_fns:
+                        _pos = code.find(_fn)
+                        while _pos != -1:
+                            _sig_end = code.find(")", _pos)
+                            if _sig_end == -1:
+                                break
+                            _sig = code[_pos : _sig_end + 1]
+                            # Rename parameters in this signature
+                            _new_sig = _sig
+                            for _sc in _ABI_SCALARS:
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
+                                )
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
+                                )
+                            code = code[:_pos] + _new_sig + code[_sig_end + 1 :]
+                            # Insert shadow locals after opening brace
+                            if "__abi_" in _new_sig:
+                                _brace = code.find("{", _pos + len(_new_sig))
+                                if _brace != -1:
+                                    _shadow = "".join(
+                                        f"\n  {_lowered_ctype} {_sc} = static_cast<{_lowered_ctype}>(__abi_{_sc});"
+                                        for _sc in _ABI_SCALARS
+                                        if f"__abi_{_sc}" in _new_sig
+                                    )
+                                    code = (
+                                        code[: _brace + 1]
+                                        + _shadow
+                                        + code[_brace + 1 :]
+                                    )
+                            _pos = code.find(_fn, _pos + len(_new_sig) + 1)
+                with open(cpu_src, "w") as f:
+                    f.write(code)
+                if _lowered_ctype:
+                    with open(header, "r") as f:
+                        hdr = f.read()
+                    for _fn in _ext_fns:
+                        _pos = hdr.find(_fn)
+                        while _pos != -1:
+                            _sig_end = hdr.find(";", _pos)
+                            if _sig_end == -1:
+                                break
+                            _sig = hdr[_pos : _sig_end + 1]
+                            _new_sig = _sig
+                            for _sc in _ABI_SCALARS:
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
+                                )
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
+                                )
+                            hdr = hdr[:_pos] + _new_sig + hdr[_sig_end + 1 :]
+                            _pos = hdr.find(_fn, _pos + len(_new_sig) + 1)
+                    with open(header, "w") as f:
+                        f.write(hdr)
+                fix_levelmask_calls(dev_src, False, stage)
+                repl_in_file(dev_src, "const const", "const")
+                repl_in_file(cpu_src, "const const", "const")
+                with open(dev_src, "r") as f:
+                    content = f.read()
+                with open(dev_src, "w") as f:
+                    f.write(
+                        '#include "reductions_device.cuh"\n#define __REDUCE_DEVICE__\n'
+                        + content
+                    )
             if stage == 9:
-                repl_in_file_per_line_with_cond(
-                    f"{build_loc}/src/cpu/{sdfg_name}.cu",
-                    "double __CG_p_diag__m_max_vcfl_dyn",
-                    "double &__CG_p_diag__m_max_vcfl_dyn",
-                    condition=lambda line: "double __CG_p_diag__m_max_vcfl_dyn" in line and "__CG_p_diag__m_max_vcfl_dyn;" not in line
-                )
-                repl_in_file_per_line_with_cond(
-                    f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu",
-                    "double __CG_p_diag__m_max_vcfl_dyn",
-                    "double &__CG_p_diag__m_max_vcfl_dyn",
-                    condition=lambda line: "double __CG_p_diag__m_max_vcfl_dyn" in line and "__CG_p_diag__m_max_vcfl_dyn;" not in line
-                )
-                repl_in_file_per_line_with_cond(
-                    f"{build_loc}/include/{sdfg_name}.h",
-                    "double __CG_p_diag__m_max_vcfl_dyn",
-                    "double &__CG_p_diag__m_max_vcfl_dyn",
-                    condition=lambda line: "double __CG_p_diag__m_max_vcfl_dyn" in line and "__CG_p_diag__m_max_vcfl_dyn;" not in line
-                )
-            #if fix_out_val_0:
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "gpu_out_val_0, &gpu_cfl_clipping")
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "gpu_out_val_0, &gpu_z_w_con_c")
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "gpu_out_val_0, &gpu_maxvcfl_arr")
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "gpu_out_val_0, &gpu_levmask")
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "gpu_out_val_0, &gpu_maxvcfl_arr")
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "gpu_out_val_0, &gpu_cfl_clipping")
-            #    fix_out_val_0_call(f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu", "out_val_0, &gpu_levmask")
-            if stage > 5:
-                sources.add(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu")
-            with open(f"{build_loc}/src/cpu/{sdfg_name}.cu", "r") as file:
-                main_cu_code = file.read()
-            with open(f"{build_loc}/src/cpu/{sdfg_name}.cu", "w") as file:
-                file.write(
+                for f in [cpu_src, dev_src, header]:
+                    repl_in_file_per_line_with_cond(
+                        f,
+                        "double __CG_p_diag__m_max_vcfl_dyn",
+                        "double &__CG_p_diag__m_max_vcfl_dyn",
+                        lambda l: "__CG_p_diag__m_max_vcfl_dyn" in l and ";" not in l,
+                    )
+            with open(cpu_src, "r") as f:
+                content = f.read()
+            with open(cpu_src, "w") as f:
+                f.write(
                     '#include "reductions_kernel.cuh"\n#include "reductions_cpu.h"\n#include "timer.h"\n'
-                    + main_cu_code
+                    + content
                 )
+            if stage in [8, 9]:
+                set_default_stream(cpu_src)
+                set_default_stream(dev_src)
 
-            if stage == 8 or stage == 9:
-                set_default_stream(f"{build_loc}/src/cpu/{sdfg_name}.cu")
-                set_default_stream(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu")
+            # Flatten build folder: move source/header to parent and clean up
+            cpu_src, dev_src, header = flatten_build_folder(build_loc, sdfg.name, gpu)
 
-            sources.add(f"{build_loc}/src/cpu/{sdfg.name}.cu")
+            if dev_src:
+                sources.add(dev_src)
+            sources.add(cpu_src)
         else:
-            with open(f"{build_loc}/src/cpu/{sdfg_name}.cpp", "r") as file:
-                main_cu_code = file.read()
-            with open(f"{build_loc}/src/cpu/{sdfg_name}.cpp", "w") as file:
-                file.write(
-                    '#include "reductions_cpu.h"\n#include "timer.h"\n' + main_cu_code
-                )
-            sources.add(f"{build_loc}/src/cpu/{sdfg.name}.cpp")
+            with open(cpu_src, "r") as f:
+                content = f.read()
+            with open(cpu_src, "w") as f:
+                f.write('#include "reductions_cpu.h"\n#include "timer.h"\n' + content)
+            sources.add(cpu_src)
 
-        _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
-        if _build_for_integration:
-            if stage == 1 or stage == 9:
-                if not gpu:
-                    use_solve_nh_struct_definitions(f"{build_loc}/src/cpu/{sdfg_name}.cpp")
-                else:
-                    if stage == 1:
-                        use_solve_nh_struct_definitions(f"{build_loc}/src/cpu/{sdfg_name}.cu")
-                    else:
-                        use_solve_nh_struct_definitions(f"{build_loc}/src/cpu/{sdfg_name}.cu")
-                        use_solve_nh_struct_definitions(f"{build_loc}/src/cuda/{sdfg_name}_cuda.cu")
-            if not gpu:
-                replace_pass_by_copy_to_pass_by_ref(f"{build_loc}/src/cpu/{sdfg_name}.cpp")
-                replace_pass_by_copy_to_pass_by_ref(f"{build_loc}/include/{sdfg_name}.h")
-            else:
-                replace_pass_by_copy_to_pass_by_ref(f"{build_loc}/src/cpu/{sdfg_name}.cu")
-                replace_pass_by_copy_to_pass_by_ref(f"{build_loc}/include/{sdfg_name}.h")
+        if (
+            os.getenv("_BUILD_LIB_FOR_SOLVE_NH", "0").lower() in ("1", "true", "yes")
+            or stage == 8
+        ):
+            if stage in [1, 8, 9]:
+                use_solve_nh_struct_definitions(cpu_src)
+                use_solve_nh_struct_definitions(header)
+                if gpu and stage != 1:
+                    use_solve_nh_struct_definitions(dev_src)
+            replace_pass_by_copy_to_pass_by_ref(cpu_src)
+            replace_pass_by_copy_to_pass_by_ref(header)
 
+    final_main = main_name or (
+        "main_gpu.cu" if gpu and not lib else "main.cc" if not gpu and not lib else None
+    )
+    if final_main:
+        sources.add(final_main)
 
     use_nvhpc = os.getenv("_USE_NVHPC", "0").lower() in ("1", "true", "yes")
-    cpp_type = {
-        "fp64": "double",
-        "fp32": "float",
-        "f32": "float",
-        "f64": "double",
-        "fp16": "half",
-        "f16": "half",
-    }.get(os.getenv("_LOWPREC", "fp64").lower(), "double")
-    low_prec_flag = f"-DLOW_PREC_TYPE={cpp_type}"
-    base_inc = f"-I{build_loc}/include -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
+    # Headers are now in the root of the stage folder (build_loc.parent)
+    base_inc = f"-I{build_loc.parent} -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
 
-    nvhpc_flags = "-ccbin=nvc++" if use_nvhpc else ""
+    # Use pkg-config to get correct paths for libraries loaded via Spack/Modules
+    import subprocess
 
-
-    supress_flags = "--diag-suppress 68 --diag-suppress 550 --diag-suppress 20208 --diag-suppress 1835 --diag-suppress 177 --diag-suppress 20012 --diag-suppress 1098"
-    no_nvhpc_flags = "-Wconversion -Wno-sign-conversion -Wfloat-conversion -Wno-unknown-pragmas -faligned-new" if not use_nvhpc else ""
-    no_nvhpc_flags_gpu = "-Xcompiler=-Wconversion -Xcompiler=-Wsign-conversion -Xcompiler=-Wfloat-conversion -Xcompiler=-Wno-unknown-pragmas -Xcompiler=-faligned-new" if not use_nvhpc else ""
-    if gpu:
-        debuginfo_flags = "-lineinfo" if debuginfo else ""
-    else:
-        debuginfo_flags = "-g" if debuginfo else ""
-    nvhpc_flags += "  " if use_nvhpc else ""
+    extra_libs = ""
+    for lib_name in ["sqlite3", "zlib", "libzstd"]:
+        try:
+            cflags = subprocess.check_output(
+                ["pkg-config", "--cflags", lib_name], text=True
+            ).strip()
+            lflags = subprocess.check_output(
+                ["pkg-config", "--libs", lib_name], text=True
+            ).strip()
+            base_inc += f" {cflags}"
+            extra_libs += f" {lflags}"
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
 
     if gpu:
-        GENCODE_NUMBER = os.getenv('GENCODE_NUMBER', 0)
-        if not GENCODE_NUMBER and not os.getenv('GENCODE_ARCH', None):
-            raise ValueError(f"""GENCODE_NUMBER environment variable is not set. Please set it to the desired CUDA architecture version.
-    export GENCODE_NUMBER=70 # for Ault
-    export GENCODE_NUMBER=90 # for Daint, Jupiter
-
-    You can also set GENCODE_ARCH environment variable to the desired architecture, e.g.:
-    export GENCODE_ARCH="arch=compute_70,code=sm_70" # for Ault
-    export GENCODE_ARCH="arch=compute_90,code=sm_90" # for Daint, Jupiter
-    """)
-        GENCODE_ARCH = os.getenv('GENCODE_ARCH', f'arch=compute_{GENCODE_NUMBER},code=sm_{GENCODE_NUMBER}')
-        print(f"Using GENCODE_ARCH: {GENCODE_ARCH}")
+        num = os.getenv("GENCODE_NUMBER", 0)
+        arch = os.getenv("GENCODE_ARCH", f"arch=compute_{num},code=sm_{num}")
+        if not num and not os.getenv("GENCODE_ARCH"):
+            raise ValueError("GENCODE_NUMBER or GENCODE_ARCH must be set.")
+        suppress = " ".join(
+            [f"--diag-suppress {x}" for x in [68, 550, 20208, 1835, 177, 20012, 1098]]
+        )
+        nvhpc = "-ccbin=nvc++" if use_nvhpc else ""
+        dbg = "-lineinfo"
+        xcomp = f"-Xcompiler=-Wall -Xcompiler=-Wextra -Xcompiler=-Wno-unused-parameter {'' if use_nvhpc else '-Xcompiler=-Wconversion -Xcompiler=-Wno-sign-conversion -Xcompiler=-Wfloat-conversion -Xcompiler=-Wno-unknown-pragmas -Xcompiler=-faligned-new'}"
         if release:
-            flags = f" {nvhpc_flags} {supress_flags} {no_nvhpc_flags_gpu} -DNDEBUG -Xcompiler=-DNDEBUG -Xcompiler=-Wall -Xcompiler=-Wextra  -Xcompiler=-O3 --expt-relaxed-constexpr -gencode {GENCODE_ARCH} --use_fast_math -O3 {debuginfo_flags} --ftz=true --prec-div=false --prec-sqrt=false --fmad=true -Xptxas=-O3 -Xptxas=-v -Xcompiler=-march=native -Xcompiler=-mtune=native --restrict -DNDEBUG"
+            flags = f"{nvhpc} {suppress} {xcomp} -DNDEBUG -Xcompiler=-DNDEBUG -Xcompiler=-O3 --expt-relaxed-constexpr -gencode {arch} --use_fast_math -O3 {dbg} --ftz=true --prec-div=false --prec-sqrt=false --fmad=true -Xptxas=-O3 -Xptxas=-v -Xcompiler=-march=native -Xcompiler=-mtune=native --restrict -DNDEBUG"
         else:
-            flags = f" {supress_flags} {no_nvhpc_flags_gpu} -DNDEBUG -Xcompiler=-Wall -Xcompiler=-Wextra --expt-relaxed-constexpr -gencode {GENCODE_ARCH} -O0 -Xcompiler=-O0 -G {debuginfo_flags} --fmad=false --prec-div=true --prec-sqrt=true --ftz=false -DDACE_VELOCITY_DEBUG -Xcompiler=-DDACE_VELOCITY_DEBUG"
+            flags = f"{suppress} {xcomp} -DNDEBUG -Xcompiler=-Wall -Xcompiler=-Wextra --expt-relaxed-constexpr -gencode {arch} -O0 -Xcompiler=-O0 -G {dbg} --fmad=false --prec-div=true --prec-sqrt=true --ftz=false -DDACE_VELOCITY_DEBUG -Xcompiler=-DDACE_VELOCITY_DEBUG"
         if lib:
-            flags += " -DNO_SERDE -std=c++17 -Xcompiler=-fPIC --compiler-options '-fPIC' --shared "
+            flags += " -DNO_SERDE -DNVTX_DISABLE -std=c++17 -Xcompiler=-fPIC --compiler-options '-fPIC' --shared"
         else:
-            flags += " -std=c++20 "
+            flags += " -std=c++20"
+
+        # Add linker wrappers for memory tracking
+        flags += " -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree"
+
+        # Keep PTX intermediate files for inspection (e.g. grep for .f64 ops)
+        flags += " --keep --keep-dir=ptx_out"
+
+        # Pass lowered precision tag so main_gpu.cu can record it in SQLite
+        lowprec_tag = os.getenv("_LOWPREC", "fp64").lower()
+        flags += f' -DLOWPREC_TAG=\\"{lowprec_tag}\\"'
+
+        out_file = output_name or ("libvelocity_gpu.so" if lib else "velocity_gpu")
+        cmd = f"nvcc {' '.join(sources)} {base_inc} {flags} {extra_libs} -lsqlite3 -lz -lzstd -o {out_file}"
     else:
+        dbg = "-g" if debuginfo else ""
         if release:
-            flags = f" {no_nvhpc_flags} {debuginfo_flags} -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -O3 -DNDEBUG"
+            flags = f"{low_prec_flag} {dbg} -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -O3 -DNDEBUG"
         else:
-            flags = f" {no_nvhpc_flags} -DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unknown-pragmas -O0 -ggdb {debuginfo_flags} "
+            flags = f"{low_prec_flag} -DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unknown-pragmas -O0 -ggdb {dbg}"
+        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} -o {'libvelocity_cpu.so' if lib else 'velocity_cpu'}"
 
-    dace_include = os.path.dirname(dace.__file__) + "/runtime/include/"
+        out_file = output_name or ("libvelocity_cpu.so" if lib else "velocity_cpu")
+        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} -lsqlite3 -lz -o {out_file}"
+
     if gpu:
-        if not lib:
-            compile_cmd = f"nvcc {' '.join(sources)} -I{build_loc}/include -I{dace_include} {' '.join(headers)} {flags} -o velocity_gpu"
-        else:
-            compile_cmd = f"nvcc {' '.join(sources)} -I{build_loc}/include -I{dace_include} {' '.join(headers)} {flags} -o libvelocity_gpu.so"
-    else:
-        if not lib:
-            compile_cmd = f"c++ {' '.join(sources)} -I{build_loc}/include -I{dace_include} {' '.join(headers)} {flags} -o velocity_cpu"
-        else:
-            compile_cmd = f"c++ {' '.join(sources)} -I{build_loc}/include -I{dace_include} {' '.join(headers)} {flags} -o libvelocity_cpu.so"
-
-    print(f"Compiling: {compile_cmd}")
-    exit_code = os.system(compile_cmd)
-
-    # check if compilation was successful
-    if exit_code != 0:
-        if gpu:
-            print(f"nvcc {' '.join(sources)} -I{build_loc}/include -I{dace_include} {' '.join(headers)} {flags} -o velocity_gpu")
-        else:
-            print(f"c++ {' '.join(sources)} -I{build_loc}/include -I{dace_include} {' '.join(headers)} {flags} -o velocity_cpu")
-        print("Compilation failed")
+        Path("ptx_out").mkdir(exist_ok=True)
+    recompile_sh = Path("recompile.sh")
+    recompile_sh.write_text(f"#!/bin/sh\nset -e\n{cmd}\n")
+    recompile_sh.chmod(0o755)
+    print(f"Compiling: {cmd}")
+    if os.system(cmd) != 0:
         exit(1)
+    print(f"\n✅ Binary ready: ./{out_file}")
+    return cmd

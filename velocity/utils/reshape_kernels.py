@@ -85,6 +85,21 @@ def reinsert_symbols_to_nsdfg(graph: dace.SDFGState):
                     child_sdfg.save("c.sdfgz", compress=True)
                     child_sdfg.remove_symbol(missing_symbol)
 
+
+def update_gpu_block_size(sdfg: dace.SDFG, block_size: list[int]):
+    """Recursively update the gpu_block_size property of all GPU_Device maps."""
+    count = 0
+    for node, _ in sdfg.all_nodes_recursive():
+        if (
+            isinstance(node, dace.nodes.MapEntry)
+            and node.map.schedule == dace.ScheduleType.GPU_Device
+        ):
+            node.map.gpu_block_size = block_size
+            count += 1
+    if count > 0:
+        print(f"  update_gpu_block_size: Updated {count} maps to {block_size}")
+
+
 def reshape_kernels(sdfg: dace.SDFG, unroll_inner_map: bool):
     map_entries = [(node, graph) for node,graph in sdfg.all_nodes_recursive() if isinstance(node, dace.nodes.MapEntry)]
 
@@ -159,9 +174,18 @@ def reshape_kernels(sdfg: dace.SDFG, unroll_inner_map: bool):
     sdfg.validate()
 
 
-def reshape_kernels_w_coarsening(sdfg: dace.SDFG, x_coarsening: int, y_coarsening: int,
-                                 x_block_size: int, y_block_size: int, unroll_x: bool, unroll_y: bool,
-                                 unroll_x_factor: int | None, unroll_y_factor: int | None):
+def reshape_kernels_w_coarsening(
+    sdfg: dace.SDFG,
+    x_coarsening: int,
+    y_coarsening: int,
+    x_block_size: int,
+    y_block_size: int,
+    unroll_x: bool,
+    unroll_y: bool,
+    unroll_x_factor: int | None,
+    unroll_y_factor: int | None,
+    permute_dims: bool = False,
+):
     # We have kernels of form:
     # [j=0:nlev, i=0:nproma]
     # [Nested SDFG]
@@ -185,98 +209,131 @@ def reshape_kernels_w_coarsening(sdfg: dace.SDFG, x_coarsening: int, y_coarsenin
             continue
         if map_entry.map.schedule != dace.ScheduleType.GPU_Device:
             continue
-        # Otherwise we are in a kernel and we can do this.
-        # We have kernels of form:
-        # [j=0:nlev, i=0:nproma]
-        # [Nested SDFG]
-        #
-        # These kernels are ran from an outer map of form
-        # [k=0:nblks]
-        #
-        # The new kernel will look as follows:
-        # [_i=0:nproma/4: _y=0:4, _x=0:128] @ GPU_Device # 0:32 is for DaCe codegen to work to generate 32 threads per column (nlev)
-        # [tidy=0:4, tidx=0:128] @ GPU_ThreadBlock # is to generate tidx for the next iteration
-        # [i=_i:_i+4, j=tidx:nlev:32] @ Sequential
-        # TODO: Extension every thread computes 2 consecutive elements of the column
-        # Prob. Not very good idea because nlev is not contigously stored
 
-        tblock_size_x = x_block_size   # This is the number of threads per block, can be changed if needed. (range is inclusive in sympy)
-        tblock_size_y = y_block_size
-        nlev_range = map_entry.map.range[0]
-        nlev_param = map_entry.map.params[0]
-        nlev_param_sym = dace.symbol(nlev_param)
-        nproma_range = map_entry.map.range[1]
-        nproma_param = map_entry.map.params[1]
-        nproma_param_sym = dace.symbol(nproma_param)
-        tidy_symbol_name = "_column_tidy"
-        tidy_symbol = dace.symbol(tidy_symbol_name)
-        tidx_symbol_name = "_row_tidx"
-        tidx_symbol = dace.symbol(tidx_symbol_name)
-        nlev_b, nlev_e, nlev_s = nlev_range
-        nproma_b, nproma_e, nproma_s = nproma_range
-        assert nlev_s == 1
+        params = map_entry.map.params
+        ranges = map_entry.map.range
 
-        glob_y_step = y_coarsening * tblock_size_y
-        glob_x_step = x_coarsening * tblock_size_x
-        # Rm the nlev range from the map entry, and add a 0:block_size range
-        # [start_idx:end_idx:1] -> [start_idx:end_idx:(tblock_x*x_coarsening)]
-        coarsened_nproma_range = (nproma_b, nproma_e, glob_x_step)
-        coarsened_nlev_range = (nlev_b, nlev_e, glob_y_step)
-        assert nproma_s == 1
-        map_entry.map.range = [(coarsened_nlev_range), (coarsened_nproma_range)]
-        map_entry.map.params = ["_y", "_x"]
-        _y_symbol = dace.symbol("_y")
-        _x_symbol = dace.symbol("_x")
+        # Robustly identify Vertical vs Horizontal based on size
+        # nlev is ~90, nproma is ~20480
+        p0_size = dace.symbolic.evaluate(
+            ranges[0][1] - ranges[0][0] + 1, sdfg.constants
+        )
+        p1_size = dace.symbolic.evaluate(
+            ranges[1][1] - ranges[1][0] + 1, sdfg.constants
+        )
 
-        if y_coarsening > 1:
-            min_expr_y = dace.symbolic.sympy.Min(nlev_e, tidy_symbol + _y_symbol + tblock_size_y * y_coarsening)
-            step_expr_y = tblock_size_y
+        if int(p0_size) < int(p1_size):
+            # Dim 0 is Vertical, Dim 1 is Horizontal
+            v_range, v_param = ranges[0], params[0]
+            h_range, h_param = ranges[1], params[1]
         else:
-            min_expr_y = dace.symbolic.sympy.Min(nlev_e, tidy_symbol + _y_symbol + y_coarsening)
-            step_expr_y = 1
-        min_expr_x = dace.symbolic.sympy.Min(nproma_e, tidx_symbol + _x_symbol + x_coarsening)
-        # X-range is coarsened contiguously, Y-range is coarsened in steps of tblock_size_y
-        new_inner_map_range = dace.subsets.Range([(tidy_symbol + _y_symbol, min_expr_y, step_expr_y),
-                                                  (tidx_symbol + _x_symbol, min_expr_x, 1)])
-        tblock_range = dace.subsets.Range([(0, tblock_size_y - 1, 1), (0, tblock_size_x - 1, 1)])
+            # Dim 0 is Horizontal, Dim 1 is Vertical
+            h_range, h_param = ranges[0], params[0]
+            v_range, v_param = ranges[1], params[1]
 
-        # Add thread block map inside the kernel/device map [0:tblock_size]
+        # hardware mapping based on empirical evidence (dim3(640, 3, 1)):
+        # range[0] -> blockIdx.y / threadIdx.y (Slower hardware dimension)
+        # range[1] -> blockIdx.x / threadIdx.x (Fastest hardware dimension)
+        #
+        # Therefore, the physically contiguous dimension MUST be at index 1.
+
+        if permute_dims:
+            # Transposed layout: Vertical is contiguous (Stride 1)
+            target_fast_range, target_fast_param = v_range, v_param
+            target_slow_range, target_slow_param = h_range, h_param
+        else:
+            # Original layout: Horizontal is contiguous (Stride 1)
+            target_fast_range, target_fast_param = h_range, h_param
+            target_slow_range, target_slow_param = v_range, v_param
+
+        # Bounds for new maps
+        fast_b, fast_e, fast_s = target_fast_range
+        slow_b, slow_e, slow_s = target_slow_range
+        assert fast_s == 1
+        assert slow_s == 1
+
+        # Align names with hardware mapping: x maps to threadIdx.x, y to threadIdx.y
+        outer_y_name = "__idx_y_slow_outer"
+        outer_x_name = "__idx_x_fast_outer"
+        tblock_y_name = "__idx_y_slow_tblock"
+        tblock_x_name = "__idx_x_fast_tblock"
+
+        glob_slow_step = y_coarsening * tblock_size_y
+        glob_fast_step = x_coarsening * tblock_size_x
+
+        # 1. Outer GPU_Device Map
+        # range[0] -> blockIdx.y, range[1] -> blockIdx.x
+        map_entry.map.range = [
+            (slow_b, slow_e, glob_slow_step),
+            (fast_b, fast_e, glob_fast_step),
+        ]
+        map_entry.map.params = [outer_y_name, outer_x_name]
+
+        # 2. ThreadBlock Map
+        # range[0] -> threadIdx.y, range[1] -> threadIdx.x
+        tblock_range = dace.subsets.Range(
+            [(0, tblock_size_y - 1, 1), (0, tblock_size_x - 1, 1)]
+        )
+
         tblock_map_entry, tblock_map_exit = add_map_inside(
             graph,
             map_entry,
-            new_map_param_range_dict={tidy_symbol_name: tblock_range[0], tidx_symbol_name: tblock_range[1]},
+            new_map_param_range_dict={
+                tblock_y_name: tblock_range[0],
+                tblock_x_name: tblock_range[1],
+            },
             new_map_schedule=dace.ScheduleType.GPU_ThreadBlock,
             new_map_name=f"ColumnThreadBlockMap_{gid}",
         )
 
-        sdfg.save("b.sdfgz", compress=True)
+        # 3. Inner Sequential Loops
+        # Nesting: Slow dimension outside, Fast (contiguous) dimension inside
 
-        assert tblock_map_entry in graph.nodes()
+        # Slow Dimension Loop (Strided)
+        inner_range_slow = (
+            dace.symbol(tblock_y_name) + dace.symbol(outer_y_name),
+            dace.symbolic.sympy.Min(
+                slow_e,
+                dace.symbol(tblock_y_name)
+                + dace.symbol(outer_y_name)
+                + tblock_size_y * y_coarsening,
+            ),
+            tblock_size_y if y_coarsening > 1 else 1,
+        )
 
-        # Add sequential map inside the thread block map [tidx:nlev:tblock_size]
-        seq_map_entry, seq_map_exit = add_map_inside(
+        seq_map_slow_entry, seq_map_slow_exit = add_map_inside(
             graph,
             tblock_map_entry,
-            new_map_param_range_dict={nlev_param: new_inner_map_range[0]},
+            new_map_param_range_dict={target_slow_param: inner_range_slow},
             new_map_schedule=dace.ScheduleType.Sequential,
-            new_map_name=f"ColumnSequentialMap_{gid}",
+            new_map_name=f"ColumnSeqSlow_{gid}",
         )
         if unroll_y:
-            seq_map_entry.map.unroll = True
-        if unroll_y_factor is not None:
-            seq_map_entry.map.unroll_factor = unroll_y_factor
+            seq_map_slow_entry.map.unroll = True
+        if unroll_y_factor:
+            seq_map_slow_entry.map.unroll_factor = unroll_y_factor
 
-        seq_map_entry2, seq_map_exit2 = add_map_inside(
+        # Fast Dimension Loop (Contiguous, Inner-most)
+        inner_range_fast = (
+            dace.symbol(tblock_x_name) + dace.symbol(outer_x_name),
+            dace.symbolic.sympy.Min(
+                fast_e,
+                dace.symbol(tblock_x_name) + dace.symbol(outer_x_name) + x_coarsening,
+            ),
+            1,
+        )
+
+        seq_map_fast_entry, seq_map_fast_exit = add_map_inside(
             graph,
-            seq_map_entry,
-            new_map_param_range_dict={nproma_param: new_inner_map_range[1]},
+            seq_map_slow_entry,
+            new_map_param_range_dict={target_fast_param: inner_range_fast},
             new_map_schedule=dace.ScheduleType.Sequential,
-            new_map_name=f"ColumnSequentialMap_{gid}",
+            new_map_name=f"ColumnSeqFast_{gid}",
         )
         if unroll_x:
-            seq_map_entry2.map.unroll = True
-        if unroll_x_factor is not None:
-            seq_map_entry2.map.unroll_factor = unroll_x_factor
+            seq_map_fast_entry.map.unroll = True
+        if unroll_x_factor:
+            seq_map_fast_entry.map.unroll_factor = unroll_x_factor
 
         gid += 1
 

@@ -1,18 +1,23 @@
+import os
+import shutil
+import argparse
 from pathlib import Path
 from typing import Dict
+from multiprocessing import Pool
 import dace
-import utils.stages.common as common
+
 import utils.config as config
 from utils.reductions import add_all_reductions
 from utils.unique_names import unique_names
 from utils.benchmark_sdfg import instrument_sdfg
 from utils.compile_if_propagated_sdfgs import compile_if_propagated_sdfgs
-from utils.make_flattened_data_to_input import make_flattened_data_to_non_transient_cpu_input, make_flattened_data_to_non_transient_gpu_input
-import os
+from utils.make_flattened_data_to_input import (
+    make_flattened_data_to_non_transient_cpu_input,
+    make_flattened_data_to_non_transient_gpu_input,
+)
 
-dace.config.Config.set('compiler', 'cuda', 'max_concurrent_streams', value="10")
-dace.config.Config.set('compiler', 'cuda', 'default_block_size', value="256,1,1")
-dace.config.Config.set('compiler', 'default_data_types', value='C')
+dace.config.Config.set("compiler", "cuda", "max_concurrent_streams", value="10")
+dace.config.Config.set("compiler", "default_data_types", value="C")
 
 STARTER_SDFG_FILES = [
     "velocity_no_nproma_if_prop_lvn_only_0_istep_1.sdfgz",
@@ -80,6 +85,29 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
     return True
 
 
+def _optimize_single(args):
+    """Worker function for parallel optimization."""
+    name, stage_id, func = args
+    infile = stage_input(name, stage_id)
+    outfile = stage_output(name, stage_id)
+
+    print(f"Stage #{stage_id}: Optimising {name} from {infile}")
+
+    sdfg = dace.SDFG.from_file(infile)
+    sdfg.name = name
+    sdfg.validate()
+
+    result = func(sdfg)
+    if isinstance(result, tuple):
+        sdfg, metadata = result
+    else:
+        sdfg, metadata = result, None
+
+    print(f"Stage #{stage_id}: Saved as {outfile}")
+    sdfg.save(outfile, compress=True)
+    return True, metadata
+
+
 def get_build_options(args=None):
     """Centralize options parsing (args override env vars)."""
     options = {
@@ -107,8 +135,6 @@ def get_build_options(args=None):
             options["profile"] = args.profile
         if args.reduce_bitwidth is not None:
             options["reduce_bitwidth"] = args.reduce_bitwidth
-        if args.lower_all is not None:
-            options["lower_all"] = args.lower_all
 
     # Write back to environment for any child processes or DaCe passes that check them directly
     os.environ["_RELEASE"] = "1" if options["release"] else "0"
@@ -121,7 +147,6 @@ def get_build_options(args=None):
     os.environ["_REDUCE_BITWIDTH_TRANSFORMATION"] = (
         "1" if options["reduce_bitwidth"] else "0"
     )
-    os.environ["_LOWER_ALL"] = "1" if options["lower_all"] else "0"
 
     return options
 
@@ -135,10 +160,7 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
     # Optional overrides for environment variables
     argp.add_argument("--release", action=argparse.BooleanOptionalAction, default=None)
     argp.add_argument(
-        "--lowprec",
-        type=str,
-        default=None,
-        choices=["fp64", "fp32", "fp16", "f32", "f64", "f16"],
+        "--lowprec", type=str, default=None, choices=["fp64", "fp32", "f32", "f64"]
     )
     argp.add_argument(
         "--integration", action=argparse.BooleanOptionalAction, default=None
@@ -147,9 +169,6 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
     argp.add_argument("--profile", action=argparse.BooleanOptionalAction, default=None)
     argp.add_argument(
         "--reduce-bitwidth", action=argparse.BooleanOptionalAction, default=None
-    )
-    argp.add_argument(
-        "--lower-all", action=argparse.BooleanOptionalAction, default=None
     )
 
     args = argp.parse_args()
@@ -162,14 +181,25 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
     get_build_options(args)
     names = sdfg_names()
 
+    all_metadata = []
     if args.optimize:
         tasks = [(name, stage_id, optimization_action_func) for name in names]
 
         # Disable OpenMP thread pooling inside DaCe during multiprocessing to avoid oversubscription
         dace.config.Config.set("compiler", "num_threads", value="1")
 
-        with Pool(processes=min(len(tasks), os.cpu_count())) as pool:
-            pool.map(_optimize_single, tasks)
+        single_threaded = os.getenv("SINGLE_THREADED", "0").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if single_threaded:
+            results = [_optimize_single(t) for t in tasks]
+        else:
+            with Pool(processes=min(len(tasks), os.cpu_count())) as pool:
+                results = pool.map(_optimize_single, tasks)
+
+        all_metadata = [r[1] for r in results if r[1] is not None]
 
     if args.compile:
         sdfgs = {
@@ -177,6 +207,8 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
         }
         kwargs = compile_extra_kwargs or {}
         compile_action(stage_id, sdfgs, **kwargs)
+
+    return all_metadata
 
 
 def compile_action(
@@ -192,6 +224,10 @@ def compile_action(
 
     for name, g in sdfgs.items():
         g.build_folder = f"{DEFAULT_CODEGEN_DIR}/stage{stage}/{name}"
+        if options["permute_dimensions"]:
+            from utils.reshape_kernels import update_gpu_block_size
+
+            update_gpu_block_size(g, [32, 32, 1])
 
     sdfg_list = list(sdfgs.values())
     unique_names(sdfg_list)
@@ -199,7 +235,8 @@ def compile_action(
     if config.instrument:
         instrument_sdfg(sdfg_list)
 
-    dace.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
+    block_size_str = "32,32,1" if options["permute_dimensions"] else "256,1,1"
+    dace.Config.set("compiler", "cuda", "default_block_size", value=block_size_str)
     dace.Config.set("compiler", "cuda", "max_concurrent_streams", value="1")
 
     # Determine build configuration
@@ -210,8 +247,11 @@ def compile_action(
         for sdfg in sdfg_list:
             make_flattened_data_to_non_transient_cpu_input(sdfg)
 
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
+    output_name = get_final_binary_name(stage, options)
+
+    cmd = compile_if_propagated_sdfgs(
+        sdfg_list,
+        gpu=True,
         release=release,
         generate_code=True,
         lib=True,
@@ -219,103 +259,9 @@ def compile_action(
         stage=stage,
         debuginfo=False,
         allocation_names_to_comment_out=allocation_names_to_comment_out,
-        use_openacc_stream=False,
-      )
-  elif stage == 8:
-    if _build_for_integration:
-      compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=True,
-        main_name=None,
-        stage=stage,
-        debuginfo=False,
-        allocation_names_to_comment_out=allocation_names_to_comment_out,
-        use_openacc_stream=False,
-      )
-    else:
-      compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=False,
-        main_name="main_gpu.cu",
-        stage=stage,
-        debuginfo=False,
-        allocation_names_to_comment_out=allocation_names_to_comment_out,
-        use_openacc_stream=False,
-      )
-  elif stage > 5:
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=False,
-        main_name="main_gpu.cu",
-        stage=stage,
-        allocation_names_to_comment_out=None,
-        use_openacc_stream=False,
-        debuginfo=True
-      )
-  elif stage > 1:
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=False,
-        main_name="main.cu",
-        stage=stage,
-        debuginfo=True,
-        allocation_names_to_comment_out=None,
-        use_openacc_stream=False,
-      )
-  else:
-    assert stage == 1
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=True,
-        main_name=None,
-        stage=stage,
-        debuginfo=True,
-        allocation_names_to_comment_out=None,
-        use_openacc_stream=False,
-      )
-    compile_if_propagated_sdfgs(
-        sdfgs, gpu=True,
-        release=release,
-        generate_code=True,
-        lib=False,
-        main_name="main.cu",
-        stage=stage,
-        debuginfo=True,
-        allocation_names_to_comment_out=None,
-        use_openacc_stream=False,
-      )
-  opt_suffix = '_release' if release else '_debug'
-  _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
-  integration_suffix = '_solve_nh_integration' if _build_for_integration else '_standalone'
-  if stage == 1 or stage == 8:
-      if not _build_for_integration:
-        binpath = Path('velocity_gpu')
-        assert binpath.exists()
-        binpath = binpath.rename(f"{binpath.name}.stage{stage}{integration_suffix}{opt_suffix}")
-        print(f"Binary available: {binpath}")
-      else:
-        libpath = Path('libvelocity_gpu.so')
-        assert libpath.exists()
-        libpath = libpath.rename(f"libvelocity_gpu_stage{stage}{integration_suffix}{opt_suffix}.so")
-        print(f"Library available: {libpath}")
-  else:
-    if not lib:
-      binpath = Path('velocity_gpu')
-      assert binpath.exists()
-      binpath = binpath.rename(f"{binpath.name}.stage{stage}{integration_suffix}{opt_suffix}")
-      print(f"Binary available: {binpath}")
-    else:
-      libpath = Path('libvelocity_gpu.so')
-      assert libpath.exists()
-      libpath = libpath.rename(f"libvelocity_gpu_stage{stage}{integration_suffix}{opt_suffix}.so")
-      print(f"Library available: {libpath}")
+        use_openacc_stream=use_openacc_stream,
+        output_name=output_name,
+    )
+
+    print(f"Output available: {output_name}")
+    print(f"Build command: {cmd}")

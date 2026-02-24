@@ -152,84 +152,131 @@ __global__ void batched_reduce_max_v2(double* __restrict__ output_data,
 
 // --- Templated CUB-based reductions ---
 
-template<typename T>
-void reduce_maxZ_to_address_gpu(const T *__restrict__ d_in,
-                                 T* __restrict__ d_out,
+// TIn: input array element type (e.g. float, __half)
+// TOut: output element type (e.g. double for CFL scalars going back to Fortran)
+// CUB reduces in TIn precision; result is cast to TOut.
+
+template<typename TIn, typename TOut>
+void reduce_maxZ_to_address_gpu(const TIn *__restrict__ d_in,
+                                 TOut* __restrict__ d_out,
                                  int size,
                                  cudaStream_t stream)
 {
+  // CUB requires matching in/out types, so reduce into a TIn temporary
+  static TIn* d_tmp = nullptr;
   static void* temp_storage = nullptr;
   static size_t temp_storage_bytes = 0;
   static int last_size = -1;
 
+  if (d_tmp == nullptr) {
+    cudaMalloc(&d_tmp, sizeof(TIn));
+  }
   if (size > last_size) {
     if (temp_storage != nullptr) {
       cudaFree(temp_storage);
       temp_storage = nullptr;
     }
     temp_storage_bytes = 0;
-    cub::DeviceReduce::Max(nullptr, temp_storage_bytes, d_in, d_out, size, nullptr);
+    cub::DeviceReduce::Max(nullptr, temp_storage_bytes, d_in, d_tmp, size, nullptr);
     if (temp_storage_bytes != 0) {
       cudaMalloc(&temp_storage, temp_storage_bytes);
     }
     last_size = size;
   }
 
-  cub::DeviceReduce::Max(temp_storage, temp_storage_bytes, d_in, d_out, size, stream);
-}
+  cub::DeviceReduce::Max(temp_storage, temp_storage_bytes, d_in, d_tmp, size, stream);
 
-template<typename T>
-T reduce_maxZ_to_scalar_gpu(const T *__restrict__ d_in, int size, cudaStream_t stream)
-{
-  static T* d_out = nullptr;
-  if (d_out == nullptr) {
-    cudaMalloc(&d_out, sizeof(T));
+  // Copy with implicit cast TIn -> TOut on host
+  if constexpr (std::is_same_v<TIn, TOut>) {
+    cudaMemcpyAsync(d_out, d_tmp, sizeof(TOut), cudaMemcpyDeviceToDevice, stream);
+  } else {
+    TIn tmp_host;
+    cudaMemcpyAsync(&tmp_host, d_tmp, sizeof(TIn), cudaMemcpyDeviceToHost, stream);
+    cudaStreamSynchronize(stream);
+    TOut tmp_cast = static_cast<TOut>(tmp_host);
+    cudaMemcpyAsync(d_out, &tmp_cast, sizeof(TOut), cudaMemcpyHostToDevice, stream);
   }
-  reduce_maxZ_to_address_gpu(d_in, d_out, size, stream);
-  T maxval;
-  cudaMemcpyAsync(&maxval, d_out, sizeof(T), cudaMemcpyDeviceToHost, stream);
-  cudaStreamSynchronize(stream);
-  return maxval;
 }
 
-template<typename T>
-void reduce_sum_to_address_gpu(const T *__restrict__ d_in,
-                                 T* __restrict__ d_out,
+template<typename TIn, typename TOut>
+TOut reduce_maxZ_to_scalar_gpu(const TIn *__restrict__ d_in, int size, cudaStream_t stream)
+{
+  // CUB reduces in TIn precision, then cast to TOut
+  static TIn* d_tmp = nullptr;
+  if (d_tmp == nullptr) {
+    cudaMalloc(&d_tmp, sizeof(TIn));
+  }
+
+  // Use the same-type overload for the CUB reduction
+  reduce_maxZ_to_address_gpu<TIn, TIn>(d_in, d_tmp, size, stream);
+
+  TIn tmp_host;
+  cudaMemcpyAsync(&tmp_host, d_tmp, sizeof(TIn), cudaMemcpyDeviceToHost, stream);
+  cudaStreamSynchronize(stream);
+  return static_cast<TOut>(tmp_host);
+}
+
+template<typename TIn, typename TOut>
+void reduce_sum_to_address_gpu(const TIn *__restrict__ d_in,
+                                 TOut* __restrict__ d_out,
                                  int size,
                                  cudaStream_t stream)
 {
+  static TIn* d_tmp = nullptr;
   static void* temp_storage = nullptr;
   static size_t temp_storage_bytes = 0;
   static int last_size = -1;
 
+  if (d_tmp == nullptr) {
+    cudaMalloc(&d_tmp, sizeof(TIn));
+  }
   if (temp_storage == nullptr || size != last_size) {
     if (temp_storage != nullptr) {
       cudaFree(temp_storage);
       temp_storage = nullptr;
     }
     temp_storage_bytes = 0;
-    cub::DeviceReduce::Max(nullptr, temp_storage_bytes, d_in, d_out, size, nullptr);
+    cub::DeviceReduce::Sum(nullptr, temp_storage_bytes, d_in, d_tmp, size, nullptr);
     if (temp_storage_bytes != 0) {
       cudaMalloc(&temp_storage, temp_storage_bytes);
     }
     last_size = size;
   }
 
-  cub::DeviceReduce::Sum(temp_storage, temp_storage_bytes, d_in, d_out, size, stream);
+  cub::DeviceReduce::Sum(temp_storage, temp_storage_bytes, d_in, d_tmp, size, stream);
+
+  if constexpr (std::is_same_v<TIn, TOut>) {
+    cudaMemcpyAsync(d_out, d_tmp, sizeof(TOut), cudaMemcpyDeviceToDevice, stream);
+  } else {
+    TIn tmp_host;
+    cudaMemcpyAsync(&tmp_host, d_tmp, sizeof(TIn), cudaMemcpyDeviceToHost, stream);
+    cudaStreamSynchronize(stream);
+    TOut tmp_cast = static_cast<TOut>(tmp_host);
+    cudaMemcpyAsync(d_out, &tmp_cast, sizeof(TOut), cudaMemcpyHostToDevice, stream);
+  }
 }
 
-// Explicit instantiations
-template void reduce_maxZ_to_address_gpu<double>(const double*, double*, int, cudaStream_t);
-template void reduce_maxZ_to_address_gpu<float>(const float*, float*, int, cudaStream_t);
-template void reduce_maxZ_to_address_gpu<__half>(const __half*, __half*, int, cudaStream_t);
+// Explicit instantiations — same-type (TIn == TOut)
+template void reduce_maxZ_to_address_gpu<double, double>(const double*, double*, int, cudaStream_t);
+template void reduce_maxZ_to_address_gpu<float, float>(const float*, float*, int, cudaStream_t);
+template void reduce_maxZ_to_address_gpu<__half, __half>(const __half*, __half*, int, cudaStream_t);
 
-template double reduce_maxZ_to_scalar_gpu<double>(const double*, int, cudaStream_t);
-template float reduce_maxZ_to_scalar_gpu<float>(const float*, int, cudaStream_t);
-template __half reduce_maxZ_to_scalar_gpu<__half>(const __half*, int, cudaStream_t);
+// Cross-type: reduce in lowered precision, output to double
+template void reduce_maxZ_to_address_gpu<float, double>(const float*, double*, int, cudaStream_t);
+template void reduce_maxZ_to_address_gpu<__half, double>(const __half*, double*, int, cudaStream_t);
 
-template void reduce_sum_to_address_gpu<double>(const double*, double*, int, cudaStream_t);
-template void reduce_sum_to_address_gpu<float>(const float*, float*, int, cudaStream_t);
-template void reduce_sum_to_address_gpu<__half>(const __half*, __half*, int, cudaStream_t);
+template double reduce_maxZ_to_scalar_gpu<double, double>(const double*, int, cudaStream_t);
+template float reduce_maxZ_to_scalar_gpu<float, float>(const float*, int, cudaStream_t);
+template __half reduce_maxZ_to_scalar_gpu<__half, __half>(const __half*, int, cudaStream_t);
+// Cross-type: reduce in lowered precision, return double
+template double reduce_maxZ_to_scalar_gpu<float, double>(const float*, int, cudaStream_t);
+template double reduce_maxZ_to_scalar_gpu<__half, double>(const __half*, int, cudaStream_t);
+
+template void reduce_sum_to_address_gpu<double, double>(const double*, double*, int, cudaStream_t);
+template void reduce_sum_to_address_gpu<float, float>(const float*, float*, int, cudaStream_t);
+template void reduce_sum_to_address_gpu<__half, __half>(const __half*, __half*, int, cudaStream_t);
+template void reduce_sum_to_address_gpu<float, double>(const float*, double*, int, cudaStream_t);
+template void reduce_sum_to_address_gpu<__half, double>(const __half*, double*, int, cudaStream_t);
 
 
 // --- Non-templated int reductions ---

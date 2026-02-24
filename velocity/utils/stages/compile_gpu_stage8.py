@@ -36,12 +36,10 @@ from utils.bfp_compression import inject_bfp_packing
 
 STAGE_ID = 8
 
-# Block Floating Point arrays — read-only, decoded inline via bfp_decode().
-# These are excluded from inject_pointwise_decompression and handled by
-# inject_bfp_packing (SDFG-level transformation) instead.
-BFP_ARRAYS: list[str] = [
-    "__CG_p_metrics__m_ddqz_z_half",
-]
+# Dynamic list of arrays that were BFP-packed during optimization.
+# Populated by optimize() at runtime; consumed by compile_if_propagated_sdfgs.py
+# for text-level patching. Empty until optimize() runs.
+BFP_PACKED: list[str] = []
 
 # Categorized arrays for FP32 conversion
 GRID_METRICS = [
@@ -207,16 +205,133 @@ SENSITIVITY_RULED_OUT: list[str] = [
 ]
 
 
+def coarsen_coalescable_dim(sdfg: dace.SDFG, factor: int = 2):
+    """Thread coarsening: for each multi-dim map, find the coalescable
+    dimension (the loop var that indexes the first array dim
+    most often), tile it by `factor`, and unroll the inner map."""
+    tile_targets = []
+    for entry, state in sdfg.all_nodes_recursive():
+        if not isinstance(entry, nodes.MapEntry) or len(entry.map.params) < 2:
+            continue
+
+        # Rule 1: skip already coarsened (has 'tile_' in params)
+        if any(p.startswith("tile_") for p in entry.map.params):
+            continue
+
+        # Rule 2: innermost only
+        is_innermost = True
+        for node in state.scope_children()[entry]:
+            if isinstance(node, nodes.MapEntry):
+                is_innermost = False
+                break
+        if not is_innermost:
+            continue
+
+        # Rule 3: winner selection
+        first_counts = {p: 0 for p in entry.map.params}
+        any_counts = {p: 0 for p in entry.map.params}
+
+        # Count occurrences in first and any dimension
+        scope_subgraph = state.scope_subgraph(entry)
+        for edge in scope_subgraph.edges():
+            if (
+                not isinstance(edge.data, dace.Memlet)
+                or edge.data.is_empty()
+                or edge.data.subset is None
+            ):
+                continue
+
+            subset = edge.data.subset
+            # Check first component
+            try:
+                first_dim = subset[0]
+                first_idx = (
+                    first_dim[0] if isinstance(first_dim, (list, tuple)) else first_dim
+                )
+                f_syms = {str(s) for s in first_idx.free_symbols}
+                for p in entry.map.params:
+                    if p in f_syms:
+                        first_counts[p] += 1
+            except (AttributeError, IndexError, TypeError):
+                pass
+
+            # Count any component
+            try:
+                all_syms = {str(s) for s in subset.free_symbols}
+                for p in entry.map.params:
+                    if p in all_syms:
+                        any_counts[p] += 1
+            except AttributeError:
+                pass
+
+        # Selection logic: priority to first dimension
+        if any(c > 0 for c in first_counts.values()):
+            winner = max(first_counts, key=lambda p: first_counts[p])
+        elif any(c > 0 for c in any_counts.values()):
+            winner = max(any_counts, key=lambda p: any_counts[p])
+        else:
+            # Fallback: pick the first parameter if no usage is detected
+            winner = entry.map.params[0]
+
+        winner_idx = list(entry.map.params).index(winner)
+        tile_sizes = [1] * len(entry.map.params)
+        tile_sizes[winner_idx] = factor
+        tile_targets.append((state.parent, state, entry, tuple(tile_sizes), winner))
+
+    print(f"Thread coarsening (×{factor} + unroll) on {len(tile_targets)} maps")
+    for nsdfg, state, entry, tile_sizes, winner in tile_targets:
+        print(f"  {entry.map.label}: coarsen '{winner}', tile_sizes={tile_sizes}")
+        MapTiling.apply_to(
+            nsdfg,
+            map_entry=entry,
+            options={"tile_sizes": tile_sizes},
+        )
+
+    # Mark inner tiled maps as Sequential + unroll so CUDA codegen
+    # emits them as #pragma unroll loops inside the kernel.
+    for nsdfg in sdfg.all_sdfgs_recursive():
+        for state in nsdfg.states():
+            for node in state.nodes():
+                if not isinstance(node, nodes.MapEntry):
+                    continue
+                if any(p.startswith("tile_") for p in node.map.params):
+                    continue
+                if node.map.unroll:
+                    continue
+                for s, e, st in node.map.range:
+                    range_syms = set()
+                    for expr in (s, e, st):
+                        try:
+                            range_syms |= {str(x) for x in expr.free_symbols}
+                        except AttributeError:
+                            pass
+                    if any(x.startswith("tile_") for x in range_syms):
+                        node.map.schedule = dace.ScheduleType.Sequential
+                        node.map.unroll = True
+                        break
+
+
 def optimization_action(sdfg):
     """DEFINE THE OPTIMIZATION ACTION HERE"""
     # Pointwise decompression shim for inv_dual_edge_length
     # Run this FIRST before any other transformations to ensure
     # DaCe's analysis (like loop body generation) sees the updated types.
-    inject_pointwise_decompression(
-        sdfg,
-        array_names=["__CG_p_patch__CG_edges__m_inv_dual_edge_length"],
-        external_dtype=dace.float32,
-    )
+    lowprec_str = os.getenv("_LOWPREC", "fp64").lower()
+    lowprec_map = {
+        "fp64": dace.float64,
+        "fp32": dace.float32,
+        "f32": dace.float32,
+        "f64": dace.float64,
+        "f16": dace.float16,
+        "bfp16": dace.float16,
+        "bfp32": dace.float32,
+    }
+    if options["lowprec"] not in lowprec_map:
+        raise ValueError(
+            f"Unknown lowprec value: {options['lowprec']!r}. "
+            f"Valid options: {', '.join(lowprec_map)}"
+        )
+    external_dtype = lowprec_map[options["lowprec"]]
 
     if options.get("lower_all"):
         # Lower all float64 arrays in the SDFG
@@ -258,10 +373,8 @@ def optimization_action(sdfg):
         #     + PREP_ADV
         # )
 
-    # Exclude BFP arrays from pointwise decompression — they get their own
-    # SDFG-level transformation via inject_bfp_packing.
-    bfp_set = set(BFP_ARRAYS) if options["lowprec"].startswith("bfp") else set()
-    array_names = [n for n in array_names if n not in bfp_set]
+    # BFP exclusion is now dynamic — handled after boundary_cast_targets are
+    # classified as read-only vs read-write (see bfp_targets below).
 
     # Split arrays into four categories:
     #   boundary_cast_targets: __CG_ arrays with gpu_ sibling → boundary cast at H2D/D2H
@@ -310,8 +423,33 @@ def optimization_action(sdfg):
     ]
     assert not uncategorized, f"Arrays not in any category: {uncategorized}"
 
-    if non_transient:
-        inject_pointwise_decompression(
+    # For BFP modes, route read-only __CG_ boundary_cast_targets to BFP
+    # packing instead of boundary cast. Output structs (p_diag, p_prog) and
+    # non-__CG_ function params are read-write and stay with boundary cast.
+    _OUTPUT_CG_PREFIXES = ("__CG_p_diag__", "__CG_p_prog__")
+    bfp_targets = []
+    print(
+        f"DEBUG BFP: lowprec={options['lowprec']!r}, "
+        f"boundary_cast_targets ({len(boundary_cast_targets)}): {boundary_cast_targets}"
+    )
+    if options["lowprec"].startswith("bfp") and boundary_cast_targets:
+        for name in boundary_cast_targets:
+            is_readonly = name.startswith("__CG_") and not any(
+                name.startswith(p) for p in _OUTPUT_CG_PREFIXES
+            )
+            if is_readonly:
+                bfp_targets.append(name)
+        if bfp_targets:
+            print(
+                f"BFP: {len(bfp_targets)} read-only arrays will be BFP-packed"
+                f" (out of {len(boundary_cast_targets)} boundary_cast_targets)"
+            )
+            boundary_cast_targets = [
+                n for n in boundary_cast_targets if n not in set(bfp_targets)
+            ]
+
+    if boundary_cast_targets:
+        inject_boundary_cast(
             sdfg,
             array_names=non_transient,
             external_dtype=external_dtype,
@@ -388,9 +526,19 @@ def optimization_action(sdfg):
 
     # BFP packing: change GPU arrays to uint8[packed_size], insert CPU-side
     # pack Map, replace H2D edge with packed version.
-    if options["lowprec"].startswith("bfp") and BFP_ARRAYS:
+    if options["lowprec"].startswith("bfp") and bfp_targets:
         bfp_mantissa_bits = {"bfp8": 8, "bfp16": 16, "bfp32": 16}[options["lowprec"]]
-        inject_bfp_packing(sdfg, BFP_ARRAYS, mantissa_bits=bfp_mantissa_bits)
+        inject_bfp_packing(sdfg, bfp_targets, mantissa_bits=bfp_mantissa_bits)
+        # TAG THE ARRAYS: mark them so the compiler knows they are BFP
+        for name in bfp_targets:
+            gpu_name = f"gpu_{name}"
+            if gpu_name in sdfg.arrays:
+                sdfg.arrays[gpu_name].debuginfo = dace.dtypes.DebugInfo(
+                    start_line=0, end_line=0, filename="BFP_PACKED"
+                )
+        # Store for text-level patching in compile_if_propagated_sdfgs.py
+        global BFP_PACKED
+        BFP_PACKED = list(bfp_targets)
 
     # Apply transformations
     gpu_levmask_desc = sdfg.arrays.get("gpu_levmask")
@@ -407,15 +555,8 @@ def optimization_action(sdfg):
     ).apply_pass(sdfg=sdfg, pipeline_results={})
     """
     inverse_strides(sdfg, "gpu_levmask")
-    sdfg.validate()
-    gpu_levmask_desc = sdfg.arrays.get("gpu_levmask")
-    print(
-        "gpu_levmask new shape:",
-        gpu_levmask_desc.shape,
-        "new strides:",
-        gpu_levmask_desc.strides,
-    )
-    # raise Exception("DEBUG: PermuteArrayDimensions applied, check gpu_levmask shape and strides")
+    if not (options["lowprec"].startswith("bfp") and bfp_targets):
+        sdfg.validate()  # skip when BFP — nested SDFG descriptors mismatch
 
     do_reduce_bitwidth = os.getenv("_REDUCE_BITWIDTH_TRANSFORMATION", "0").lower() in (
         "1",
@@ -493,6 +634,20 @@ def optimization_action(sdfg):
         y_coarsening = int(os.environ.get("Y_COARSENING", 1))
         x_block_size = int(os.environ.get("X_BLOCK_SIZE", 256))
         y_block_size = int(os.environ.get("Y_BLOCK_SIZE", 1))
+
+        if options["permute_dimensions"]:
+            # When vertical dim is contiguous, we want 32 threads in X to handle levels.
+            # We fill the rest of the 1024-thread block with 32 horizontal elements in Y.
+            x_block_size = 32
+            y_block_size = 32
+            # Update launch bounds for the entire SDFG
+            from utils.reshape_kernels import update_gpu_block_size
+
+            update_gpu_block_size(sdfg, [32, 32, 1])
+
+        print(
+            f"Reshaping kernels with x_block_size={x_block_size}, y_block_size={y_block_size}"
+        )
         y_unroll_factor = int(os.environ.get("Y_UNROLL_FACTOR", 1))
         # reshape_kernels(sdfg)
         reshape_kernels_w_coarsening(
@@ -505,20 +660,91 @@ def optimization_action(sdfg):
             unroll_x_factor=None,
             unroll_y=True,
             unroll_y_factor=y_unroll_factor,
+            permute_dims=options["permute_dimensions"],
         )
     # tile_kernels(sdfg)
     # sdfg.simplify()
     # Sync first
     insert_synchronization_for_profiling(sdfg)
     insert_timers_for_profiling(sdfg)
-    # set_default_stream(sdfg)
-    sdfg.validate()
+    if not (options["lowprec"].startswith("bfp") and bfp_targets):
+        sdfg.validate()  # skip when BFP — nested SDFG descriptors mismatch
 
     do_profile = os.getenv("_PROFILE", "0").lower() in ("1", "true", "yes")
     if do_profile:
         create_profile_sdfg(sdfg)
 
-    return sdfg
+    # Floatify: replace double literals and math functions in tasklets with
+    # float equivalents to prevent FP64 promotion on GPU.
+    # Done last so it sees final tasklet code after tiling/coarsening.
+    if options["lowprec"] != "fp64":
+        import re
+
+        for nsdfg in sdfg.all_sdfgs_recursive():
+            for state in nsdfg.states():
+                for node in state.nodes():
+                    if not isinstance(node, nodes.Tasklet):
+                        continue
+
+                    code = node.code.as_string
+                    new_code = code
+
+                    # Target constants
+                    constants = ["0.5", "0.85", "1.0", "0.0", "0.05", "0.65", "1.15"]
+
+                    if node.language == dace.Language.CPP:
+                        # For C++, use the 'f' suffix (e.g., 0.5f)
+                        for val in constants:
+                            new_code = re.sub(
+                                rf"(?<![0-9fF]){re.escape(val)}(?![0-9fF])",
+                                f"{val}f",
+                                new_code,
+                            )
+                            new_code = re.sub(
+                                rf"(?<![0-9fF])\-{re.escape(val)}(?![0-9fF])",
+                                f"-{val}f",
+                                new_code,
+                            )
+                        # abs() -> fabsf()
+                        new_code = re.sub(r"\babs\(", "fabsf(", new_code)
+                        # ipow(x, 2) -> (x * x)
+                        new_code = re.sub(
+                            r"dace::math::ipow\(([^,]+),\s*2\)",
+                            r"((\1) * (\1))",
+                            new_code,
+                        )
+                    else:
+                        # For Python tasklets, use float() wrapper.
+                        # DaCe parses Python AST so 'f' suffix is invalid;
+                        # float(0.5) emits float(0.5) in C++ — compile-time constant.
+                        for val in constants:
+                            new_code = re.sub(
+                                rf"(?<![0-9fF]){re.escape(val)}(?![0-9fF])",
+                                f"float({val})",
+                                new_code,
+                            )
+                            new_code = re.sub(
+                                rf"(?<![0-9fF])\-{re.escape(val)}(?![0-9fF])",
+                                f"float(-{val})",
+                                new_code,
+                            )
+                        # abs() is already type-preserving in C++ (std::abs
+                        # overloads for float/double/etc.), no change needed.
+                        # x ** 2 -> (x * x)  (Python tasklets use ** operator,
+                        # DaCe codegen converts to dace::math::ipow which stays fp64)
+                        new_code = re.sub(
+                            r"(\w+)\s*\*\*\s*2\b",
+                            r"((\1) * (\1))",
+                            new_code,
+                        )
+
+                    if new_code != code:
+                        node.code = dace.properties.CodeBlock(new_code, node.language)
+
+    # Disabled for now. Performance actually degrades.
+    # coarsen_coalescable_dim(sdfg, factor=2)
+
+    return sdfg, bfp_targets
 
 
 def main():

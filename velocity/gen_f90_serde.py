@@ -485,9 +485,90 @@ def _get_sdfg_structs(g: SDFG) -> Dict[str, Dict[str, str]]:
     }
 
 
+def _parse_shared_struct_defs(header_path: str = "include/shared_struct_defs.h") -> Tuple[Dict[str, List[Tuple[str, str]]], Dict[str, Dict[str, str]]]:
+    """Parse shared_struct_defs.h to get the full field list for each struct.
+
+    Returns:
+        (struct_fields, union_aliases)
+        struct_fields: {struct_name: [(field_name, c_type), ...]} in declaration order.
+            Union blocks are collapsed to a single field (the first variant).
+        union_aliases: {struct_name: {alias_name: canonical_name}} mapping all
+            union member names to the first (canonical) member name.
+    """
+    header = Path(header_path)
+    if not header.exists():
+        return {}, {}
+
+    text = header.read_text()
+    # Remove comments
+    text = re.sub(r'//[^\n]*', '', text)
+
+    result = {}
+    all_aliases = {}
+
+    # Extract struct bodies using brace-counting (handles nested {} in initializers)
+    for m in re.finditer(r'struct\s+(\w+)\s*\{', text):
+        sname = m.group(1)
+        start = m.end()
+        depth = 1
+        pos = start
+        while pos < len(text) and depth > 0:
+            if text[pos] == '{':
+                depth += 1
+            elif text[pos] == '}':
+                depth -= 1
+            pos += 1
+        body = text[start:pos - 1]
+
+        # Extract union aliases before collapsing
+        aliases = {}
+        for um in re.finditer(r'union\s*\{(.*?)\}', body, flags=re.DOTALL):
+            inner = um.group(1)
+            members = re.findall(r'(\w+)\s*(?:\*{0,2})\s+(\w+)\s*;', inner)
+            if members:
+                canonical = members[0][1]  # first member name
+                for _, mname in members:
+                    aliases[mname] = canonical
+        all_aliases[sname] = aliases
+
+        # Collapse union blocks to first member
+        def replace_union(um):
+            inner = um.group(1)
+            fm = re.search(r'(\w+)\s*(\*{0,2})\s+(\w+)\s*;', inner)
+            if fm:
+                ptr = fm.group(2)
+                return f"{fm.group(1)} {ptr}{fm.group(3)} = {{{{}}}};"
+            return ""
+
+        body = re.sub(r'union\s*\{(.*?)\}', replace_union, body, flags=re.DOTALL)
+
+        fields = []
+        for line in body.split(';'):
+            # Strip and remove any brace initializers
+            line = re.sub(r'\{[^}]*\}', '', line).strip()
+            if not line:
+                continue
+            # Match: type [*[*]] name [= ...]
+            fm = re.match(r'(\w+)\s*(\*{0,2})\s*(\w+)\s*(?:=.*)?$', line)
+            if fm:
+                ctype = fm.group(1)
+                stars = fm.group(2)
+                fname = fm.group(3)
+                if stars:
+                    ctype = ctype + stars
+                fields.append((fname, ctype))
+
+        result[sname] = fields
+
+    return result, all_aliases
+
+
 def _generate_f90_c_glue_code(
     ast: Program, sdfg_structs: Dict[str, Dict[str, str]], mod_name: str
 ) -> Module:
+    # Parse the full C struct layouts from the header
+    full_c_structs, union_aliases = _parse_shared_struct_defs()
+
     glue_uses, ident_map = [], identifier_specs(ast)
     for dt in iterate_over_derived_types(ident_map):
         if dt.name not in sdfg_structs:
@@ -511,16 +592,30 @@ def _generate_f90_c_glue_code(
             "int": "INTEGER(c_int)",
             "float": "REAL(c_float)",
             "double": "REAL(c_double)",
+            "uint8_t": "INTEGER(c_int8_t)",
         }.get(tx, "TYPE(c_ptr)" if tx.endswith("*") else f"TYPE({tx})")
 
-    f90_struct_defs = "\n".join(
-        [
-            f"type, bind(C) :: glue_{n}\n"
-            + "\n".join([f"  {f90_type(t)} :: m_{c}" for c, t in sorted(v.items())])
-            + f"\nend type glue_{n}"
-            for n, v in sdfg_structs.items()
-        ]
-    )
+    # Generate struct defs using full C layout when available
+    struct_def_parts = []
+    for n, v in sdfg_structs.items():
+        if n in full_c_structs:
+            # Use the full C struct field order and types
+            lines = []
+            for fname, ctype in full_c_structs[n]:
+                lines.append(f"  {f90_type(ctype)} :: m_{fname}")
+            struct_def_parts.append(
+                f"type, bind(C) :: glue_{n}\n"
+                + "\n".join(lines)
+                + f"\nend type glue_{n}"
+            )
+        else:
+            # Fallback: SDFG-only fields (sorted)
+            struct_def_parts.append(
+                f"type, bind(C) :: glue_{n}\n"
+                + "\n".join([f"  {f90_type(t)} :: m_{c}" for c, t in sorted(v.items())])
+                + f"\nend type glue_{n}"
+            )
+    f90_struct_defs = "\n".join(struct_def_parts)
 
     def glue_logic(tx, nx, dtname):
         if nx.startswith("__f2dace_"):
@@ -528,14 +623,27 @@ def _generate_f90_c_glue_code(
         if tx in {"int", "float", "double"}:
             return f"out % m_{nx} = inp % {nx}", ""
         if tx.endswith("*"):
+            # Only reference dimension fields that exist in the C struct.
+            # Remap SDFG field names through union aliases to canonical names.
+            c_fields_for_dt = {fname for fname, _ in full_c_structs.get(dtname, [])}
+            aliases_for_dt = union_aliases.get(dtname, {})
+            all_known_dt = c_fields_for_dt | set(aliases_for_dt.keys())
+            active_sdfg = sdfg_structs[dtname] if not c_fields_for_dt else {
+                k: v for k, v in sdfg_structs[dtname].items() if k in all_known_dt
+            }
+            # Remap to canonical names
+            active_fields = {}
+            for k, v in active_sdfg.items():
+                canonical = aliases_for_dt.get(k, k)
+                active_fields[canonical] = v
             sas = {
                 re.sub(r"__f2dace_SA_(.*?)_d_(\d+)_s_.*", r"\1 \2", k): k
-                for k in sdfg_structs[dtname]
+                for k in active_fields
                 if k.startswith("__f2dace_SA_")
             }
             soas = {
                 re.sub(r"__f2dace_SOA_(.*?)_d_(\d+)_s_.*", r"\1 \2", k): k
-                for k in sdfg_structs[dtname]
+                for k in active_fields
                 if k.startswith("__f2dace_SOA_")
             }
             basetx = tx.removesuffix("*")
@@ -549,19 +657,19 @@ def _generate_f90_c_glue_code(
                 size_call = ",".join(
                     [f"size(inp % {nx}, {int(d) + 1})" for d in sorted(dims)]
                 )
-                decl = f"type(glue_{basetx}), allocatable, target :: a_{nx}({idx})\n  type({basetx}), pointer :: pt_{nx}\n  integer :: i_{nx}, j_{nx}, k_{nx}"
-                init = f"if (initalloc) allocate(a_{nx}({size_call}))\n  do i_{nx}=lbound(a_{nx}, 1), ubound(a_{nx}, 1)\n    do j_{nx}=lbound(a_{nx}, 2), ubound(a_{nx}, 2)\n      do k_{nx}=lbound(a_{nx}, 3), ubound(a_{nx}, 3)\n        if (initalloc) allocate(pt_{nx})\n        call ctor(inp % {nx}(i_{nx}, j_{nx}, k_{nx}), a_{nx}(i_{nx}, j_{nx}, k_{nx}), initalloc)\n      end do\n    end do\n  end do\n  out % m_{nx} = c_loc(a_{nx})"
+                decl = f"type(glue_{basetx}), allocatable, target, save :: a_{nx}({idx})\n  type({basetx}), pointer :: pt_{nx}\n  integer :: i_{nx}, j_{nx}, k_{nx}"
+                init = f"if (initalloc .and. .not. allocated(a_{nx})) allocate(a_{nx}({size_call}))\n  do i_{nx}=lbound(a_{nx}, 1), ubound(a_{nx}, 1)\n    do j_{nx}=lbound(a_{nx}, 2), ubound(a_{nx}, 2)\n      do k_{nx}=lbound(a_{nx}, 3), ubound(a_{nx}, 3)\n        if (initalloc .and. .not. associated(pt_{nx})) allocate(pt_{nx})\n        call ctor(inp % {nx}(i_{nx}, j_{nx}, k_{nx}), a_{nx}(i_{nx}, j_{nx}, k_{nx}), initalloc)\n      end do\n    end do\n  end do\n  out % m_{nx} = c_loc(a_{nx})"
             elif basetx in sdfg_structs:
-                decl = f"type(glue_{basetx}), allocatable, target :: a_{nx}"
-                init = f"if (initalloc) allocate(a_{nx}) ; call ctor(inp % {nx}, a_{nx}, initalloc) ; out % m_{nx} = c_loc(a_{nx})"
+                decl = f"type(glue_{basetx}), allocatable, target, save :: a_{nx}"
+                init = f"if (initalloc .and. .not. allocated(a_{nx})) allocate(a_{nx})\n  call ctor(inp % {nx}, a_{nx}, initalloc) ; out % m_{nx} = c_loc(a_{nx})"
             else:
                 dims = [k.split()[1] for k in sas if k.split()[0] == nx]
                 idx = ",".join([":" for _ in dims])
                 size_call = ",".join(
                     [f"size(inp % {nx}, {int(d) + 1})" for d in sorted(dims)]
                 )
-                decl = f"{f90_type(basetx)}, allocatable, target :: a_{nx}({idx})"
-                init = f"if (initalloc) allocate(a_{nx}({size_call})) ; a_{nx} = inp % {nx} ; out % m_{nx} = c_loc(a_{nx})"
+                decl = f"{f90_type(basetx)}, allocatable, target, save :: a_{nx}({idx})"
+                init = f"if (initalloc .and. .not. allocated(a_{nx})) allocate(a_{nx}({size_call}))\n  a_{nx} = inp % {nx} ; out % m_{nx} = c_loc(a_{nx})"
 
             for k, v in sas.items():
                 dim_idx = int(k.split()[1]) + 1
@@ -578,10 +686,41 @@ def _generate_f90_c_glue_code(
     for n, v in sdfg_structs.items():
         if n == "global_data_type":
             continue
-        ops = [glue_logic(t, c, n) for c, t in sorted(v.items())]
+
+        # Only generate ctor logic for SDFG fields that exist in the C struct.
+        # Fields in the SDFG but not in the C struct are flattened from nested
+        # sub-structs and are handled by recursive ctor calls.
+        # Union aliases: SDFG may reference any union member name — map to canonical.
+        c_field_names = {fname for fname, _ in full_c_structs.get(n, [])}
+        aliases_for_n = union_aliases.get(n, {})
+        # A field is "in the C struct" if it's a direct field OR a union alias
+        all_known = c_field_names | set(aliases_for_n.keys())
+        v_filtered = {c: t for c, t in v.items() if c in all_known} if c_field_names else v
+        # Remap aliased field names to their canonical (first union member) names
+        v_remapped = {}
+        for c, t in v_filtered.items():
+            canonical = aliases_for_n.get(c, c)
+            v_remapped[canonical] = t
+        ops = [glue_logic(t, c, n) for c, t in sorted(v_remapped.items())]
+
+        # Zero-init fields from the full C struct that are NOT in the SDFG.
+        zero_inits = []
+        if n in full_c_structs:
+            for fname, ctype in full_c_structs[n]:
+                if fname not in v_remapped:
+                    ft = f90_type(ctype)
+                    if "INTEGER" in ft:
+                        zero_inits.append(f"out % m_{fname} = 0")
+                    elif "REAL" in ft:
+                        zero_inits.append(f"out % m_{fname} = 0.0")
+                    elif "c_ptr" in ft:
+                        zero_inits.append(f"out % m_{fname} = c_null_ptr")
+
         ctors.append(
             f"subroutine ctor_{n}(inp, out, initalloc)\n  type({n}), intent(in) :: inp\n  type(glue_{n}), intent(inout) :: out\n  logical, intent(in) :: initalloc\n  "
             + "\n  ".join([x[1] for x in ops if x[1]])
+            + "\n  "
+            + "\n  ".join(zero_inits)
             + "\n  "
             + "\n  ".join([x[0] for x in ops if x[0]])
             + f"\nend subroutine ctor_{n}"

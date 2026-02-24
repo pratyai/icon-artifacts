@@ -3,14 +3,14 @@
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
 
-template<typename T>
-void reduce_maxZ_to_address_gpu(const T *__restrict__ d_in, T* __restrict__ d_out, int size, cudaStream_t stream);
+template<typename TIn, typename TOut = TIn>
+void reduce_maxZ_to_address_gpu(const TIn *__restrict__ d_in, TOut* __restrict__ d_out, int size, cudaStream_t stream);
 
-template<typename T>
-T reduce_maxZ_to_scalar_gpu(const T *__restrict__ d_in, int size, cudaStream_t stream);
+template<typename TIn, typename TOut = TIn>
+TOut reduce_maxZ_to_scalar_gpu(const TIn *__restrict__ d_in, int size, cudaStream_t stream);
 
-template<typename T>
-void reduce_sum_to_address_gpu(const T *__restrict__ d_in, T* __restrict__ d_out, int size, cudaStream_t stream);
+template<typename TIn, typename TOut = TIn>
+void reduce_sum_to_address_gpu(const TIn *__restrict__ d_in, TOut* __restrict__ d_out, int size, cudaStream_t stream);
 
 int reduce_sum_to_scalar_gpu(const int *__restrict__ d_in, int size, cudaStream_t stream);
 
