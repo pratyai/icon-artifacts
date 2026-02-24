@@ -10,13 +10,17 @@ from utils.move_ifs_inside_maps import move_ifs_inside_maps
 from utils.move_lib_schedules import move_lib_schedules
 from utils.pre_gpu_fixes import pre_gpu_fix
 from utils.prune_unused_inputs_outputs import prune_unused_inputs_outputs
-from utils.remove_unused_inconnectors_from_nestedsdfg import remove_unused_inconnectors_from_nestedsdfg
+from utils.remove_unused_inconnectors_from_nestedsdfg import (
+    remove_unused_inconnectors_from_nestedsdfg,
+)
 from utils.segmented_reduction import to_segmented_reduction
 from utils.rm_segmented_reduce import rm_segmented_reduce
+
 STAGE_ID = 6
 
+
 def optimization_action(sdfg):
-    """ DEFINE THE OPTIMIZATION ACTION HERE """
+    """DEFINE THE OPTIMIZATION ACTION HERE"""
     add_gpu_copies_to_flattener(sdfg)
     sdfg.validate()
 
@@ -28,7 +32,11 @@ def optimization_action(sdfg):
     deflatten_lib, _ = find_node_by_name(sdfg, "deflatten")
 
     sdfg.validate()
-    ToGPU(verbose=config.verbose, cpu_library_nodes=[flatten_lib, deflatten_lib], exclude=["vcflmax"]).apply_pass(sdfg, {})
+    ToGPU(
+        verbose=config.verbose,
+        cpu_library_nodes=[flatten_lib, deflatten_lib],
+        exclude=["vcflmax"],
+    ).apply_pass(sdfg, {})
     sdfg.validate()
 
     prune_unused_inputs_outputs(sdfg)
@@ -43,7 +51,11 @@ def optimization_action(sdfg):
                 arr.lifetime = dace.dtypes.AllocationLifetime.SDFG
 
     for e, graph in sdfg.all_edges_recursive():
-        if e.data is not None and hasattr(e.data, "data") and (e.data.data == "gpu_out_val_0" or e.data.data == "out_val_0"):
+        if (
+            e.data is not None
+            and hasattr(e.data, "data")
+            and (e.data.data == "gpu_out_val_0" or e.data.data == "out_val_0")
+        ):
             sb = dace.subsets.Range.from_string("2*_for_it_35 - 2")
             if sb == e.data.subset:
                 e.data.subset = dace.subsets.Range.from_string("_for_it_35 - 1")
@@ -70,36 +82,10 @@ def optimization_action(sdfg):
 
     return sdfg
 
+
 def main():
-    argp = argparse.ArgumentParser()
-    argp.add_argument('--optimize', action=argparse.BooleanOptionalAction, default=False)
-    argp.add_argument('--compile', action=argparse.BooleanOptionalAction, default=False)
-    args = argp.parse_args()
-    if not args.optimize and not args.compile:
-        args.optimize, args.compile = True, True
+    common.standard_main(STAGE_ID, optimization_action)
 
-    names = common.sdfg_names()
-
-    if args.optimize:
-        for name in names:
-            infile = common.stage_input(name, STAGE_ID)
-            outfile = common.stage_output(name, STAGE_ID)
-
-            print(f"Stage #{STAGE_ID}: Optimising {name} from {infile}")
-
-            sdfg = dace.SDFG.from_file(infile)
-            sdfg.name = name
-            sdfg.validate()
-
-            sdfg = optimization_action(sdfg)
-
-            print(f"Stage #{STAGE_ID}: Saved as {outfile}")
-            sdfg.save(outfile, compress=True)
-
-    if args.compile:
-        # Read back the written files as we prepare for compilation.
-        sdfgs = {name: dace.SDFG.from_file(common.stage_output(name, STAGE_ID)) for name in names}
-        common.compile_action(STAGE_ID, sdfgs, False, None, False)
 
 if __name__ == "__main__":
     main()

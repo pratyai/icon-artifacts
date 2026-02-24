@@ -1,6 +1,7 @@
 import dace
 import typing
 
+
 def unique_names(sdfgs: typing.List[dace.SDFG]):
     for i, sdfg in enumerate(sdfgs):
         sdfg.function_suffix = "_" + str(i)
@@ -14,7 +15,7 @@ def unique_names(sdfgs: typing.List[dace.SDFG]):
                 n.label = f"{n.label}{sdfg.function_suffix}"
                 visited.add(n.map)
                 visited.add(n)
-            #if isinstance(n, dace.nodes.MapExit):
+            # if isinstance(n, dace.nodes.MapExit):
             #    n.label = f"{n.label}{sdfg.function_suffix}"
             #    visited.add(n)
             if isinstance(n, dace.nodes.NestedSDFG):

@@ -3,13 +3,16 @@ import typing
 
 from dace.codegen.control_flow import CodeBlock
 
-def change_array_dtypes(sdfg: dace.SDFG, array_names: typing.Set[str], new_type, level: int = 0):
+
+def change_array_dtypes(
+    sdfg: dace.SDFG, array_names: typing.Set[str], new_type, level: int = 0
+):
     for name in array_names:
         if name in sdfg.arrays:
             array = sdfg.arrays[name]
             if array.dtype != new_type:
                 if (level == 0 and array.transient) or level > 0:
-                    print(f'Changing dtype of {name} from {array.dtype} to {new_type}')
+                    print(f"Changing dtype of {name} from {array.dtype} to {new_type}")
                     array.dtype = new_type
 
     for state in sdfg.all_states():
@@ -23,7 +26,8 @@ def change_array_dtypes(sdfg: dace.SDFG, array_names: typing.Set[str], new_type,
                     for oe in state.out_edges(node):
                         if oe.data.data == name:
                             nsdfg_names.add(oe.src_conn)
-                change_array_dtypes(node.sdfg, nsdfg_names, new_type, level+1)
+                change_array_dtypes(node.sdfg, nsdfg_names, new_type, level + 1)
+
 
 def setzero_to_memset(sdfg: dace.SDFG):
     map_entries = set()
@@ -37,13 +41,14 @@ def setzero_to_memset(sdfg: dace.SDFG):
         assert isinstance(map_entry, dace.nodes.MapEntry)
         map_exit = graph.exit_node(map_entry)
         # No inputs single output map
-        if (graph.in_degree(map_entry) == 0 and
-            graph.out_degree(map_exit) == 1):
+        if graph.in_degree(map_entry) == 0 and graph.out_degree(map_exit) == 1:
             an_edge = next(iter(graph.out_edges(map_exit)))
             # One access node as output
             if isinstance(an_edge.dst, dace.nodes.AccessNode):
                 # Write set is the same as the array (not necessarily, sometimes some lines are not written to?)
-                shape_subset = [(0, m-1, 1) for m in graph.sdfg.arrays[an_edge.data.data].shape]
+                shape_subset = [
+                    (0, m - 1, 1) for m in graph.sdfg.arrays[an_edge.data.data].shape
+                ]
                 if an_edge.data.subset == shape_subset:
                     nodelist = list(graph.all_nodes_between(map_entry, map_exit))
                     if len(nodelist) == 1:
@@ -71,13 +76,17 @@ def setzero_to_memset(sdfg: dace.SDFG):
             graph.remove_node(n)
 
         t = graph.add_tasklet(
-            f'set_zero_{array_name}',
+            f"set_zero_{array_name}",
             {},
             {"_out"},
-            f'cudaMemsetAsync((void*)_out, 0, sizeof({graph.sdfg.arrays[array_name].dtype.ctype}) * {graph.sdfg.arrays[array_name].total_size}, __state->gpu_context->streams[0]);',
-            dace.dtypes.Language.CPP
+            f"cudaMemsetAsync((void*)_out, 0, sizeof({graph.sdfg.arrays[array_name].dtype.ctype}) * {graph.sdfg.arrays[array_name].total_size}, __state->gpu_context->streams[0]);",
+            dace.dtypes.Language.CPP,
         )
         t.schedule = dace.ScheduleType.GPU_Device
-        graph.add_edge(t, "_out", an, None, dace.memlet.Memlet.from_array(array_name, graph.sdfg.arrays[array_name]))
-
-
+        graph.add_edge(
+            t,
+            "_out",
+            an,
+            None,
+            dace.memlet.Memlet.from_array(array_name, graph.sdfg.arrays[array_name]),
+        )

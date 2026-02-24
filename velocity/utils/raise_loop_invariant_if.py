@@ -2,16 +2,25 @@ import ast
 import copy
 from itertools import product
 import dace
-from dace.codegen.control_flow import ConditionalBlock, ControlFlowBlock, ControlFlowRegion
+from dace.codegen.control_flow import (
+    ConditionalBlock,
+    ControlFlowBlock,
+    ControlFlowRegion,
+)
 from dace.properties import CodeBlock
 
 # ((istep == 1) == 1)
 # ((1 - ldeepatmo) == 1)
 # (_if_cond_27 == 1) w. _if_cond_27=__CG_global_data__m_lextra_diffu in edge before
 
-def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEntry, state: dace.SDFGState,
-                             check_invariant_if_conds,
-                             copy_edge_before):
+
+def _raise_loop_invariant_if(
+    nested_sdfg: dace.SDFG,
+    map_entry: dace.nodes.MapEntry,
+    state: dace.SDFGState,
+    check_invariant_if_conds,
+    copy_edge_before,
+):
     if_conds = []
     for node in nested_sdfg.nodes():
         if isinstance(node, ConditionalBlock):
@@ -21,21 +30,21 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
                     continue
                 if isinstance(cond.code, list):
                     for i, el in enumerate(cond.code):
-                       expr_str = ast.unparse(el).strip()
-                       #print(expr_str)
-                       conds.append(expr_str)
+                        expr_str = ast.unparse(el).strip()
+                        # print(expr_str)
+                        conds.append(expr_str)
             if_conds.append((conds, node))
 
     # For all condition that is loop-invariant
     # For all combinations of conditions duplicate the inside accordingly
 
-    #invariant_if_conds [([v for v in vlist if v in invariant_if_conds], node) for vlist, node in if_conds]
+    # invariant_if_conds [([v for v in vlist if v in invariant_if_conds], node) for vlist, node in if_conds]
     invariant_if_conds = []
     for vlist, node in if_conds:
         invariant_ifs = [v for v in vlist if v in check_invariant_if_conds]
         if len(invariant_ifs) > 0:
             invariant_if_conds.append((invariant_ifs, node))
-    #print(invariant_if_conds)
+    # print(invariant_if_conds)
 
     # Supporting only 1 if-else per if block
     for vlist, node in invariant_if_conds:
@@ -46,19 +55,25 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
     combinations = list(product([True, False], repeat=len(conds)))
 
     if len(conds) > 0:
-        cfg = ConditionalBlock(label=state.label + "_if", sdfg=state.sdfg, parent=state.parent_graph)
+        cfg = ConditionalBlock(
+            label=state.label + "_if", sdfg=state.sdfg, parent=state.parent_graph
+        )
         state.sdfg.add_node(cfg)
         cfg.parent_graph = state.parent_graph
         cfg.sdfg = state.sdfg
         additional_assignments = dict()
 
-
         for i, combo in enumerate(combinations):
-            condition_str = " and ".join(f"({cond})" if val is True else f"(not ({cond}))"  for cond, val in zip(conds, combo))
-            #print(f"if {condition_str}:")
+            condition_str = " and ".join(
+                f"({cond})" if val is True else f"(not ({cond}))"
+                for cond, val in zip(conds, combo)
+            )
+            # print(f"if {condition_str}:")
             condition = CodeBlock(code=condition_str)
 
-            body = ControlFlowRegion(label=state.label + f"_body_{i}", sdfg=cfg.sdfg, parent=cfg)
+            body = ControlFlowRegion(
+                label=state.label + f"_body_{i}", sdfg=cfg.sdfg, parent=cfg
+            )
             cfg.add_branch(condition=condition, branch=body)
             s_main = body.add_state(f"main_{i}")
 
@@ -70,7 +85,13 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
                 node_map0[node] = node2
                 s_main.add_node(node2)
             for edge in state.edges():
-                s_main.add_edge(node_map0[edge.src], edge.src_conn, node_map0[edge.dst], edge.dst_conn, copy.deepcopy(edge.data))
+                s_main.add_edge(
+                    node_map0[edge.src],
+                    edge.src_conn,
+                    node_map0[edge.dst],
+                    edge.dst_conn,
+                    copy.deepcopy(edge.data),
+                )
 
             nsdfgs = [n for n in s_main.nodes() if isinstance(n, dace.nodes.NestedSDFG)]
             assert len(nsdfgs) == 1
@@ -93,24 +114,26 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
                         for _s in node2.all_states():
                             for _n in _s.nodes():
                                 if isinstance(_n, dace.nodes.NestedSDFG):
-                                    #print(_n.label, _n.guid)
+                                    # print(_n.label, _n.guid)
                                     _n.sdfg.parent_sdfg = nsdfg
                     else:
                         for _n in node2.nodes():
                             if isinstance(_n, dace.nodes.NestedSDFG):
-                                #print(_n.label, _n.guid)
+                                # print(_n.label, _n.guid)
                                 _n.sdfg.parent_sdfg = nsdfg
                 else:
                     cfg_to_take = None
                     assert len(node.branches) == 2 or len(node.branches) == 1
                     cond0, body0 = node.branches[0]
-                    cond1, body1 = node.branches[1] if len(node.branches) == 2 else (None, None)
+                    cond1, body1 = (
+                        node.branches[1] if len(node.branches) == 2 else (None, None)
+                    )
 
                     if len(node.branches) == 2:
                         assert cond0 is not None and cond1 is None
                         assert len(cond0.code) == 1
                         expr_str = ast.unparse(cond0.code[0]).strip()
-                        #print(expr_str, expr_str in check_invariant_if_conds)
+                        # print(expr_str, expr_str in check_invariant_if_conds)
                         if expr_str in check_invariant_if_conds:
                             index = check_invariant_if_conds.index(expr_str)
                             # If we need to copy assignments do it now
@@ -127,7 +150,7 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
                         assert cond0 is not None and cond1 is None
                         assert len(cond0.code) == 1
                         expr_str = ast.unparse(cond0.code).strip()
-                        #print(expr_str, expr_str in check_invariant_if_conds)
+                        # print(expr_str, expr_str in check_invariant_if_conds)
                         if expr_str in check_invariant_if_conds:
                             index = check_invariant_if_conds.index(expr_str)
                             # If we need to copy assignments do it now
@@ -153,12 +176,12 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
                         for _s in node2.all_states():
                             for _n in _s.nodes():
                                 if isinstance(_n, dace.nodes.NestedSDFG):
-                                    #print(_n.label, _n.guid, nested_sdfg.label)
+                                    # print(_n.label, _n.guid, nested_sdfg.label)
                                     _n.sdfg.parent_sdfg = nsdfg
                     else:
                         for _n in node2.nodes():
                             if isinstance(_n, dace.nodes.NestedSDFG):
-                                #print(_n.label, _n.guid, nested_sdfg.label)
+                                # print(_n.label, _n.guid, nested_sdfg.label)
                                 _n.sdfg.parent_sdfg = nsdfg
                     node_map[node] = node2
                     cond_to_cfg[node] = node2
@@ -181,15 +204,23 @@ def _raise_loop_invariant_if(nested_sdfg: dace.SDFG, map_entry: dace.nodes.MapEn
             state.sdfg.add_edge(cfg, oe.dst, copy.deepcopy(oe.data))
         state.sdfg.remove_node(state)
 
-def raise_loop_invariant_if(sdfg: dace.SDFG,
-                            check_invariant_if_conds = ["1 - ldeepatmo == 1", "_if_cond_27 == 1"],
-                            copy_edge_before = [False, True]):
+
+def raise_loop_invariant_if(
+    sdfg: dace.SDFG,
+    check_invariant_if_conds=["1 - ldeepatmo == 1", "_if_cond_27 == 1"],
+    copy_edge_before=[False, True],
+):
     for state in sdfg.states():
         for node in state.nodes():
             if isinstance(node, dace.nodes.NestedSDFG):
                 srcs = list(set([e.src for e in state.in_edges(node)]))
                 assert len(srcs) == 1
                 if isinstance(srcs[0], dace.nodes.MapEntry):
-                    _raise_loop_invariant_if(node.sdfg, srcs[0], state, check_invariant_if_conds, copy_edge_before)
+                    _raise_loop_invariant_if(
+                        node.sdfg,
+                        srcs[0],
+                        state,
+                        check_invariant_if_conds,
+                        copy_edge_before,
+                    )
     sdfg.validate()
-

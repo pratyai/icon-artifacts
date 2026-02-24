@@ -5,8 +5,12 @@ from pathlib import Path
 import shutil
 import dace
 import os
-from dace.transformation.auto_tile.add_compute_element_map import AddComputeElementBlockMap
-from dace.transformation.auto_tile.remainder_loop_stencil_map import RemainderLoopStencilMap
+from dace.transformation.auto_tile.add_compute_element_map import (
+    AddComputeElementBlockMap,
+)
+from dace.transformation.auto_tile.remainder_loop_stencil_map import (
+    RemainderLoopStencilMap,
+)
 from dace.transformation.auto_tile.thread_coarsening import ThreadCoarsening
 from dace.transformation.interstate import (
     LoopToMap,
@@ -27,8 +31,12 @@ from utils import *
 from dace.sdfg import utils as sdutil
 from utils.config import tile
 
+
 def _can_apply(graph, n, seq_map_ok=False):
-    if not (isinstance(n, dace.nodes.MapEntry) and n.schedule == dace.ScheduleType.GPU_Device):
+    if not (
+        isinstance(n, dace.nodes.MapEntry)
+        and n.schedule == dace.ScheduleType.GPU_Device
+    ):
         return False
     # Assert no reductions in the map
     ns = graph.all_nodes_between(n, graph.exit_node(n))
@@ -40,16 +48,28 @@ def _can_apply(graph, n, seq_map_ok=False):
     if seq_map_ok:
         return not cont
     else:
-        has_seq_map = any([isinstance(_n, dace.nodes.MapEntry) and _n.map.schedule == dace.dtypes.ScheduleType.Sequential for _n in ns])
+        has_seq_map = any(
+            [
+                isinstance(_n, dace.nodes.MapEntry)
+                and _n.map.schedule == dace.dtypes.ScheduleType.Sequential
+                for _n in ns
+            ]
+        )
         cont = cont or has_seq_map
         return not cont
 
-def tile_specific_kernel(sdfg: dace.SDFG, params:List[str]=["_for_it_23", "_for_it_24"],
-                         tblock_sizes:List[int]=[256,1,1],
-                         coarsening_factors:List[int]=[4,2],
-                         remainder_loop:bool=True):
+
+def tile_specific_kernel(
+    sdfg: dace.SDFG,
+    params: List[str] = ["_for_it_23", "_for_it_24"],
+    tblock_sizes: List[int] = [256, 1, 1],
+    coarsening_factors: List[int] = [4, 2],
+    remainder_loop: bool = True,
+):
     map_entry, parent_state, parent_sdfg = None, None, None
-    for graph in [v for v, _ in list(sdfg.all_nodes_recursive()) if isinstance(v, dace.SDFGState)]:
+    for graph in [
+        v for v, _ in list(sdfg.all_nodes_recursive()) if isinstance(v, dace.SDFGState)
+    ]:
         for n in graph.nodes():
             if isinstance(n, dace.nodes.MapEntry) and n.map.params == params:
                 map_entry = n
@@ -73,19 +93,29 @@ def tile_specific_kernel(sdfg: dace.SDFG, params:List[str]=["_for_it_23", "_for_
                 "tiles_evenly": remainder_loop,
             },
         )
-        map_entry = parent_state.entry_node(map_entry) # Due to how maptiling works
-        tblock_entry = set([e.dst for e in parent_state.out_edges(map_entry) if isinstance(e.dst, dace.nodes.MapEntry)]).pop()
-        #print(map_entry, tblock_entry)
+        map_entry = parent_state.entry_node(map_entry)  # Due to how maptiling works
+        tblock_entry = set(
+            [
+                e.dst
+                for e in parent_state.out_edges(map_entry)
+                if isinstance(e.dst, dace.nodes.MapEntry)
+            ]
+        ).pop()
+        # print(map_entry, tblock_entry)
 
         if not remainder_loop:
-            for i, ((b, e, s), (tb, te, ts)) in enumerate(zip(map_entry.map.range, tblock_entry.map.range)):
+            for i, ((b, e, s), (tb, te, ts)) in enumerate(
+                zip(map_entry.map.range, tblock_entry.map.range)
+            ):
                 if coarsening_factors[i] == 1:
                     continue
-                range1 = (e+1-b)//s
-                range2 = (te+1-tb)//ts
+                range1 = (e + 1 - b) // s
+                range2 = (te + 1 - tb) // ts
                 dim = int(range1 // range2)
                 if coarsening_factors[i] != 1:
-                    assert dim % coarsening_factors[-(i+1)] == 0, f"Coarsening factor {coarsening_factors[i]} is not a divisor of {dim}"
+                    assert dim % coarsening_factors[-(i + 1)] == 0, (
+                        f"Coarsening factor {coarsening_factors[i]} is not a divisor of {dim}"
+                    )
 
             ThreadCoarsening.apply_to(
                 sdfg=parent_sdfg,
@@ -107,10 +137,22 @@ def tile_specific_kernel(sdfg: dace.SDFG, params:List[str]=["_for_it_23", "_for_
                 },
             )
 
-        #map_entry = parent_state.entry_node(map_entry) # Due to how maptiling works
-        tblock_entry = set([e.dst for e in parent_state.out_edges(map_entry) if isinstance(e.dst, dace.nodes.MapEntry)]).pop()
-        inner_work_map_entry = set([e.dst for e in parent_state.out_edges(tblock_entry) if isinstance(e.dst, dace.nodes.MapEntry)]).pop()
-        #print(map_entry, tblock_entry, inner_work_map_entry)
+        # map_entry = parent_state.entry_node(map_entry) # Due to how maptiling works
+        tblock_entry = set(
+            [
+                e.dst
+                for e in parent_state.out_edges(map_entry)
+                if isinstance(e.dst, dace.nodes.MapEntry)
+            ]
+        ).pop()
+        inner_work_map_entry = set(
+            [
+                e.dst
+                for e in parent_state.out_edges(tblock_entry)
+                if isinstance(e.dst, dace.nodes.MapEntry)
+            ]
+        ).pop()
+        # print(map_entry, tblock_entry, inner_work_map_entry)
 
         if remainder_loop:
             RemainderLoopStencilMap.apply_to(
@@ -120,13 +162,16 @@ def tile_specific_kernel(sdfg: dace.SDFG, params:List[str]=["_for_it_23", "_for_
                 tblock_type=dace.dtypes.ScheduleType.GPU_ThreadBlock,
                 options={
                     "tblock_type": dace.dtypes.ScheduleType.GPU_ThreadBlock,
-                }
+                },
             )
 
     pass
 
+
 def tile_kernels(sdfg: dace.SDFG):
-    for graph in [v for v, _ in list(sdfg.all_nodes_recursive()) if isinstance(v, dace.SDFGState)]:
+    for graph in [
+        v for v, _ in list(sdfg.all_nodes_recursive()) if isinstance(v, dace.SDFGState)
+    ]:
         for n in graph.nodes():
             if isinstance(n, dace.nodes.MapEntry):
                 if n.schedule == dace.ScheduleType.GPU_Device:
@@ -135,7 +180,7 @@ def tile_kernels(sdfg: dace.SDFG):
                     if len(n.map.range) < 2:
                         continue
                     (b, e, s) = n.map.range[1]
-                    range1 = (e+1-b)//s
+                    range1 = (e + 1 - b) // s
                     dim = 1
                     try:
                         dim = range1
@@ -144,7 +189,7 @@ def tile_kernels(sdfg: dace.SDFG):
                     if dim == 92:
                         coarsening_factor = 2
                     if dim == 91:
-                        coarsening_factor = 1 # could be 7 but it is probablly too much
+                        coarsening_factor = 1  # could be 7 but it is probablly too much
                     elif dim == 90:
                         coarsening_factor = 3
                     elif dim == 89:
@@ -153,7 +198,7 @@ def tile_kernels(sdfg: dace.SDFG):
                         coarsening_factor = 1
                     _coarsening_factors.append(coarsening_factor)
 
-                    if  _coarsening_factors != 1:
+                    if _coarsening_factors != 1:
                         AddComputeElementBlockMap.apply_to(
                             sdfg=graph.sdfg,
                             verify=False,
@@ -166,8 +211,9 @@ def tile_kernels(sdfg: dace.SDFG):
                             },
                         )
 
-
-    for graph in [v for v, _ in list(sdfg.all_nodes_recursive()) if isinstance(v, dace.SDFGState)]:
+    for graph in [
+        v for v, _ in list(sdfg.all_nodes_recursive()) if isinstance(v, dace.SDFGState)
+    ]:
         for n in graph.nodes():
             if not _can_apply(graph, n):
                 continue
@@ -181,8 +227,8 @@ def tile_kernels(sdfg: dace.SDFG):
                     coarsening_factors = []
 
                     for (b, e, s), (tb, te, ts) in zip(n.map.range, n2.map.range):
-                        range1 = (e+1-b)//s
-                        range2 = (te+1-tb)//ts
+                        range1 = (e + 1 - b) // s
+                        range2 = (te + 1 - tb) // ts
                         dim = 1
                         try:
                             dim = int(range1 // range2)
@@ -191,7 +237,9 @@ def tile_kernels(sdfg: dace.SDFG):
                         if dim == 92:
                             coarsening_factor = 2
                         if dim == 91:
-                            coarsening_factor = 1 # could be 7 but it is probablly too much
+                            coarsening_factor = (
+                                1  # could be 7 but it is probablly too much
+                            )
                         elif dim == 90:
                             coarsening_factor = 3
                         elif dim == 89:

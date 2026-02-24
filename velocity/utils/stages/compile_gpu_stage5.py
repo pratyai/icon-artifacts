@@ -7,15 +7,18 @@ from utils.find import find_node_by_name
 from utils.move_scalar_to_array import _tmp_difcoef
 from utils.move_transients_to_top_level import move_transients_to_top_level
 from utils.prune_unused_inputs_outputs import prune_unused_inputs_outputs
-from utils.remove_unused_inconnectors_from_nestedsdfg import remove_unused_inconnectors_from_nestedsdfg
+from utils.remove_unused_inconnectors_from_nestedsdfg import (
+    remove_unused_inconnectors_from_nestedsdfg,
+)
 from utils.merge_maps import merge_maps_in_sdfg
 from utils.change_array_dtypes import change_array_dtypes
 from dace.transformation.passes.constant_propagation import ConstantPropagation
+
 STAGE_ID = 5
 
 
 def optimization_action(sdfg):
-    """ DEFINE THE OPTIMIZATION ACTION HERE """
+    """DEFINE THE OPTIMIZATION ACTION HERE"""
     sdfg.validate()
     prune_unused_inputs_outputs(sdfg)
     sdfg.validate()
@@ -58,9 +61,7 @@ def optimization_action(sdfg):
     move_transients_to_top_level(
         root=sdfg,
         ilifetime=dace.dtypes.AllocationLifetime.SDFG,
-        upper_bounds={
-            "maxvcfl_arr": "tmp_struct_symbol_11"
-        },
+        upper_bounds={"maxvcfl_arr": "tmp_struct_symbol_11"},
         only=["maxvcfl_arr"],
         no_dim_change=False,
         offset=-1,
@@ -83,7 +84,6 @@ def optimization_action(sdfg):
     sdfg.simplify()
     sdfg.validate()
 
-
     sdfg.validate()
 
     ConstantPropagation().apply_pass(sdfg, {})
@@ -91,36 +91,10 @@ def optimization_action(sdfg):
     sdfg.validate()
     return sdfg
 
+
 def main():
-    argp = argparse.ArgumentParser()
-    argp.add_argument('--optimize', action=argparse.BooleanOptionalAction, default=False)
-    argp.add_argument('--compile', action=argparse.BooleanOptionalAction, default=False)
-    args = argp.parse_args()
-    if not args.optimize and not args.compile:
-        args.optimize, args.compile = True, True
+    common.standard_main(STAGE_ID, optimization_action)
 
-    names = common.sdfg_names()
-
-    if args.optimize:
-        for name in names:
-            infile = common.stage_input(name, STAGE_ID)
-            outfile = common.stage_output(name, STAGE_ID)
-
-            print(f"Stage #{STAGE_ID}: Optimising {name} from {infile}")
-
-            sdfg = dace.SDFG.from_file(infile)
-            sdfg.name = name
-            sdfg.validate()
-
-            sdfg = optimization_action(sdfg)
-
-            print(f"Stage #{STAGE_ID}: Saved as {outfile}")
-            sdfg.save(outfile, compress=True)
-
-    if args.compile:
-        # Read back the written files as we prepare for compilation.
-        sdfgs = {name: dace.SDFG.from_file(common.stage_output(name, STAGE_ID)) for name in names}
-        common.compile_action(STAGE_ID, sdfgs, False, None, False)
 
 if __name__ == "__main__":
     main()

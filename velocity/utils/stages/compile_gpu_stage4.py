@@ -11,11 +11,12 @@ from utils.prune_unused_inputs_outputs import prune_unused_inputs_outputs
 import argparse
 from utils.propagate_if_cond import propagate_if_cond
 from utils.demote_symbol_to_scalar import demote_symbol_to_scalar
+
 STAGE_ID = 4
 
 
 def optimization_action(sdfg):
-    """ DEFINE THE OPTIMIZATION ACTION HERE """
+    """DEFINE THE OPTIMIZATION ACTION HERE"""
     sdfg.validate()
     sdfg.simplify(skip=["StateFusion"])
     sdfg.validate()
@@ -63,36 +64,10 @@ def optimization_action(sdfg):
     sdfg.validate()
     return sdfg
 
+
 def main():
-    argp = argparse.ArgumentParser()
-    argp.add_argument('--optimize', action=argparse.BooleanOptionalAction, default=False)
-    argp.add_argument('--compile', action=argparse.BooleanOptionalAction, default=False)
-    args = argp.parse_args()
-    if not args.optimize and not args.compile:
-        args.optimize, args.compile = True, True
+    common.standard_main(STAGE_ID, optimization_action)
 
-    names = common.sdfg_names()
-
-    if args.optimize:
-        for name in names:
-            infile = common.stage_input(name, STAGE_ID)
-            outfile = common.stage_output(name, STAGE_ID)
-
-            print(f"Stage #{STAGE_ID}: Optimising {name} from {infile}")
-
-            sdfg = dace.SDFG.from_file(infile)
-            sdfg.name = name
-            sdfg.validate()
-
-            sdfg = optimization_action(sdfg)
-
-            print(f"Stage #{STAGE_ID}: Saved as {outfile}")
-            sdfg.save(outfile, compress=True)
-
-    if args.compile:
-        # Read back the written files as we prepare for compilation.
-        sdfgs = {name: dace.SDFG.from_file(common.stage_output(name, STAGE_ID)) for name in names}
-        common.compile_action(STAGE_ID, sdfgs, False, None, False)
 
 if __name__ == "__main__":
     main()

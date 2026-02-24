@@ -1,12 +1,18 @@
 import copy
 import dace
-from dace.codegen.control_flow import ConditionalBlock, ContinueBlock, ControlFlowBlock, ControlFlowRegion
+from dace.codegen.control_flow import (
+    ConditionalBlock,
+    ContinueBlock,
+    ControlFlowBlock,
+    ControlFlowRegion,
+)
 from dace.codegen.targets.unroller import product
 from dace.properties import CodeBlock
 from dace.transformation.passes import DeadStateElimination, SymbolPropagation
 from dace.transformation.passes.constant_propagation import ConstantPropagation
 import ast
 import operator as op
+
 
 def extract_variables_from_ast(expr_str):
     """
@@ -15,7 +21,7 @@ def extract_variables_from_ast(expr_str):
     :return: A set of variable names (strings).
     """
     # Parse the expression string into an AST
-    tree = ast.parse(expr_str, mode='eval')
+    tree = ast.parse(expr_str, mode="eval")
 
     # Set to store variable names
     variables = set()
@@ -33,8 +39,10 @@ def extract_variables_from_ast(expr_str):
 
     return variables
 
+
 # Example usage
 expr_str = "((1 - lvn_only) and 0)"
+
 
 # Define environment with some variables
 def eval_expr_any_value(expr_str, env=None):
@@ -48,7 +56,7 @@ def eval_expr_any_value(expr_str, env=None):
         env = {}
 
     # Parse the expression string into an AST
-    tree = ast.parse(expr_str, mode='eval')
+    tree = ast.parse(expr_str, mode="eval")
 
     # Define a helper function to safely evaluate the AST
     def eval_node(node, env):
@@ -99,6 +107,7 @@ def eval_expr_any_value(expr_str, env=None):
 
     return eval_node(tree.body, env)
 
+
 def evaluate_with_possible_values(expr_str, possible_values):
     # Extract variables from the expression
     variables = extract_variables_from_ast(expr_str)
@@ -124,7 +133,10 @@ def evaluate_with_possible_values(expr_str, possible_values):
     results_eval = set(results.values())
     return results_eval
 
-def evaluate_interstate_assignments_and_ifs(graph : dace.SDFG | ControlFlowRegion, prop_dict, verbose):
+
+def evaluate_interstate_assignments_and_ifs(
+    graph: dace.SDFG | ControlFlowRegion, prop_dict, verbose
+):
     for e in graph.edges():
         if isinstance(e.data, dace.InterstateEdge):
             new_assignments = dict()
@@ -143,7 +155,7 @@ def evaluate_interstate_assignments_and_ifs(graph : dace.SDFG | ControlFlowRegio
                 except Exception as ex:
                     simplified = expr_str
                 try:
-                    simplified=  str(eval(simplified))
+                    simplified = str(eval(simplified))
                 except Exception as ex:
                     simplified = simplified
                 if "(1 - 0)" == simplified:
@@ -180,8 +192,9 @@ def evaluate_interstate_assignments_and_ifs(graph : dace.SDFG | ControlFlowRegio
                     simplified = "1"
                 if simplified != expr_str:
                     if verbose:
-                        print(f"{assignment}: {expr_str} ({type(expr_str)}) -> {simplified}")
-
+                        print(
+                            f"{assignment}: {expr_str} ({type(expr_str)}) -> {simplified}"
+                        )
 
                 if simplified == False or simplified == 0 or simplified == "0":
                     new_assignments[assignment] = "0"
@@ -189,6 +202,7 @@ def evaluate_interstate_assignments_and_ifs(graph : dace.SDFG | ControlFlowRegio
                     new_assignments[assignment] = str(simplified)
 
             e.data.assignments = new_assignments
+
 
 def rename_on_if_conds(node: ConditionalBlock, src: str, dst: str):
     gpu_host_name_map = {src: dst}
@@ -199,26 +213,35 @@ def rename_on_if_conds(node: ConditionalBlock, src: str, dst: str):
         if isinstance(b[0].code, list):
             for i, el in enumerate(b[0].code):
                 if isinstance(el, str):
-                    for src,dst in gpu_host_name_map.items():
-                        b[0].code[i] = b[0].code[i].replace(src,dst)
+                    for src, dst in gpu_host_name_map.items():
+                        b[0].code[i] = b[0].code[i].replace(src, dst)
                 else:
+
                     def replace_x_with_y(expr: ast.Expr, repl_dict) -> ast.Expr:
                         expr_str = ast.unparse(expr).strip()
                         for src, dst in repl_dict.items():
                             modified_str = expr_str.replace(src, dst)
                         return ast.parse(modified_str, mode="eval").body
+
                     b[0].code[i] = replace_x_with_y(b[0].code[i], gpu_host_name_map)
         else:
             assert isinstance(b[0].code, str)
-            for src,dst in gpu_host_name_map.items():
+            for src, dst in gpu_host_name_map.items():
                 b[0].code = b[0].code.replace(src, dst)
+
 
 # I think I will just detect the "AccessNode -> Tasklet -> AccessNode"
 # with memlet.data having the name we want and the destination node
 # having the name "if*" in this case we can be pretty sure it is if
 # access on what we want then I can assign the value on the interstate
 # edge and rely on simplify, I hope this will work
-def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dict, possible_values: dict, verbose):
+def propagate_if_cond(
+    root: dace.SDFG,
+    sdfg: dace.SDFG,
+    replace_dict: None | dict,
+    possible_values: dict,
+    verbose,
+):
     sdfg.validate()
 
     if replace_dict is not None:
@@ -240,18 +263,23 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                     if isinstance(n, dace.nodes.AccessNode):
                         if len(s.out_edges(n)) == 1:
                             dst1 = s.out_edges(n)[0].dst
-                            if (len(s.out_edges(dst1)) == 1 and
-                                isinstance(dst1, dace.nodes.Tasklet)):
+                            if len(s.out_edges(dst1)) == 1 and isinstance(
+                                dst1, dace.nodes.Tasklet
+                            ):
                                 dst2 = s.out_edges(dst1)[0].dst
-                                if (len(s.out_edges(dst2)) == 0 and
-                                    isinstance(dst2, dace.nodes.AccessNode) and
-                                    dst2.label.startswith("_if")):
+                                if (
+                                    len(s.out_edges(dst2)) == 0
+                                    and isinstance(dst2, dace.nodes.AccessNode)
+                                    and dst2.label.startswith("_if")
+                                ):
                                     # We have a match
                                     # Access node -> Tasklet -> Access node
                                     for name, dstexpr in replace_dict.items():
                                         if name in n.data:
                                             if verbose:
-                                                print(f"Matched: {n.data} -> {dst1.label} -> {dst2.data} on name {name}")
+                                                print(
+                                                    f"Matched: {n.data} -> {dst1.label} -> {dst2.data} on name {name}"
+                                                )
                                             s.remove_node(dst1)
                                             s.remove_node(dst2)
                                             ies = s.in_edges(n)
@@ -260,22 +288,34 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                                             oe = oes[0]
                                             assert dst2.data not in oe.data.assignments
                                             for ie in ies:
-                                                if s.in_degree(ie.src) == 0 and s.out_degree(ie.src) == 0:
+                                                if (
+                                                    s.in_degree(ie.src) == 0
+                                                    and s.out_degree(ie.src) == 0
+                                                ):
                                                     s.remove_node(ie.src)
                                             d = sdfg.arrays[dst2.data]
-                                            #sdfg.remove_data(dst2.data, validate=False)
+                                            # sdfg.remove_data(dst2.data, validate=False)
                                             oname = dst2.data
                                             sdfg.remove_data(dst2.data, validate=False)
-                                            sdfg.add_symbol(name=oname + "_sym", stype=d.dtype)
-                                            oe.data.assignments[oname + "_sym"] = dstexpr
+                                            sdfg.add_symbol(
+                                                name=oname + "_sym", stype=d.dtype
+                                            )
+                                            oe.data.assignments[oname + "_sym"] = (
+                                                dstexpr
+                                            )
 
                                             for oe in oes:
                                                 dst_node = oe.dst
-                                                if isinstance(dst_node, ConditionalBlock):
-                                                    rename_on_if_conds(dst_node, oname, oname + "_sym")
+                                                if isinstance(
+                                                    dst_node, ConditionalBlock
+                                                ):
+                                                    rename_on_if_conds(
+                                                        dst_node, oname, oname + "_sym"
+                                                    )
+
         if root == sdfg:
             repl_assign_if(sdfg)
-        #for state in sdfg.states():
+        # for state in sdfg.states():
         #    for node in state.nodes():
         #        if isinstance(node, dace.nodes.NestedSDFG):
         #            repl_assign_if(node.sdfg)
@@ -302,15 +342,14 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
         ConstantPropagation().apply_pass(sdfg, {})
         sdfg.validate()
 
-
-    #return # here validates
+    # return # here validates
 
     for cfg in sdfg.all_control_flow_blocks():
         if cfg not in sdfg.all_control_flow_blocks():
             continue
         if isinstance(cfg, ConditionalBlock):
             ss = []
-            #if cfg.branches is not None:
+            # if cfg.branches is not None:
             assert len(cfg.branches) == 1 or len(cfg.branches) == 2
 
             if len(cfg.branches) == 1:
@@ -318,7 +357,7 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                 if cfg.branches[0][0] is not None:
                     for i in range(len(cfg.branches[0][0].code)):
                         s += " and " + ast.unparse(cfg.branches[0][0].code[i])
-                ss.append(s[len(" and "):])
+                ss.append(s[len(" and ") :])
                 assert len(ss) == 1
                 # If length of ss is 1 and we have 1 == 1 or (1 == 1) == 1 then we can cut out body
                 if len(ss) == 1:
@@ -336,7 +375,7 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                         print(ex, ss)
                         pass
                     if always_false:
-                        branch, body =  cfg.branches[0]
+                        branch, body = cfg.branches[0]
                         for n in body.nodes():
                             body.remove_node(n)
                         cfg.remove_branch(body)
@@ -347,9 +386,9 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                             cfg.parent_graph.add_edge(s, oe.dst, copy.deepcopy(oe.data))
                         cfg.parent_graph.remove_node(cfg)
                     # Makes access problematic key not found
-                    #if always_true:
+                    # if always_true:
                     #    cfg.branches[0][0].code = ["1 == 1"]
-                    #if always_true:
+                    # if always_true:
                     #    cfg.branches[0] = (CodeBlock("1 == 1"), cfg.branches[0][1])
             if len(cfg.branches) == 2:
                 branch0, body0 = cfg.branches[0]
@@ -359,15 +398,15 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                     for i in range(len(branch0.code)):
                         s0 += " and " + ast.unparse(branch0.code[i])
                 if s0 != "":
-                    s0 = s0[len(" and "):]
+                    s0 = s0[len(" and ") :]
                 s1 = ""
                 if branch1 is not None:
                     for i in range(len(branch1.code)):
                         s1 += " and " + ast.unparse(branch1.code[i])
                 if s1 != "":
-                    s1 = s1[len(" and "):]
-                assert not(s0 == "" and s1 == "")
-                assert not(s0 != "" and s1 != "")
+                    s1 = s1[len(" and ") :]
+                assert not (s0 == "" and s1 == "")
+                assert not (s0 != "" and s1 != "")
 
                 else_branch, else_body = None, None
                 c_branch, c_body = None, None
@@ -396,7 +435,11 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                 except Exception as ex:
                     print(ex, cond)
                     pass
-                assert always_false or always_true or (not always_false and not always_true)
+                assert (
+                    always_false
+                    or always_true
+                    or (not always_false and not always_true)
+                )
                 # if always_false add the else branch
                 if always_false or always_true:
                     ncfg = ConditionalBlock(cfg.label, cfg.sdfg, cfg.parent_graph)
@@ -442,7 +485,7 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
     for cfg in sdfg.all_control_flow_blocks():
         if isinstance(cfg, ConditionalBlock):
             ss = []
-            #if cfg.branches is not None:
+            # if cfg.branches is not None:
             for j in range(len(cfg.branches)):
                 s = ""
                 if cfg.branches[j][0] is not None:
@@ -470,13 +513,20 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                     for oe in parent_graph.out_edges(cfg):
                         dst_edges.add(oe)
 
-                    #sdfg.remove_node(cfg)
+                    # sdfg.remove_node(cfg)
                     parent_graph.remove_node(cfg)
-                    #print(cfg)
+                    # print(cfg)
 
                     for n in body.nodes():
                         node_map[n] = copy.deepcopy(n)
-                        for _s in node_map[n].all_states() if (not isinstance(node_map[n], dace.SDFGState) and not isinstance(node_map[n], ContinueBlock)) else [node_map[n]]:
+                        for _s in (
+                            node_map[n].all_states()
+                            if (
+                                not isinstance(node_map[n], dace.SDFGState)
+                                and not isinstance(node_map[n], ContinueBlock)
+                            )
+                            else [node_map[n]]
+                        ):
                             for _n in _s.nodes():
                                 if isinstance(_n, dace.nodes.NestedSDFG):
                                     _n.sdfg.parent_graph = parent_graph
@@ -487,25 +537,39 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                     for e in body.edges():
                         assert e.src in node_map
                         assert e.dst in node_map
-                        parent_graph.add_edge(node_map[e.src], node_map[e.dst], copy.deepcopy(e.data))
+                        parent_graph.add_edge(
+                            node_map[e.src], node_map[e.dst], copy.deepcopy(e.data)
+                        )
 
-                    new_src_nodes = set([n for n in node_map.values() if parent_graph.in_degree(n) == 0])
-                    new_dst_nodes = set([n for n in node_map.values() if parent_graph.out_degree(n) == 0])
+                    new_src_nodes = set(
+                        [n for n in node_map.values() if parent_graph.in_degree(n) == 0]
+                    )
+                    new_dst_nodes = set(
+                        [
+                            n
+                            for n in node_map.values()
+                            if parent_graph.out_degree(n) == 0
+                        ]
+                    )
 
                     assert len(new_src_nodes) == 1
                     assert len(new_dst_nodes) == 1
-                    #assert len(src_edges) <= 1, f"{[(e.src, e.dst) for e in src_edges]}"
+                    # assert len(src_edges) <= 1, f"{[(e.src, e.dst) for e in src_edges]}"
                     assert len(dst_edges) <= 1, f"{[(e.src, e.dst) for e in dst_edges]}"
 
                     new_src_node = new_src_nodes.pop()
                     if len(src_edges) > 0:
                         for src_edge in src_edges:
-                            parent_graph.add_edge(src_edge.src, new_src_node, copy.deepcopy(src_edge.data))
+                            parent_graph.add_edge(
+                                src_edge.src, new_src_node, copy.deepcopy(src_edge.data)
+                            )
 
                     if len(dst_edges) == 1:
                         dst_edge = dst_edges.pop()
                         new_dst_node = new_dst_nodes.pop()
-                        parent_graph.add_edge(new_dst_node, dst_edge.dst, copy.deepcopy(dst_edge.data))
+                        parent_graph.add_edge(
+                            new_dst_node, dst_edge.dst, copy.deepcopy(dst_edge.data)
+                        )
 
     sdfg.validate()
 
@@ -530,7 +594,7 @@ def propagate_if_cond(root: dace.SDFG, sdfg: dace.SDFG, replace_dict: None | dic
                     for _n in nodes_to_rm:
                         parent.remove_node(_n)
                     break
-    #for cfg in sdfg.all_control_flow_blocks():
+    # for cfg in sdfg.all_control_flow_blocks():
     #    if isinstance(cfg, ConditionalBlock):
     #        print(cfg.label, len(cfg.branches))
     #        s = ""

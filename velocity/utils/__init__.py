@@ -10,7 +10,16 @@ from utils.reductions import (
 )
 from utils.count import count_loops, count_max_maps_per_state, count_symbols_use_defs
 from utils.move_transients_to_top_level import move_transients_to_top_level
-from utils.config import use_cache, cleanup, reduction, verbose, instrument, tile, remainder_loop, layout_transform
+from utils.config import (
+    use_cache,
+    cleanup,
+    reduction,
+    verbose,
+    instrument,
+    tile,
+    remainder_loop,
+    layout_transform,
+)
 from utils.map_fissions import YoloMapFission
 from utils.split_maps import split_map_sdfg, untangle_if_sdfg
 from utils.raise_loop_invariant_if import raise_loop_invariant_if
@@ -42,7 +51,12 @@ from utils.move_scalar_to_array import move_scalar_to_array, _tmp_difcoef
 from utils.move_lib_schedules import move_lib_schedules
 
 from utils.combine import combine
-from utils.permute import permute_index, permute_maps, permute_all_maps, permute_all_maps_depending_on_input
+from utils.permute import (
+    permute_index,
+    permute_maps,
+    permute_all_maps,
+    permute_all_maps_depending_on_input,
+)
 from utils.input_to_gpu import input_to_gpu
 from utils.pre_gpu_fixes import make_arrays_persistent
 from utils.init_transient_zero import init_transient_zero
@@ -61,4 +75,7 @@ from utils.decrease_bitwidth_of_const_arrays import decrease_bitwidth_of_const_a
 
 from utils.prune_names import prune_names
 
-from utils.make_flattened_data_to_input import make_flattened_data_to_non_transient_cpu_input, make_flattened_data_to_non_transient_gpu_input
+from utils.make_flattened_data_to_input import (
+    make_flattened_data_to_non_transient_cpu_input,
+    make_flattened_data_to_non_transient_gpu_input,
+)

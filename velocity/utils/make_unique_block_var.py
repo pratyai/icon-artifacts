@@ -4,6 +4,7 @@ import dace
 from dace.sdfg.sdfg import ConditionalBlock
 from utils.rename_on_if import rename_on_if, rename_on_if2
 
+
 def make_unique_block_var(sdfg: dace.SDFG, verbose=False):
     # Works only if all top level CFG have 1 incoming edge and 1 outgoing edge at max
     for cfg in sdfg.nodes():
@@ -46,7 +47,9 @@ def make_unique_block_var(sdfg: dace.SDFG, verbose=False):
                                 ie.data.assignments[new_name] = val
                                 if new_name not in cfg.parent_graph.sdfg.symbols:
                                     old_sym_dtype = cfg.parent_graph.sdfg.symbols[var]
-                                    cfg.parent_graph.sdfg.add_symbol(new_name, old_sym_dtype)
+                                    cfg.parent_graph.sdfg.add_symbol(
+                                        new_name, old_sym_dtype
+                                    )
                                 current_blk_symbols[var] = new_name
 
         rename_on_if2(cfg, current_blk_symbols, True, False)
@@ -60,8 +63,13 @@ def make_unique_block_var(sdfg: dace.SDFG, verbose=False):
                 for i, code in enumerate(n.code.code):
                     code_string = ast.unparse(code)
                     for blk_symbol in current_blk_symbols:
-                        if blk_symbol in code_string.split(" ") and blk_symbol in blk_symbols_set:
-                            code_string = code_string.replace(blk_symbol, current_blk_symbols[blk_symbol])
+                        if (
+                            blk_symbol in code_string.split(" ")
+                            and blk_symbol in blk_symbols_set
+                        ):
+                            code_string = code_string.replace(
+                                blk_symbol, current_blk_symbols[blk_symbol]
+                            )
                     if code_string != ast.unparse(code):
                         _code = ast.parse(code_string)
                         n.code.code[i] = _code
@@ -71,7 +79,7 @@ def make_unique_block_var(sdfg: dace.SDFG, verbose=False):
                 for blk_symbol in current_blk_symbols:
                     if blk_symbol in node.symbol_mapping:
                         rmkey = node.symbol_mapping.pop(blk_symbol)
-                        #print(rmkey, blk_symbol)
+                        # print(rmkey, blk_symbol)
                         dtype = node.sdfg.symbols[blk_symbol]
 
                         node.symbol_mapping[current_blk_symbols[blk_symbol]] = rmkey

@@ -3,7 +3,8 @@ from typing import Dict, List
 
 from dace.transformation.dataflow.map_dim_shuffle import MapDimShuffle
 
-def permute_index(root: dace.SDFG, sdfg: dace.SDFG, permute_map : Dict[str, List[int]]):
+
+def permute_index(root: dace.SDFG, sdfg: dace.SDFG, permute_map: Dict[str, List[int]]):
     if root == sdfg:
         s = sdfg.add_state_before(sdfg.start_state, "transpose")
         permuted_arrays = dict()
@@ -40,20 +41,42 @@ def permute_index(root: dace.SDFG, sdfg: dace.SDFG, permute_map : Dict[str, List
                 range_dict[f"i{i}"] = f"0:{arr_shape[i]}"
             map_entry, map_exit = s.add_map("transpose_impl", range_dict)
             src_access = ", ".join(f"i{i}" for i in range(len(permute_indices)))
-            dst_access = ", ".join(f"i{permute_indices[i]}" for i in range(len(permute_indices)))
+            dst_access = ", ".join(
+                f"i{permute_indices[i]}" for i in range(len(permute_indices))
+            )
             map_entry.add_in_connector("IN_" + oldn)
             map_entry.add_out_connector("OUT_" + oldn)
             map_exit.add_in_connector("IN_" + newn)
             map_exit.add_out_connector("OUT_" + newn)
-            s.add_edge(olda, None, map_entry, "IN_" + oldn,
-                       dace.Memlet.from_array(oldn, sdfg.arrays[oldn]))
-            s.add_edge(map_exit, "OUT_" + newn, newa, None,
-                       dace.Memlet.from_array(newn, sdfg.arrays[newn]))
-            t= s.add_tasklet("assign", {"_in1"}, {"_out1"}, f"_out1 = _in1")
-            s.add_edge(map_entry, "OUT_" + oldn, t, "_in1",
-                       dace.Memlet(expr=f"{oldn}[{src_access}]"))
-            s.add_edge(t, "_out1", map_exit, "IN_" + newn,
-                       dace.Memlet(expr=f"{newn}[{dst_access}]"))
+            s.add_edge(
+                olda,
+                None,
+                map_entry,
+                "IN_" + oldn,
+                dace.Memlet.from_array(oldn, sdfg.arrays[oldn]),
+            )
+            s.add_edge(
+                map_exit,
+                "OUT_" + newn,
+                newa,
+                None,
+                dace.Memlet.from_array(newn, sdfg.arrays[newn]),
+            )
+            t = s.add_tasklet("assign", {"_in1"}, {"_out1"}, f"_out1 = _in1")
+            s.add_edge(
+                map_entry,
+                "OUT_" + oldn,
+                t,
+                "_in1",
+                dace.Memlet(expr=f"{oldn}[{src_access}]"),
+            )
+            s.add_edge(
+                t,
+                "_out1",
+                map_exit,
+                "IN_" + newn,
+                dace.Memlet(expr=f"{newn}[{dst_access}]"),
+            )
 
         final_block = [v for v in sdfg.nodes() if sdfg.out_degree(v) == 0][0]
         s2 = sdfg.add_state_after(final_block, "transpose2")
@@ -65,21 +88,43 @@ def permute_index(root: dace.SDFG, sdfg: dace.SDFG, permute_map : Dict[str, List
                 range_dict[f"i{i}"] = f"0:{arr_shape[i]}"
             map_entry, map_exit = s2.add_map("transpose_impl", range_dict)
             src_access = ", ".join(f"i{i}" for i in range(len(permute_indices)))
-            dst_access = ", ".join(f"i{permute_indices[i]}" for i in range(len(permute_indices)))
+            dst_access = ", ".join(
+                f"i{permute_indices[i]}" for i in range(len(permute_indices))
+            )
             map_entry.add_in_connector("IN_" + newn)
             map_entry.add_out_connector("OUT_" + newn)
             map_exit.add_in_connector("IN_" + oldn)
             map_exit.add_out_connector("OUT_" + oldn)
-            s2.add_edge(newa, None, map_entry, "IN_" + newn,
-                       dace.Memlet.from_array(newn, sdfg.arrays[newn]))
-            s2.add_edge(map_exit, "OUT_" + oldn, olda, None,
-                       dace.Memlet.from_array(oldn, sdfg.arrays[oldn]))
+            s2.add_edge(
+                newa,
+                None,
+                map_entry,
+                "IN_" + newn,
+                dace.Memlet.from_array(newn, sdfg.arrays[newn]),
+            )
+            s2.add_edge(
+                map_exit,
+                "OUT_" + oldn,
+                olda,
+                None,
+                dace.Memlet.from_array(oldn, sdfg.arrays[oldn]),
+            )
 
-            t= s2.add_tasklet("assign", {"_in1"}, {"_out1"}, f"_out1 = _in1")
-            s2.add_edge(map_entry, "OUT_" + newn, t, "_in1",
-                       dace.Memlet(expr=f"{newn}[{dst_access}]"))
-            s2.add_edge(t, "_out1", map_exit, "IN_" + oldn,
-                       dace.Memlet(expr=f"{oldn}[{src_access}]"))
+            t = s2.add_tasklet("assign", {"_in1"}, {"_out1"}, f"_out1 = _in1")
+            s2.add_edge(
+                map_entry,
+                "OUT_" + newn,
+                t,
+                "_in1",
+                dace.Memlet(expr=f"{newn}[{dst_access}]"),
+            )
+            s2.add_edge(
+                t,
+                "_out1",
+                map_exit,
+                "IN_" + oldn,
+                dace.Memlet(expr=f"{oldn}[{src_access}]"),
+            )
     else:
         # Replace the array with shape
         name_map = dict()
@@ -94,7 +139,7 @@ def permute_index(root: dace.SDFG, sdfg: dace.SDFG, permute_map : Dict[str, List
                 if len(arr.shape) != len(permute_indices):
                     continue
                 for i in permute_indices:
-                    #print(arr_shape, permute_indices, arr_name, permute_map)
+                    # print(arr_shape, permute_indices, arr_name, permute_map)
                     per_shape.append(arr_shape[i])
 
                 per_arr = dace.data.Array(
@@ -149,7 +194,8 @@ def permute_index(root: dace.SDFG, sdfg: dace.SDFG, permute_map : Dict[str, List
                     new_subset.append(e.data.subset[permute_indices[i]])
                 e.data.subset = dace.subsets.Range(new_subset)
 
-def permute_maps(sdfg: dace.SDFG, permute_map : Dict[str, List[int]]):
+
+def permute_maps(sdfg: dace.SDFG, permute_map: Dict[str, List[int]]):
     for s, g in sdfg.all_nodes_recursive():
         if isinstance(s, dace.SDFGState):
             for n in s.nodes():
@@ -159,4 +205,6 @@ def permute_maps(sdfg: dace.SDFG, permute_map : Dict[str, List[int]]):
                     if n.map.label in permute_map:
                         for j in range(len(permute_map[n.map.label])):
                             new_params.append(old_params[permute_map[n.map.label][j]])
-                        MapDimShuffle.apply_to(sdfg, map_entry=n, options={"parameters": new_params})
+                        MapDimShuffle.apply_to(
+                            sdfg, map_entry=n, options={"parameters": new_params}
+                        )

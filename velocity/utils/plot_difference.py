@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def read_arrays_from_file(file_path):
     """Read arrays of floating-point numbers from a structured file."""
     with open(file_path, "r") as f:
@@ -16,7 +17,9 @@ def read_arrays_from_file(file_path):
         line = line.strip()
         if line == "# entries":
             if current_array:
-                data_arrays.append((arr_name, np.array(current_array)))  # Save the previous array
+                data_arrays.append(
+                    (arr_name, np.array(current_array))
+                )  # Save the previous array
                 current_array = []
                 arr_name = None
             in_entries_section = True
@@ -43,8 +46,17 @@ def read_arrays_from_file(file_path):
 
     return data_arrays
 
+
 def plot():
-    for name in ["z_w_concorr_me", "global_data", "p_diag", "p_metrics", "p_prog", "z_vt_ie", "z_kin_hor_e"]:
+    for name in [
+        "z_w_concorr_me",
+        "global_data",
+        "p_diag",
+        "p_metrics",
+        "p_prog",
+        "z_vt_ie",
+        "z_kin_hor_e",
+    ]:
         for i in range(1, 5):
             file_want = f"{name}_{i}.want"
             file_got = f"{name}_{i}.got"
@@ -53,7 +65,9 @@ def plot():
             want_arrays = read_arrays_from_file(file_want)
             got_arrays = read_arrays_from_file(file_got)
 
-            for idx, ((arr_name, want_data), (arr_name2, got_data)) in enumerate(zip(want_arrays, got_arrays)):
+            for idx, ((arr_name, want_data), (arr_name2, got_data)) in enumerate(
+                zip(want_arrays, got_arrays)
+            ):
                 plt.clf()
 
                 # Ensure the arrays have the same size
@@ -65,17 +79,20 @@ def plot():
                 absolute_difference = np.abs(want_data - got_data)
                 m = max(absolute_difference)
                 mi = min(absolute_difference)
-                print(f"Max absolute difference for {arr_name} is {m}, min: {mi}, len {len(absolute_difference)}")
+                print(
+                    f"Max absolute difference for {arr_name} is {m}, min: {mi}, len {len(absolute_difference)}"
+                )
 
                 # Plot
                 plt.plot(absolute_difference, label=f"Absolute Difference {arr_name}")
                 plt.xlabel("Index")
                 plt.ylabel("Absolute Difference")
-                plt.ylim(0, 1.1*m)
+                plt.ylim(0, 1.1 * m)
                 plt.title(f"Absolute Difference for Array {arr_name}")
                 plt.legend()
                 plt.grid(True)
                 plt.savefig(f"{name}_{i}_array_{arr_name}.png")
+
 
 if __name__ == "__main__":
     plot()

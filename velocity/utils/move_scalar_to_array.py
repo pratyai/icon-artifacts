@@ -1,16 +1,18 @@
 import dace
 
-def move_scalar_to_array(root:dace.SDFG, name:str, double_size:bool=False):
-    assert name in root.arrays, f"Array {name} not found in SDFG"
-    assert isinstance(root.arrays[name], dace.data.Scalar), f"Array {name} is not a scalar"
 
+def move_scalar_to_array(root: dace.SDFG, name: str, double_size: bool = False):
+    assert name in root.arrays, f"Array {name} not found in SDFG"
+    assert isinstance(root.arrays[name], dace.data.Scalar), (
+        f"Array {name} is not a scalar"
+    )
 
     scalar_desc = root.arrays[name]
     root.remove_data(name, False)
 
     array_desc = dace.data.Array(
         dtype=scalar_desc.dtype,
-        shape=(1,) if not double_size else (2, ),
+        shape=(1,) if not double_size else (2,),
         transient=scalar_desc.transient,
         location=scalar_desc.location,
         strides=(1,),
@@ -25,15 +27,15 @@ def move_scalar_to_array(root:dace.SDFG, name:str, double_size:bool=False):
             if edge.data is not None and edge.data.data == name:
                 edge.data = dace.memlet.Memlet.from_array(
                     dataname=name,
-                    datadesc=array_desc, # Since scalar it will be len1 1D array
+                    datadesc=array_desc,  # Since scalar it will be len1 1D array
                 )
 
     # Recursive to sub SDFGs
     for state in root.all_states():
         for node in state.nodes():
             if isinstance(node, dace.nodes.NestedSDFG):
-                if (name in node.sdfg.arrays):
-                    assert (name in node.in_connectors or name in node.out_connectors)
+                if name in node.sdfg.arrays:
+                    assert name in node.in_connectors or name in node.out_connectors
                     move_scalar_to_array(node.sdfg, name)
 
     for parent, arr_name, arr in root.arrays_recursive():
@@ -42,13 +44,17 @@ def move_scalar_to_array(root:dace.SDFG, name:str, double_size:bool=False):
             assert parent is not None
 
 
-
-def _tmp_difcoef(sdfg:dace.SDFG):
+def _tmp_difcoef(sdfg: dace.SDFG):
     for s in sdfg.all_states():
         for n in s.nodes():
             if isinstance(n, dace.nodes.MapEntry):
-                ins = [v for v in s.in_edges(n) if isinstance(v.src, dace.nodes.AccessNode) and v.src.data == "difcoef"]
-                #print(ins)
+                ins = [
+                    v
+                    for v in s.in_edges(n)
+                    if isinstance(v.src, dace.nodes.AccessNode)
+                    and v.src.data == "difcoef"
+                ]
+                # print(ins)
                 if len(ins) > 0:
                     assert len(ins) == 1
                     inan = ins[0].src
@@ -56,14 +62,23 @@ def _tmp_difcoef(sdfg:dace.SDFG):
                     for ie in ies:
                         s.remove_edge(ie)
                         ie.dst.remove_in_connector(ie.dst_conn)
-                        oes = [oe for oe in s.out_edges(ie.dst) if oe.src_conn == ie.dst_conn.replace("IN_", "OUT_")]
+                        oes = [
+                            oe
+                            for oe in s.out_edges(ie.dst)
+                            if oe.src_conn == ie.dst_conn.replace("IN_", "OUT_")
+                        ]
                         ie.dst.remove_out_connector(ie.dst_conn.replace("IN_", "OUT_"))
                         for oe in oes:
                             s.remove_edge(oe)
                             oe.dst.remove_in_connector(oe.dst_conn)
                             oe.dst.sdfg.arrays[oe.dst_conn].transient = True
 
-                    outs = [v for v in s.out_edges(s.exit_node(n)) if isinstance(v.dst, dace.nodes.AccessNode) and v.dst.data == "difcoef"]
+                    outs = [
+                        v
+                        for v in s.out_edges(s.exit_node(n))
+                        if isinstance(v.dst, dace.nodes.AccessNode)
+                        and v.dst.data == "difcoef"
+                    ]
                     if len(outs) > 0:
                         assert len(outs) == 1
                         outan = outs[0].dst
@@ -71,8 +86,14 @@ def _tmp_difcoef(sdfg:dace.SDFG):
                         for oe in oes:
                             s.remove_edge(oe)
                             oe.src.remove_out_connector(oe.src_conn)
-                            ies = [ie for ie in s.in_edges(oe.src) if ie.dst_conn == oe.src_conn.replace("OUT_", "IN_")]
-                            oe.src.remove_in_connector(oe.src_conn.replace("OUT_", "IN_"))
+                            ies = [
+                                ie
+                                for ie in s.in_edges(oe.src)
+                                if ie.dst_conn == oe.src_conn.replace("OUT_", "IN_")
+                            ]
+                            oe.src.remove_in_connector(
+                                oe.src_conn.replace("OUT_", "IN_")
+                            )
                             for ie in ies:
                                 s.remove_edge(ie)
                                 ie.src.remove_out_connector(ie.src_conn)

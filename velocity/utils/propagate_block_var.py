@@ -2,6 +2,7 @@ import ast
 import dace
 from utils.rename_on_if import rename_on_if
 
+
 def propagate_block_var(sdfg: dace.SDFG):
     # Works only if all top level CFG have 1 incoming edge and 1 outgoing edge at max
     for cfg in sdfg.nodes():
@@ -29,13 +30,15 @@ def propagate_block_var(sdfg: dace.SDFG):
                             # delete the assignment we do not need it
                             vars_to_rm.add(var)
                             current_blk_symbols[var] = blk_symbols[var]
-                            assert var in blk_symbols, f"Variable {var} not in blk_symbols, assignment: {assignment}"
+                            assert var in blk_symbols, (
+                                f"Variable {var} not in blk_symbols, assignment: {assignment}"
+                            )
                     for var in vars_to_rm:
                         del ie.data.assignments[var]
         for node, p in cfg.all_nodes_recursive():
             if isinstance(node, dace.nodes.MapEntry):
                 blk_params = set()
-                for b,e,s in node.map.range:
+                for b, e, s in node.map.range:
                     syms = b.free_symbols.union(e.free_symbols).union(s.free_symbols)
                     str_syms = [str(sym) for sym in syms]
                     for str_sym in str_syms:
@@ -83,7 +86,7 @@ def propagate_block_var(sdfg: dace.SDFG):
                                 if current_blk_symbols[blk_symbol] == "CELL":
                                     code_string = code_string.replace(blk_symbol, "1")
                     # if code_string != ast.unparse(code):
-                        # print(code_string, code)
+                    # print(code_string, code)
                     _code = ast.parse(code_string)
                     n.code.code[i] = _code
         # Replace rest as usual
@@ -101,7 +104,6 @@ def propagate_block_var(sdfg: dace.SDFG):
                 if current_blk_symbols[blk_symbol] == "CELL":
                     cfg.replace(blk_symbol, "2")
                     rename_on_if(cfg, blk_symbol, "2", recursive=True)
-
 
     # print(f"Now unneeded blk symbols: {current_blk_symbols}")
     for sym in current_blk_symbols:

@@ -6,6 +6,7 @@ from dace.codegen.control_flow import ConditionalBlock, ControlFlowRegion
 from dace.properties import CodeBlock
 import typing
 
+
 def _unique_names(sdfgs: typing.List[dace.SDFG]):
     for i, sdfg in enumerate(sdfgs):
         sdfg.function_suffix = "_" + str(i)
@@ -19,15 +20,20 @@ def _unique_names(sdfgs: typing.List[dace.SDFG]):
                 n.label = f"{n.label}{sdfg.function_suffix}"
                 visited.add(n.map)
                 visited.add(n)
-            #if isinstance(n, dace.nodes.MapExit):
+            # if isinstance(n, dace.nodes.MapExit):
             #    n.label = f"{n.label}{sdfg.function_suffix}"
             #    visited.add(n)
             elif isinstance(n, dace.nodes.NestedSDFG):
                 n.sdfg.function_suffix = "_" + str(i)
                 visited.add(n)
-            elif not isinstance(n, dace.nodes.AccessNode) and not isinstance(n, dace.nodes.EntryNode) and not isinstance(n, dace.nodes.ExitNode):
+            elif (
+                not isinstance(n, dace.nodes.AccessNode)
+                and not isinstance(n, dace.nodes.EntryNode)
+                and not isinstance(n, dace.nodes.ExitNode)
+            ):
                 n.label = f"{n.label}{sdfg.function_suffix}"
                 visited.add(n)
+
 
 def combine(sdfgs: List[dace.SDFG], cond_list: List[Dict[str, str]]):
     merged_sdfg = dace.SDFG("merged_sdfg")
@@ -46,7 +52,7 @@ def combine(sdfgs: List[dace.SDFG], cond_list: List[Dict[str, str]]):
             parent=cb,
         )
         cb.add_branch(
-            CodeBlock(" and ".join([f'{k} == {v}' for k, v in cond_dict.items()])),
+            CodeBlock(" and ".join([f"{k} == {v}" for k, v in cond_dict.items()])),
             cfg,
         )
         node_map = dict()
@@ -60,13 +66,13 @@ def combine(sdfgs: List[dace.SDFG], cond_list: List[Dict[str, str]]):
             dst = node_map[edge.dst]
             merged_sdfg.add_edge(src, dst, copy.deepcopy(edge.data))
 
-
         for node, parent in cfg.all_nodes_recursive():
             if isinstance(node, dace.nodes.NestedSDFG):
                 node.sdfg.parent_sdfg = parent.sdfg
                 node.sdfg.parent_graph = parent
 
     return merged_sdfg
+
 
 if __name__ == "__main__":
     sdfg_names = [

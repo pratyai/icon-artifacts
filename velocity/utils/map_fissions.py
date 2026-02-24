@@ -20,8 +20,12 @@ class YoloMapFission(SingleStateTransformation):
     def expressions(cls):
         return [node_path_graph(cls.map_entry, cls.nested_sdfg, cls.map_exit)]
 
-    def can_be_applied(self, s: SDFGState, expr_index: int, g: SDFG, permissive: bool = False) -> bool:
-        return set(s.all_nodes_between(self.map_entry, self.map_exit)) == {self.nested_sdfg}
+    def can_be_applied(
+        self, s: SDFGState, expr_index: int, g: SDFG, permissive: bool = False
+    ) -> bool:
+        return set(s.all_nodes_between(self.map_entry, self.map_exit)) == {
+            self.nested_sdfg
+        }
 
     @staticmethod
     def _partition_nodes(g: SDFG):
@@ -45,14 +49,17 @@ class YoloMapFission(SingleStateTransformation):
         # Then, topologically sort the contracted graph to get a maximal fissioned partition.
         gx = networkx.DiGraph()
         gx.add_nodes_from(contractions[u.guid] for u in g.nodes())
-        gx.add_edges_from((contractions[ed.src.guid], contractions[ed.dst.guid]) for ed in g.edges()
-                          if contractions[ed.src.guid] != contractions[ed.dst.guid])
+        gx.add_edges_from(
+            (contractions[ed.src.guid], contractions[ed.dst.guid])
+            for ed in g.edges()
+            if contractions[ed.src.guid] != contractions[ed.dst.guid]
+        )
         orderd_nodes = list(anticontractions[u] for u in networkx.topological_sort(gx))
 
         return orderd_nodes
 
     @staticmethod
-    def _add_replica_state_after(s: SDFGState, g:SDFG) -> SDFGState:
+    def _add_replica_state_after(s: SDFGState, g: SDFG) -> SDFGState:
         nus = deepcopy(s)
         for u in nus.nodes():
             if isinstance(u, NestedSDFG):
@@ -98,7 +105,11 @@ class YoloMapFission(SingleStateTransformation):
             upto = len(ordered_nodes) - 1
             # Pt: 1
             nus = self._add_replica_state_after(s, g)
-            tgt_node = singular(u for u in self.nested_sdfg.sdfg.nodes() if u.guid == ordered_nodes[upto])
+            tgt_node = singular(
+                u
+                for u in self.nested_sdfg.sdfg.nodes()
+                if u.guid == ordered_nodes[upto]
+            )
             tgt_edge = singular(ed for ed in self.nested_sdfg.sdfg.in_edges(tgt_node))
             crossing_edge = singular(ed for ed in g.in_edges(nus))
             crossing_edge.data = deepcopy(tgt_edge.data)
@@ -121,7 +132,11 @@ class YoloMapFission(SingleStateTransformation):
             upto = 3
             # Pt: 1
             nus = self._add_replica_state_after(s, g)
-            tgt_node = singular(u for u in self.nested_sdfg.sdfg.nodes() if u.guid == ordered_nodes[upto])
+            tgt_node = singular(
+                u
+                for u in self.nested_sdfg.sdfg.nodes()
+                if u.guid == ordered_nodes[upto]
+            )
             tgt_edge = singular(ed for ed in self.nested_sdfg.sdfg.in_edges(tgt_node))
             crossing_edge = singular(ed for ed in g.in_edges(nus))
             crossing_edge.data = deepcopy(tgt_edge.data)
@@ -144,7 +159,11 @@ class YoloMapFission(SingleStateTransformation):
             upto = 2
             # Pt: 1
             nus = self._add_replica_state_after(s, g)
-            tgt_node = singular(u for u in self.nested_sdfg.sdfg.nodes() if u.guid == ordered_nodes[upto])
+            tgt_node = singular(
+                u
+                for u in self.nested_sdfg.sdfg.nodes()
+                if u.guid == ordered_nodes[upto]
+            )
             tgt_edge = singular(ed for ed in self.nested_sdfg.sdfg.in_edges(tgt_node))
             crossing_edge = singular(ed for ed in g.in_edges(nus))
             crossing_edge.data = deepcopy(tgt_edge.data)

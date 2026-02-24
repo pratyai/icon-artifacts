@@ -7,16 +7,17 @@ from dace.codegen.control_flow import ConditionalBlock
 from dace.sdfg.sdfg import ControlFlowBlock
 import copy
 
+
 def simplify_state_if_if_pattern(sdfg: dace.SDFG):
     nodes = list(sdfg.bfs_nodes())
     [s1, cfg1, cfg2] = nodes[0:3]
     if (
-        isinstance(s1, dace.SDFGState) and
-        isinstance(cfg1, ConditionalBlock) and
-        isinstance(cfg2, ConditionalBlock) and
-        len(s1.nodes()) == 0 and
-        len(sdfg.out_edges(s1)) == 1 and
-        sdfg.out_edges(s1)[0].dst == cfg1
+        isinstance(s1, dace.SDFGState)
+        and isinstance(cfg1, ConditionalBlock)
+        and isinstance(cfg2, ConditionalBlock)
+        and len(s1.nodes()) == 0
+        and len(sdfg.out_edges(s1)) == 1
+        and sdfg.out_edges(s1)[0].dst == cfg1
     ):
         assignments = sdfg.out_edges(s1)[0].data.assignments
         # We have something like var_1 = expr
@@ -28,6 +29,7 @@ def simplify_state_if_if_pattern(sdfg: dace.SDFG):
         for sym in syms:
             sdfg.remove_symbol(sym)
             assert sym not in sdfg.parent_nsdfg_node.symbol_mapping
+
 
 def untangle_if(cfg: ConditionalBlock):
     # Pattern to untanble is:
@@ -55,14 +57,18 @@ def untangle_if(cfg: ConditionalBlock):
 
     startidx_name = None
     for condition, body in copy_cfg.branches:
-        if condition is not None: # if (startblk)
+        if condition is not None:  # if (startblk)
             for node in body.nodes():
                 if isinstance(node, dace.SDFGState):
                     # Since we remove and add things
                     if node not in body.nodes():
                         continue
                     oe = body.out_edges(node)[0]
-                    new_assignments = { k: v for k, v in oe.data.assignments.items() if "endidx" not in k}
+                    new_assignments = {
+                        k: v
+                        for k, v in oe.data.assignments.items()
+                        if "endidx" not in k
+                    }
                     rmed_symbols = rmed_symbols.union(set(oe.data.assignments.keys()))
                     oe.data.assignments = new_assignments
                     assert len(new_assignments) == 1
@@ -74,7 +80,7 @@ def untangle_if(cfg: ConditionalBlock):
     # Need the startidx name
     end_cond = None
     for condition, body in copy_cfg.branches:
-        if condition is None: # else
+        if condition is None:  # else
             assert len(body.nodes()) == 1, f"{body.nodes()}"
             for node in body.nodes():
                 end_cond = copy.deepcopy(node)
@@ -82,14 +88,19 @@ def untangle_if(cfg: ConditionalBlock):
 
             a1 = body.add_state("assign_startidx_1")
             a2 = body.add_state("assign_startidx_2")
-            body.add_edge(a1, a2, dace.InterstateEdge(assignments={startidx_name: "int(1)"}))
+            body.add_edge(
+                a1, a2, dace.InterstateEdge(assignments={startidx_name: "int(1)"})
+            )
 
     for edge, g in end_cond.all_edges_recursive():
-        if (isinstance(edge.dst, dace.SDFGState) and
-            isinstance(edge.src, dace.SDFGState)):
+        if isinstance(edge.dst, dace.SDFGState) and isinstance(
+            edge.src, dace.SDFGState
+        ):
             g.remove_edge(edge)
             edge2 = copy.deepcopy(edge)
-            edge2.data.assignments = {k: v for k, v in edge2.data.assignments.items() if "startidx" not in k}
+            edge2.data.assignments = {
+                k: v for k, v in edge2.data.assignments.items() if "startidx" not in k
+            }
             g.add_edge(edge.src, edge.dst, copy.deepcopy(edge2.data))
 
     graph.add_node(copy_cfg)
@@ -102,7 +113,7 @@ def untangle_if(cfg: ConditionalBlock):
 
     graph.remove_node(cfg)
 
-    #for sym in rmed_symbols:
+    # for sym in rmed_symbols:
     #    if sym in sdfg.free_symbols:
     #        sdfg.remove_symbol(sym)
     #        parent_nsdfg_node = sdfg.parent_nsdfg_node
@@ -110,8 +121,9 @@ def untangle_if(cfg: ConditionalBlock):
     #        parent_nsdfg_node.symbol_mapping.pop(sym)
 
 
-
-def parse_range_dict_from_if(sdfg: dace.SDFG, cfg1: ConditionalBlock, cfg2: ConditionalBlock):
+def parse_range_dict_from_if(
+    sdfg: dace.SDFG, cfg1: ConditionalBlock, cfg2: ConditionalBlock
+):
     global split_ranges
 
     _split_ranges = {
@@ -123,15 +135,13 @@ def parse_range_dict_from_if(sdfg: dace.SDFG, cfg1: ConditionalBlock, cfg2: Cond
             "beg": "1",
             "end": "1",
         },
-        "end": {
-            "beg": "1",
-            "end": "1"
-        },
+        "end": {"beg": "1", "end": "1"},
         "old_ranges": {
             "beg": "1",
             "end": "1",
         },
     }
+
     def remove_int_wrapper(expr):
         # Regular expression to match int() and capture what's inside
         match = re.match(r"int\((.*)\)", expr)
@@ -139,14 +149,14 @@ def parse_range_dict_from_if(sdfg: dace.SDFG, cfg1: ConditionalBlock, cfg2: Cond
 
     for cfg, part in zip([cfg1, cfg2], ["startblk", "endblk"]):
         for condition, body in cfg.branches:
-            if condition is not None: # True
+            if condition is not None:  # True
                 for edge in body.edges():
                     assert len(edge.data.assignments) == 1
                     k, v = list(edge.data.assignments.items())[0]
-                    if part == "startblk": # Assigning start offset
+                    if part == "startblk":  # Assigning start offset
                         # Is start block
                         _split_ranges["beg"]["beg"] = remove_int_wrapper(v)
-                    else: # Assigning end offset
+                    else:  # Assigning end offset
                         # Is end block
                         _split_ranges["end"]["end"] = remove_int_wrapper(v)
                         pass
@@ -159,24 +169,34 @@ def parse_range_dict_from_if(sdfg: dace.SDFG, cfg1: ConditionalBlock, cfg2: Cond
                     assert len(edge.data.assignments) == 1
                     k, v = list(edge.data.assignments.items())[0]
                     # Else branches
-                    if part == "startblk": # Assigning start offset
+                    if part == "startblk":  # Assigning start offset
                         # Is not start block
                         _split_ranges["middle"]["beg"] = remove_int_wrapper(v)
                         _split_ranges["end"]["beg"] = remove_int_wrapper(v)
-                    else: # Assigning end offset
+                    else:  # Assigning end offset
                         # Is not end block
                         _split_ranges["beg"]["end"] = remove_int_wrapper(v)
                         _split_ranges["middle"]["end"] = remove_int_wrapper(v)
 
     return _split_ranges
 
-def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
-              map_entry: dace.nodes.MapEntry, range_dict: typing.Dict,
-              gpu: bool = True):
 
-    sym_names = ["beg_blk_range_beg", "beg_blk_range_end",
-                 "middle_blk_range_beg", "middle_blk_range_end",
-                 "end_blk_range_beg", "end_blk_range_end"]
+def split_map(
+    cfg: dace.SDFG | ControlFlowBlock,
+    state: dace.SDFGState,
+    map_entry: dace.nodes.MapEntry,
+    range_dict: typing.Dict,
+    gpu: bool = True,
+):
+
+    sym_names = [
+        "beg_blk_range_beg",
+        "beg_blk_range_end",
+        "middle_blk_range_beg",
+        "middle_blk_range_end",
+        "end_blk_range_beg",
+        "end_blk_range_end",
+    ]
 
     sdfg = cfg if isinstance(cfg, dace.SDFG) else cfg.sdfg
     for sym_name in sym_names:
@@ -211,7 +231,9 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
     duplicates = []
     for i in range(2):
         node_map = dict()
-        inner_nodes = list(state.all_nodes_between(map_entry, state.exit_node(map_entry))) + [map_entry, state.exit_node(map_entry)]
+        inner_nodes = list(
+            state.all_nodes_between(map_entry, state.exit_node(map_entry))
+        ) + [map_entry, state.exit_node(map_entry)]
         inner_edges = state.all_edges(*inner_nodes)
         for n in inner_nodes:
             node_map[n] = copy.deepcopy(n)
@@ -237,13 +259,15 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
     for map_entry, part in zip(duplicates, ["beg", "middle", "end"]):
         map_entry._cuda_stream = i
         map_entry._cs_childpath = False
-        inner_nodes = list(state.all_nodes_between(map_entry, state.exit_node(map_entry))) + [map_entry, state.exit_node(map_entry)]
+        inner_nodes = list(
+            state.all_nodes_between(map_entry, state.exit_node(map_entry))
+        ) + [map_entry, state.exit_node(map_entry)]
         for n in inner_nodes:
             if isinstance(n, dace.nodes.NestedSDFG):
                 old_beg = range_dict["old_ranges"]["beg"]
                 old_end = range_dict["old_ranges"]["end"]
                 # Keep the symbol name in the nested SDFG same - to make it easier with multiple nested SDFGs
-                #n.sdfg.replace_dict({old_beg: part + "_blk_range_beg", old_end: part + "_blk_range_end"})
+                # n.sdfg.replace_dict({old_beg: part + "_blk_range_beg", old_end: part + "_blk_range_end"})
                 """
                 if old_beg in n.symbol_mapping.keys():
                     n.symbol_mapping.pop(old_beg)
@@ -256,21 +280,25 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
                     k = list(n.symbol_mapping.keys())[list(n.symbol_mapping.values()).index(old_end)]
                     n.symbol_mapping.pop(k)"
                 """
-                #if old_beg not in n.sdfg.symbols:
+                # if old_beg not in n.sdfg.symbols:
                 #    n.sdfg.add_symbol(old_beg, dace.int64)
-                #if old_end not in n.sdfg.symbols:
+                # if old_end not in n.sdfg.symbols:
                 #    n.sdfg.add_symbol(old_end, dace.int64)
                 if old_beg not in n.sdfg.symbols:
                     n.sdfg.add_symbol(old_beg, dace.int64)
                 if old_end not in n.sdfg.symbols:
                     n.sdfg.add_symbol(old_end, dace.int64)
-                n.symbol_mapping[old_beg] = part + "_blk_range_beg" #part + "_blk_range_beg"
-                n.symbol_mapping[old_end] = part + "_blk_range_end" #part + "_blk_range_end"
-                #n.sdfg.add_symbol(part + "_blk_range_beg", dace.int64)
-                #n.sdfg.add_symbol(part + "_blk_range_end", dace.int64)
-                #symbols = set(k for k in n.sdfg.free_symbols if k not in n.in_connectors and k not in n.out_connectors)
-                #missing_symbols = [s for s in symbols if s not in n.symbol_mapping]
-                #print("MissingSymbols: ", missing_symbols, [old_beg, old_end])
+                n.symbol_mapping[old_beg] = (
+                    part + "_blk_range_beg"
+                )  # part + "_blk_range_beg"
+                n.symbol_mapping[old_end] = (
+                    part + "_blk_range_end"
+                )  # part + "_blk_range_end"
+                # n.sdfg.add_symbol(part + "_blk_range_beg", dace.int64)
+                # n.sdfg.add_symbol(part + "_blk_range_end", dace.int64)
+                # symbols = set(k for k in n.sdfg.free_symbols if k not in n.in_connectors and k not in n.out_connectors)
+                # missing_symbols = [s for s in symbols if s not in n.symbol_mapping]
+                # print("MissingSymbols: ", missing_symbols, [old_beg, old_end])
         i += 1
 
     unused_inputs = set()
@@ -279,17 +307,21 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
             if expr.isdigit():
                 continue
             else:
+
                 def get_variable_name(expr):
                     # Hack for max(1, var[]) case
                     expr = expr.split(",")[-1]
                     match = re.match(r"^\s*([a-zA-Z_]\w*)\s*\[", expr)
                     return match.group(1) if match else expr
+
                 var_name = get_variable_name(expr)
                 unused_inputs.add(var_name)
 
     # Clean the map edge connections
     for map_entry, part in zip(duplicates, ["beg", "middle", "end"]):
-        inner_nodes = list(state.all_nodes_between(map_entry, state.exit_node(map_entry))) + [map_entry, state.exit_node(map_entry)]
+        inner_nodes = list(
+            state.all_nodes_between(map_entry, state.exit_node(map_entry))
+        ) + [map_entry, state.exit_node(map_entry)]
         for n in inner_nodes:
             if isinstance(n, dace.nodes.NestedSDFG):
                 for conn in unused_inputs:
@@ -297,7 +329,11 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
                     assert len(edges) == 1, f"{edges}, {n}, {conn}"
                     edge = edges[0]
                     state.remove_edge(edge)
-                    inedges = list(state.in_edges_by_connector(edge.src, edge.src_conn.replace("OUT_", "IN_")))
+                    inedges = list(
+                        state.in_edges_by_connector(
+                            edge.src, edge.src_conn.replace("OUT_", "IN_")
+                        )
+                    )
                     edge.src.remove_out_connector(edge.src_conn)
                     edge.dst.remove_in_connector(edge.dst_conn)
                     n.sdfg.remove_data(edge.dst_conn)
@@ -307,7 +343,10 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
                     if inedge.src_conn is not None:
                         inedge.src.remove_out_connector(inedge.src_conn)
                     state.remove_edge(inedge)
-                    if state.in_degree(inedge.src) == 0 and state.out_degree(inedge.src) == 0:
+                    if (
+                        state.in_degree(inedge.src) == 0
+                        and state.out_degree(inedge.src) == 0
+                    ):
                         state.remove_node(inedge.src)
 
     i = 0
@@ -319,7 +358,7 @@ def split_map(cfg: dace.SDFG | ControlFlowBlock, state: dace.SDFGState,
             assert s == 1
             new_range = [(b, b, s)]
         elif part == "middle":
-            new_range = [(b+1, e-1, s)]
+            new_range = [(b + 1, e - 1, s)]
         elif part == "end":
             new_range = [(e, e, s)]
         map_entry.map.range = dace.subsets.Range(new_range)
@@ -336,17 +375,19 @@ def move_in_if(sdfg: dace.SDFG, n: dace.nodes.NestedSDFG):
     if len(nodes) == 2:
         [s0, cfg0] = nodes
         if (
-            isinstance(cfg0, ConditionalBlock) and
-            isinstance(s0, dace.SDFGState) and
-            len(s0.nodes()) == 0 and
-            len(sdfg.out_edges(s0)) == 1 and
-            sdfg.out_edges(s0)[0].dst == cfg0
+            isinstance(cfg0, ConditionalBlock)
+            and isinstance(s0, dace.SDFGState)
+            and len(s0.nodes()) == 0
+            and len(sdfg.out_edges(s0)) == 1
+            and sdfg.out_edges(s0)[0].dst == cfg0
         ):
             edges = sdfg.edges()
             assert len(edges) == 1
             edge = edges[0]
 
-            move_in_assignments = {k + "_m1": v for k,v in edge.data.assignments.items()}
+            move_in_assignments = {
+                k + "_m1": v for k, v in edge.data.assignments.items()
+            }
 
             if len(cfg0.branches) == 1:
                 condition, body = cfg0.branches[0]
@@ -354,19 +395,38 @@ def move_in_if(sdfg: dace.SDFG, n: dace.nodes.NestedSDFG):
                     [s1] = list(body.bfs_nodes())
                     if isinstance(s1, dace.SDFGState):
                         # Move if inside
-                        nested = [n for n in s1.nodes() if isinstance(n, dace.nodes.NestedSDFG)][0]
+                        nested = [
+                            n
+                            for n in s1.nodes()
+                            if isinstance(n, dace.nodes.NestedSDFG)
+                        ][0]
                         inner_sdfg = nested.sdfg
                         if len(inner_sdfg.nodes()) == 2:
                             [s2, cfg2] = inner_sdfg.nodes()
-                            assignments_to_rm = copy.deepcopy(list(inner_sdfg.in_edges(cfg2)[0].data.assignments.keys()))
+                            assignments_to_rm = copy.deepcopy(
+                                list(
+                                    inner_sdfg.in_edges(cfg2)[0].data.assignments.keys()
+                                )
+                            )
                         elif len(inner_sdfg.nodes()) > 2:
                             for inner_node in inner_sdfg.nodes():
-                                if (isinstance(inner_node, ConditionalBlock) and
-                                    inner_sdfg.in_degree(inner_node) == 1 and
-                                    isinstance(inner_sdfg.in_edges(inner_node)[0].src, dace.SDFGState)):
+                                if (
+                                    isinstance(inner_node, ConditionalBlock)
+                                    and inner_sdfg.in_degree(inner_node) == 1
+                                    and isinstance(
+                                        inner_sdfg.in_edges(inner_node)[0].src,
+                                        dace.SDFGState,
+                                    )
+                                ):
                                     cfg2 = inner_node
                                     s2 = inner_sdfg.in_edges(inner_node)[0].src
-                                    assignments_to_rm = copy.deepcopy(list(inner_sdfg.in_edges(inner_node)[0].data.assignments.keys()))
+                                    assignments_to_rm = copy.deepcopy(
+                                        list(
+                                            inner_sdfg.in_edges(inner_node)[
+                                                0
+                                            ].data.assignments.keys()
+                                        )
+                                    )
                                     break
                         else:
                             return
@@ -374,10 +434,12 @@ def move_in_if(sdfg: dace.SDFG, n: dace.nodes.NestedSDFG):
                         if isinstance(cfg2, ConditionalBlock):
                             if len(cfg2.branches) == 1:
                                 for k in move_in_assignments.keys():
-                                    #s = ast.unparse(condition.code[-1])
-                                    #print(s)
+                                    # s = ast.unparse(condition.code[-1])
+                                    # print(s)
                                     s = ast.unparse(cfg2.branches[0][0].code[-1])
-                                    cfg2.branches[0][0].code[-1] = ast.parse(f"({s}) and ({k} == 1)", mode="eval")
+                                    cfg2.branches[0][0].code[-1] = ast.parse(
+                                        f"({s}) and ({k} == 1)", mode="eval"
+                                    )
 
                                 edge = inner_sdfg.edges()[0]
                                 edge.data.assignments.update(move_in_assignments)
@@ -389,21 +451,39 @@ def move_in_if(sdfg: dace.SDFG, n: dace.nodes.NestedSDFG):
                                 sdfg.remove_node(s1)
                                 sdfg.remove_node(cfg0)
                                 sdfg.remove_node(s0)
-                                nested = [n for n in s2.nodes() if isinstance(n, dace.nodes.NestedSDFG)][0]
+                                nested = [
+                                    n
+                                    for n in s2.nodes()
+                                    if isinstance(n, dace.nodes.NestedSDFG)
+                                ][0]
 
                                 # Pass outside data passed from outer sdfg to inner sdfg
                                 for in_conn in n.in_connectors:
                                     if in_conn not in nested.in_connectors:
                                         nested.add_in_connector(in_conn)
-                                        src = list(set([e.src for e in s2.in_edges(nested)]))
+                                        src = list(
+                                            set([e.src for e in s2.in_edges(nested)])
+                                        )
                                         assert len(src) == 1
                                         src = src[0]
                                         arr = sdfg.arrays[in_conn]
-                                        s2.add_edge(src, "OUT_" + in_conn, nested, in_conn, dace.memlet.Memlet.from_array(in_conn, arr))
+                                        s2.add_edge(
+                                            src,
+                                            "OUT_" + in_conn,
+                                            nested,
+                                            in_conn,
+                                            dace.memlet.Memlet.from_array(in_conn, arr),
+                                        )
                                         src.add_out_connector("OUT_" + in_conn)
                                         src.add_in_connector("IN_" + in_conn)
                                         an = s2.add_access(in_conn)
-                                        s2.add_edge(an, None, src, "IN_" + in_conn, dace.memlet.Memlet.from_array(in_conn, arr))
+                                        s2.add_edge(
+                                            an,
+                                            None,
+                                            src,
+                                            "IN_" + in_conn,
+                                            dace.memlet.Memlet.from_array(in_conn, arr),
+                                        )
                                         if in_conn not in nested.sdfg.arrays:
                                             copy_desc = copy.deepcopy(arr)
                                             copy_desc.transient = False
@@ -415,11 +495,18 @@ def move_in_if(sdfg: dace.SDFG, n: dace.nodes.NestedSDFG):
                                         _n.sdfg.parent_sdfg = sdfg
                                         _n.sdfg.parent = s2
 
-                                #print("SymMap", n.symbol_mapping)
-                                #print("FreeSym", n.sdfg.free_symbols)
+                                # print("SymMap", n.symbol_mapping)
+                                # print("FreeSym", n.sdfg.free_symbols)
                                 # DANGEROUS TODO: WHY MISSING SYMBOLS APPEAR AND WHY DOES IT COMPILE AFTER REMOVING THEM?
-                                symbols = set(k for k in n.sdfg.free_symbols if k not in n.in_connectors and k not in n.out_connectors)
-                                missing_symbols = [s for s in symbols if s not in n.symbol_mapping]
+                                symbols = set(
+                                    k
+                                    for k in n.sdfg.free_symbols
+                                    if k not in n.in_connectors
+                                    and k not in n.out_connectors
+                                )
+                                missing_symbols = [
+                                    s for s in symbols if s not in n.symbol_mapping
+                                ]
                                 for sym in missing_symbols:
                                     n.sdfg.remove_symbol(sym)
 
@@ -441,9 +528,11 @@ def untangle_if_sdfg(sdfg: dace.SDFG, verbose: bool):
                                 s = ""
                                 for i in range(len(n2.branches[0][0].code)):
                                     s += " " + ast.unparse(n2.branches[0][0].code[i])
-                                if ((n1.label == "Conditional_l_0_c_0_4_0_0" or
-                                    n1.label == "Conditional_l_0_c_0_4")):
-                                    #raise Exception("A")
+                                if (
+                                    n1.label == "Conditional_l_0_c_0_4_0_0"
+                                    or n1.label == "Conditional_l_0_c_0_4"
+                                ):
+                                    # raise Exception("A")
                                     untangle_if(n1)
 
     sdfg.validate()
@@ -455,6 +544,7 @@ def untangle_if_sdfg(sdfg: dace.SDFG, verbose: bool):
     if verbose:
         sdfg.save("ifs_untangled.sdfgz", compress=True)
     sdfg.validate()
+
 
 def remove_empty_kernel(sdfg: dace.SDFG):
     for n, graph in sdfg.all_nodes_recursive():
@@ -482,6 +572,7 @@ def remove_empty_kernel(sdfg: dace.SDFG):
             remove_empty_kernel(n.sdfg)
         for _n in nodes_to_rm:
             graph.remove_node(_n)
+
 
 def remove_empty_cfg(sdfg: dace.SDFG):
     for n, graph in sdfg.all_nodes_recursive():
@@ -512,7 +603,6 @@ def remove_empty_cfg(sdfg: dace.SDFG):
             remove_empty_cfg(n.sdfg)
 
 
-
 def split_map_sdfg(sdfg: dace.SDFG, gpu: bool, verbose: bool):
     applied = 0
     remove_empty_kernel(sdfg)
@@ -526,15 +616,27 @@ def split_map_sdfg(sdfg: dace.SDFG, gpu: bool, verbose: bool):
                     nested_nodes = list(n.sdfg.bfs_nodes())
                     if len(nested_nodes) >= 3:
                         [cfg1, cfg2, s1] = nested_nodes[0:3]
-                        if (isinstance(cfg1, ConditionalBlock) and
-                            isinstance(cfg2, ConditionalBlock) and
-                            isinstance(s1, dace.SDFGState)):
+                        if (
+                            isinstance(cfg1, ConditionalBlock)
+                            and isinstance(cfg2, ConditionalBlock)
+                            and isinstance(s1, dace.SDFGState)
+                        ):
                             isrcs = list(set([e.src for e in state.in_edges(n)]))
-                            #print(isrcs)
-                            if len(isrcs) == 1 and isinstance(isrcs[0], dace.nodes.MapEntry):
+                            # print(isrcs)
+                            if len(isrcs) == 1 and isinstance(
+                                isrcs[0], dace.nodes.MapEntry
+                            ):
                                 map_entry = isrcs[0]
-                                range_dict = parse_range_dict_from_if(n.sdfg, cfg1, cfg2)
-                                split_map(state.parent_graph, state, map_entry, range_dict, gpu)
+                                range_dict = parse_range_dict_from_if(
+                                    n.sdfg, cfg1, cfg2
+                                )
+                                split_map(
+                                    state.parent_graph,
+                                    state,
+                                    map_entry,
+                                    range_dict,
+                                    gpu,
+                                )
                                 applied += 1
 
     if verbose:

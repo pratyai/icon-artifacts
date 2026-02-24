@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Set
 import warnings
 import dace
 
+
 @properties.make_properties
 @transformation.explicit_cf_compatible
 class SetZeroMapToMemset(ppl.Pass):

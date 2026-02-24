@@ -1,6 +1,7 @@
 import dace
 from dace.sdfg.utils import set_nested_sdfg_parent_references
 
+
 def used_inconns(ng: dace.sdfg.nodes.NestedSDFG) -> set[str]:
     inconns: set[str] = set(ng.in_connectors.keys())
     used: set[str] = set()
@@ -17,13 +18,17 @@ def used_inconns(ng: dace.sdfg.nodes.NestedSDFG) -> set[str]:
                     if c in b.as_string:
                         used.add(c)
     for k, _ in ng.sdfg.all_edges_recursive():
-        if isinstance(k, dace.sdfg.graph.Edge) and isinstance(k.data, dace.sdfg.InterstateEdge):
+        if isinstance(k, dace.sdfg.graph.Edge) and isinstance(
+            k.data, dace.sdfg.InterstateEdge
+        ):
             used = used | k.data.used_arrays(ng.sdfg.arrays)
     return used
+
 
 def unused_inconns(ng: dace.sdfg.nodes.NestedSDFG) -> set[str]:
     inconns: set[str] = set(ng.in_connectors.keys())
     return inconns - used_inconns(ng)
+
 
 def remove_unused_inconnectors_from_nestedsdfg(g: dace.SDFG):
     set_nested_sdfg_parent_references(g)

@@ -1,6 +1,7 @@
 import dace
 from utils.rename_on_if import rename_on_if
 
+
 def rm_segmented_reduce(sdfg: dace.SDFG):
     # Detect and remove segmented reduction
     lib_node = None
@@ -14,7 +15,10 @@ def rm_segmented_reduce(sdfg: dace.SDFG):
 
     src_nodes = set()
     for ie in parent_graph.in_edges(lib_node):
-        if not( isinstance(ie.src, dace.nodes.AccessNode) and not parent_graph.sdfg.arrays[ie.src.data].transient):
+        if not (
+            isinstance(ie.src, dace.nodes.AccessNode)
+            and not parent_graph.sdfg.arrays[ie.src.data].transient
+        ):
             src_nodes.add(ie.src)
             for ieie in parent_graph.in_edges(ie.src):
                 src_nodes.add(ieie.src)

@@ -57,7 +57,9 @@ def _insert_reduction(
         #else
           out = reduce_{type}_cpu(in_arr, in_size);
         #endif
-        """ if "address" not in type else f"""
+        """
+        if "address" not in type
+        else f"""
         #ifdef __REDUCE_DEVICE__
           reduce_{type}_device(in_arr, out, in_size);
         #elif defined(__REDUCE_GPU__)
@@ -112,23 +114,23 @@ def _insert_reduction(
 
     # Route output
     if out_expr is None:
-        #if "address" not in type:
-            arr_name, arr = red_state.sdfg.add_scalar(
-                "out_val",
-                dtype=symtype,
-                transient=True,
-                find_new_name=True,
-            )
-            red_state.add_edge(
-                red_node,
-                "out",
-                red_state.add_write(arr_name),
-                None,
-                dace.Memlet.from_array(arr_name, arr),
-            )
-            parent.add_state_after(red_state, assignments={out_name: f"{arr_name}"})
-        #else:
-        #
+        # if "address" not in type:
+        arr_name, arr = red_state.sdfg.add_scalar(
+            "out_val",
+            dtype=symtype,
+            transient=True,
+            find_new_name=True,
+        )
+        red_state.add_edge(
+            red_node,
+            "out",
+            red_state.add_write(arr_name),
+            None,
+            dace.Memlet.from_array(arr_name, arr),
+        )
+        parent.add_state_after(red_state, assignments={out_name: f"{arr_name}"})
+    # else:
+    #
     else:
         red_state.add_edge(
             red_node, "out", red_state.add_write(out_name), None, dace.Memlet(out_expr)
@@ -144,7 +146,7 @@ def loop_to_max_reduction(sdfg: dace.SDFG, loop_name, task_name):
     loop_node, _ = find_node_by_name(sdfg, loop_name)
     start = str(loop_analysis.get_init_assignment(loop_node))
     end = str(loop_analysis.get_loop_end(loop_node))
-    #print("map reduction clipping", start, end)
+    # print("map reduction clipping", start, end)
 
     vcfl_name = None
     for name in sdfg.arrays.keys():
@@ -162,7 +164,9 @@ def loop_to_max_reduction(sdfg: dace.SDFG, loop_name, task_name):
     else:
         for name in var_names:
             tmp_call_names = [v for v in var_names if "tmp_call" in v]
-            assert len(tmp_call_names) == 1, f"{tmp_call_names} is not a single variable"
+            assert len(tmp_call_names) == 1, (
+                f"{tmp_call_names} is not a single variable"
+            )
             var_name = tmp_call_names[0]
     assert var_name is not None, f"Could not deduce output variable name"
     red_state, red_node = _insert_reduction(
@@ -201,12 +205,13 @@ def cfl_clipping_to_reduction(sdfg: dace.SDFG, task_name, cond_name, loop_name):
     loop, parent = find_node_by_name(sdfg, loop_name)
     start = str(loop_analysis.get_init_assignment(loop))
     end = str(loop_analysis.get_loop_end(loop))
-    #print("cfl clipping", start, end)
+    # print("cfl clipping", start, end)
 
     outer_loop = parent
     outer_it_var = outer_loop.loop_variable
 
     from utils.move_scalar_to_array import move_scalar_to_array
+
     dst_arr_name = "out_val_0"
     if "out_val_0" not in sdfg.arrays:
         sdfg.add_array(
@@ -216,7 +221,7 @@ def cfl_clipping_to_reduction(sdfg: dace.SDFG, task_name, cond_name, loop_name):
             transient=True,
             find_new_name=False,
         )
-    #move_scalar_to_array(sdfg, dst_arr_name)
+    # move_scalar_to_array(sdfg, dst_arr_name)
     red_state, red_node = _insert_reduction(
         parent,
         loop,
@@ -249,13 +254,16 @@ def cfl_clipping_to_reduction(sdfg: dace.SDFG, task_name, cond_name, loop_name):
     task._offloadable = True
     task._output = "array"
 
+
 def maxvcfl_to_reduction(sdfg: dace.SDFG, task_name, loop_name):
     """
     Turns the maxvcfl max into a reduction.
     """
     task, parent = find_node_by_name(sdfg, task_name, skip=1)
     tmp_call = "tmp_call_8_0_in"
-    assert task.code.as_string == f"maxvcfl_out = max(maxvcfl_0_in, {tmp_call})", task.code.as_string
+    assert task.code.as_string == f"maxvcfl_out = max(maxvcfl_0_in, {tmp_call})", (
+        task.code.as_string
+    )
     task.code.as_string = f"maxvcfl_out = {tmp_call}"
     task.remove_in_connector("maxvcfl_0_in")
     for pred in parent.predecessors(task):
@@ -274,7 +282,7 @@ def maxvcfl_to_reduction(sdfg: dace.SDFG, task_name, loop_name):
     ol_end = str(loop_analysis.get_loop_end(loop))
     il_start = str(loop_analysis.get_init_assignment(inner_loop))
     il_end = str(loop_analysis.get_loop_end(inner_loop))
-    #print("ol il", ol_start, ol_end)
+    # print("ol il", ol_start, ol_end)
 
     # The sizes need to be symbolic for dace to allocate the array correctly
     ol_size_sym = parent.sdfg.add_symbol(
@@ -324,6 +332,7 @@ def maxvcfl_to_reduction(sdfg: dace.SDFG, task_name, loop_name):
     red_node._offloadable = False
     red_node._output = "scalar"
 
+
 def tmp_call_13_to_reduction(sdfg: dace.SDFG, loop_name, task_name):
     """
     Turns the tmp_call_13 scan into a reduction.
@@ -331,7 +340,7 @@ def tmp_call_13_to_reduction(sdfg: dace.SDFG, loop_name, task_name):
     loop, parent = find_node_by_name(sdfg, loop_name)
     start = str(loop_analysis.get_init_assignment(loop))
     end = str(loop_analysis.get_loop_end(loop))
-    #print("tmp_call_13", start, end)
+    # print("tmp_call_13", start, end)
 
     outer_loop = parent
     outer_it_var = outer_loop.loop_variable
@@ -357,6 +366,7 @@ def tmp_call_13_to_reduction(sdfg: dace.SDFG, loop_name, task_name):
     red_node._offloadable = True
     red_node._output = "array"
 
+
 def levmask_to_reduction(sdfg: dace.SDFG, loop_name, task_name):
     """
     Turns the levmask scan into a reduction.
@@ -365,7 +375,7 @@ def levmask_to_reduction(sdfg: dace.SDFG, loop_name, task_name):
     prestate = parent.add_state_before(loop)
     start = str(loop_analysis.get_init_assignment(loop))
     end = str(loop_analysis.get_loop_end(loop))
-    #print("levmask", start, end)
+    # print("levmask", start, end)
 
     outer_loop = parent.parent_graph.parent_graph
     assert isinstance(outer_loop, LoopRegion)
@@ -411,9 +421,9 @@ def _demote_vcflmax(sdfg: dace.SDFG):
         if not isinstance(edge.data, dace.sdfg.InterstateEdge):
             continue
         if "vcflmax" in edge.data.assignments.keys():
-            assert (
-                not replaced_write
-            ), "TODO: vcflmax is assigned in multiple interstate edges"
+            assert not replaced_write, (
+                "TODO: vcflmax is assigned in multiple interstate edges"
+            )
             del edge.data.assignments["vcflmax"]
 
             vstate = parent.add_state_after(edge.src, "vcflmax_state")
@@ -428,9 +438,9 @@ def _demote_vcflmax(sdfg: dace.SDFG):
             )
             replaced_write = True
         if "vcflmax" in edge.data.assignments.values():
-            assert (
-                not replaced_read
-            ), "TODO: vcflmax is read in multiple interstate edges"
+            assert not replaced_read, (
+                "TODO: vcflmax is read in multiple interstate edges"
+            )
             edge.data.replace("vcflmax", vcfl_name)
             replaced_read = True
 
@@ -439,7 +449,7 @@ def _demote_vcflmax(sdfg: dace.SDFG):
 
 def add_all_reductions(sdfg: dace.SDFG):
     # Make sure vcflmax is not a symbol
-    #if "vcflmax" in sdfg.symbols:
+    # if "vcflmax" in sdfg.symbols:
     #    import warnings
     #
     #    warnings.warn("vcflmax is a symbol, demoting to a scalar")

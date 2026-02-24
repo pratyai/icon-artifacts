@@ -15,7 +15,9 @@ lib_node = LibNode(
     #else
         out = reduce_{_type}_cpu(in_arr, in_size);
     #endif
-    """ if "address" not in _type else f"""
+    """
+    if "address" not in _type
+    else f"""
     #ifdef __REDUCE_DEVICE__
         reduce_{_type}_device(in_arr, out, in_size);
     #elif defined(__REDUCE_GPU__)
@@ -26,9 +28,10 @@ lib_node = LibNode(
     """,
 )
 
+
 def change_reduction_schedule(sdfg: dace.SDFG):
     # In access node "gpu_maxvcfl_arr", out access node "maxvcfl"
-    #lib_node_to_replace =
+    # lib_node_to_replace =
     b = False
     for node, graph in sdfg.all_nodes_recursive():
         if isinstance(node, LibNode):
@@ -40,27 +43,45 @@ def change_reduction_schedule(sdfg: dace.SDFG):
                     dst_dst = graph.out_edges(dst)[0].dst
                     if graph.out_degree(dst_dst) == 1:
                         dst_dst_dst = graph.out_edges(dst_dst)[0].dst
-                        if isinstance(dst, dace.nodes.AccessNode) and dst.data == "maxvcfl":
+                        if (
+                            isinstance(dst, dace.nodes.AccessNode)
+                            and dst.data == "maxvcfl"
+                        ):
                             src = in_edges[0].src
                             src2 = in_edges[1].src
-                            if ((isinstance(src, dace.nodes.AccessNode) and src.data == "gpu_maxvcfl_arr") or (
-                                isinstance(src2, dace.nodes.AccessNode) and src2.data == "gpu_maxvcfl_arr"
-                            )):
+                            if (
+                                isinstance(src, dace.nodes.AccessNode)
+                                and src.data == "gpu_maxvcfl_arr"
+                            ) or (
+                                isinstance(src2, dace.nodes.AccessNode)
+                                and src2.data == "gpu_maxvcfl_arr"
+                            ):
                                 # Pattern found
-                                assert "maxZ_to_scalar" in node.label or "maxZ_to_scalar" in node.name
+                                assert (
+                                    "maxZ_to_scalar" in node.label
+                                    or "maxZ_to_scalar" in node.name
+                                )
                                 new_lib_node = lib_node
                                 new_lib_node.schedule = dace.ScheduleType.GPU_Device
-                                #new_access = graph.add_access("vcflmax")
+                                # new_access = graph.add_access("vcflmax")
                                 new_edge = copy.deepcopy(graph.out_edges(dst_dst)[0])
                                 subset = copy.deepcopy(new_edge.data.subset)
-                                new_subset = [(b,e+1,s) for b, e, s in subset]
-                                new_memlet = dace.memlet.Memlet(data=new_edge.data.data,
-                                                                subset= dace.subsets.Range(new_subset))
+                                new_subset = [(b, e + 1, s) for b, e, s in subset]
+                                new_memlet = dace.memlet.Memlet(
+                                    data=new_edge.data.data,
+                                    subset=dace.subsets.Range(new_subset),
+                                )
                                 graph.add_node(new_lib_node)
                                 for ie in in_edges:
-                                    graph.add_edge(ie.src, ie.src_conn, new_lib_node, ie.dst_conn, ie.data)
-                                #graph.add_edge(new_lib_node, out_edges[0].src_conn, dst_dst_dst, None, new_memlet.data)
-                                #print(node.out_connectors.items())
+                                    graph.add_edge(
+                                        ie.src,
+                                        ie.src_conn,
+                                        new_lib_node,
+                                        ie.dst_conn,
+                                        ie.data,
+                                    )
+                                # graph.add_edge(new_lib_node, out_edges[0].src_conn, dst_dst_dst, None, new_memlet.data)
+                                # print(node.out_connectors.items())
                                 src_conn = out_edges[0].src_conn
                                 conntype = node.out_connectors[src_conn]
                                 _t = lib_node.remove_out_connector(src_conn)
@@ -68,14 +89,20 @@ def change_reduction_schedule(sdfg: dace.SDFG):
                                 graph.remove_node(dst)
                                 graph.remove_node(node)
                                 graph.remove_node(dst_dst)
-                                #tt = new_lib_node.remove_out_connector(src_conn)
-                                #assert src_conn == "out"
-                                #ttt= new_lib_node.add_in_connector(connector_name=src_conn, dtype=dace.float64, force=True)
-                                #assert tt
-                                #assert ttt
-                                graph.add_edge(dst_dst_dst, None, new_lib_node, src_conn, new_memlet)
-                                #an = graph.add_access("gpu_vcflmax")
-                                #graph.add_edge(new_lib_node, None, an, None, dace.Memlet())
+                                # tt = new_lib_node.remove_out_connector(src_conn)
+                                # assert src_conn == "out"
+                                # ttt= new_lib_node.add_in_connector(connector_name=src_conn, dtype=dace.float64, force=True)
+                                # assert tt
+                                # assert ttt
+                                graph.add_edge(
+                                    dst_dst_dst,
+                                    None,
+                                    new_lib_node,
+                                    src_conn,
+                                    new_memlet,
+                                )
+                                # an = graph.add_access("gpu_vcflmax")
+                                # graph.add_edge(new_lib_node, None, an, None, dace.Memlet())
                                 b = True
                                 break
     assert b, "Pattern not found in SDFG"
@@ -107,7 +134,9 @@ def change_reduction_schedule(sdfg: dace.SDFG):
                 del node.out_connectors["vcflmax"]
 
         if "gpu_vcflmax" in graph.sdfg.arrays:
-            graph.sdfg.arrays["gpu_vcflmax"].storage = dace.dtypes.StorageType.GPU_Global
+            graph.sdfg.arrays[
+                "gpu_vcflmax"
+            ].storage = dace.dtypes.StorageType.GPU_Global
 
     # add copy gpu_vcflmax to vcflmax later
     # if a map exit writes to gpu_vcflmax add a copy to vcflmax
@@ -119,17 +148,25 @@ def change_reduction_schedule(sdfg: dace.SDFG):
                     src_conn = graph.in_edges(node)[0].src_conn
                     graph.in_edges(node)[0].dynamic = False
                     dst = graph.add_access("vcflmax")
-                    e = graph.add_edge(node, None, dst, None, dace.Memlet.from_array(
-                        dataname="gpu_vcflmax",
-                        datadesc=graph.sdfg.arrays["gpu_vcflmax"],
-                    ))
+                    e = graph.add_edge(
+                        node,
+                        None,
+                        dst,
+                        None,
+                        dace.Memlet.from_array(
+                            dataname="gpu_vcflmax",
+                            datadesc=graph.sdfg.arrays["gpu_vcflmax"],
+                        ),
+                    )
                     e.dynamic = False
                     if "vcflmax" not in graph.sdfg.arrays:
                         desc = copy.deepcopy(graph.sdfg.arrays["gpu_vcflmax"])
                         desc.storage = dace.dtypes.StorageType.CPU_Heap
                         graph.sdfg.add_datadesc("vcflmax", desc)
                     else:
-                        graph.sdfg.arrays["vcflmax"].storage = dace.dtypes.StorageType.CPU_Heap
+                        graph.sdfg.arrays[
+                            "vcflmax"
+                        ].storage = dace.dtypes.StorageType.CPU_Heap
 
     # On the last state if fix the reduction node
     last_state = [node for node in sdfg.nodes() if sdfg.out_degree(node) == 0][0]
@@ -143,10 +180,17 @@ def change_reduction_schedule(sdfg: dace.SDFG):
     for node, graph in sdfg.all_nodes_recursive():
         if "vcflmax" in graph.sdfg.arrays:
             graph.sdfg.arrays["vcflmax"].storage = dace.dtypes.StorageType.CPU_Heap
-            assert graph.sdfg.arrays["vcflmax"].storage == dace.dtypes.StorageType.CPU_Heap
+            assert (
+                graph.sdfg.arrays["vcflmax"].storage == dace.dtypes.StorageType.CPU_Heap
+            )
         if "gpu_vcflmax" in graph.sdfg.arrays:
-            graph.sdfg.arrays["gpu_vcflmax"].storage = dace.dtypes.StorageType.GPU_Global
-            assert graph.sdfg.arrays["gpu_vcflmax"].storage == dace.dtypes.StorageType.GPU_Global
+            graph.sdfg.arrays[
+                "gpu_vcflmax"
+            ].storage = dace.dtypes.StorageType.GPU_Global
+            assert (
+                graph.sdfg.arrays["gpu_vcflmax"].storage
+                == dace.dtypes.StorageType.GPU_Global
+            )
 
     sdfg.save("a.sdfg")
     sdfg.validate()

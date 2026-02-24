@@ -2,6 +2,7 @@ import dace
 from utils import find_node_by_name
 import copy
 
+
 def wrap_reduction_and_T_l488_c488in_gpumap(sdfg: dace.SDFG):
     """
     Wraps the reduction and T_l488_c488 in a GPU map.
@@ -53,14 +54,19 @@ def wrap_reduction_and_T_l488_c488in_gpumap(sdfg: dace.SDFG):
     map_exit.add_in_connector("IN_2")
 
     # Connect the input and output nodes to the map
-    parent.add_edge(input_node, None, map_entry, "IN_1", copy.deepcopy(inpu_in_edge.data))
+    parent.add_edge(
+        input_node, None, map_entry, "IN_1", copy.deepcopy(inpu_in_edge.data)
+    )
     parent.add_edge(map_exit, "OUT_2", output_node, None, copy.deepcopy(out_edge.data))
-    parent.add_edge(map_entry, "OUT_1", lib_node, "in_arr", copy.deepcopy(inpu_in_edge.data))
-    parent.add_edge(tasklet, "vcflmax_out_0", map_exit, "IN_2", copy.deepcopy(out_edge.data))
+    parent.add_edge(
+        map_entry, "OUT_1", lib_node, "in_arr", copy.deepcopy(inpu_in_edge.data)
+    )
+    parent.add_edge(
+        tasklet, "vcflmax_out_0", map_exit, "IN_2", copy.deepcopy(out_edge.data)
+    )
 
     parent.remove_edge(inpu_in_edge)
     parent.remove_edge(out_edge)
-
 
     # We also need to wrap the tasklet T_l462_c462 which initializes maxvcfl
     tasklet, parent = find_node_by_name(sdfg, "T_l462_c462")
@@ -85,6 +91,8 @@ def wrap_reduction_and_T_l488_c488in_gpumap(sdfg: dace.SDFG):
 
     # Connect the output node to the map
     parent.add_edge(map_exit, "OUT_2", output_node, None, copy.deepcopy(out_edge.data))
-    parent.add_edge(tasklet, "maxvcfl_out", map_exit, "IN_2", copy.deepcopy(out_edge.data))
+    parent.add_edge(
+        tasklet, "maxvcfl_out", map_exit, "IN_2", copy.deepcopy(out_edge.data)
+    )
 
     parent.remove_edge(out_edge)

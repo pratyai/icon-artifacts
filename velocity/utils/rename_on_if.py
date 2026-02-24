@@ -5,10 +5,13 @@ import ast
 from dace.codegen.control_flow import ConditionalBlock, LoopRegion
 import dace.properties
 
+
 def rename_on_if(cfg, src: str, dst: str, recursive=False, exact=False):
     gpu_host_name_map = {src: dst}
 
-    for _, node in enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive():
+    for _, node in (
+        enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive()
+    ):
         if not isinstance(node, ConditionalBlock):
             continue
 
@@ -18,13 +21,14 @@ def rename_on_if(cfg, src: str, dst: str, recursive=False, exact=False):
             if isinstance(b[0].code, list):
                 for i, el in enumerate(b[0].code):
                     if isinstance(el, str):
-                        for src,dst in gpu_host_name_map.items():
-                            b[0].code[i] = b[0].code[i].replace(src,dst)
+                        for src, dst in gpu_host_name_map.items():
+                            b[0].code[i] = b[0].code[i].replace(src, dst)
                     else:
+
                         def replace_x_with_y(expr: ast.Expr, repl_dict) -> ast.Expr:
                             expr_str = ast.unparse(expr).strip()
                             for src, dst in repl_dict.items():
-                                #print(src, dst, expr_str, src in expr_str)
+                                # print(src, dst, expr_str, src in expr_str)
                                 if not exact:
                                     modified_str = expr_str.replace(src, dst)
                                 else:
@@ -33,16 +37,20 @@ def rename_on_if(cfg, src: str, dst: str, recursive=False, exact=False):
                                     else:
                                         modified_str = expr_str
                             return ast.parse(modified_str, mode="eval").body
+
                         b[0].code[i] = replace_x_with_y(b[0].code[i], gpu_host_name_map)
             else:
                 assert isinstance(b[0].code, str)
-                for src,dst in gpu_host_name_map.items():
+                for src, dst in gpu_host_name_map.items():
                     b[0].code = b[0].code.replace(src, dst)
+
 
 def rename_on_for(cfg, src: str, dst: str, recursive=False, exact=False):
     gpu_host_name_map = {src: dst}
 
-    for _, node in enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive():
+    for _, node in (
+        enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive()
+    ):
         if not isinstance(node, LoopRegion):
             continue
 
@@ -52,9 +60,10 @@ def rename_on_for(cfg, src: str, dst: str, recursive=False, exact=False):
             if isinstance(b.code, list):
                 for i, el in enumerate(b.code):
                     if isinstance(el, str):
-                        for src,dst in gpu_host_name_map.items():
-                            b.code[i] = b.code[i].replace(src,dst)
+                        for src, dst in gpu_host_name_map.items():
+                            b.code[i] = b.code[i].replace(src, dst)
                     else:
+
                         def replace_x_with_y(expr: ast.Expr, repl_dict) -> ast.Expr:
                             expr_str = ast.unparse(expr).strip()
                             for src, dst in repl_dict.items():
@@ -66,16 +75,20 @@ def rename_on_for(cfg, src: str, dst: str, recursive=False, exact=False):
                                     else:
                                         modified_str = expr_str
                             return ast.parse(modified_str).body
+
                         b.code[i] = replace_x_with_y(b.code[i], gpu_host_name_map)
             else:
                 assert isinstance(b.code, str)
-                for src,dst in gpu_host_name_map.items():
+                for src, dst in gpu_host_name_map.items():
                     b.code = b.code.replace(src, dst)
+
 
 def rename_on_map(cfg, src: str, dst: str, recursive=False, exact=False):
     gpu_host_name_map = {src: dst}
 
-    for _, cfg_or_state in enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive():
+    for _, cfg_or_state in (
+        enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive()
+    ):
         if isinstance(cfg_or_state, dace.SDFGState):
             for node in cfg_or_state.nodes():
                 if not isinstance(node, dace.nodes.MapEntry):
@@ -89,14 +102,17 @@ def rename_on_map(cfg, src: str, dst: str, recursive=False, exact=False):
                     ne = e.subs(src_sym, dst_sym)
                     ns = s.subs(src_sym, dst_sym)
 
-                    #print(b,e,s)
-                    #if "i_startblk_var_146" in str(b) or "i_endblk_var_147" in str(e):
+                    # print(b,e,s)
+                    # if "i_startblk_var_146" in str(b) or "i_endblk_var_147" in str(e):
                     #    raise Exception((b,e,s), (nb, ne, ns))
                     new_range_arr.append((nb, ne, ns))
                 node.map.range = dace.subsets.Range(ranges=new_range_arr)
 
+
 def rename_on_tasklet(cfg, src: str, dst: str, recursive=False):
-    for _, cfg_or_state in enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive():
+    for _, cfg_or_state in (
+        enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive()
+    ):
         if isinstance(cfg_or_state, dace.SDFGState):
             for node in cfg_or_state.nodes():
                 if not isinstance(node, dace.nodes.Tasklet):
@@ -113,7 +129,9 @@ def rename_on_tasklet(cfg, src: str, dst: str, recursive=False):
 def rename_on_if2(cfg, m, recursive=False, exact=False):
     gpu_host_name_map = m
 
-    for _, node in enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive():
+    for _, node in (
+        enumerate([cfg] + cfg.nodes()) if not recursive else cfg.all_nodes_recursive()
+    ):
         if not isinstance(node, ConditionalBlock):
             continue
 
@@ -123,19 +141,33 @@ def rename_on_if2(cfg, m, recursive=False, exact=False):
             if isinstance(b[0].code, list):
                 for i, el in enumerate(b[0].code):
                     if isinstance(el, str):
-                        pattern = re.compile(r'\b(' + '|'.join(map(re.escape, gpu_host_name_map.keys())) + r')\b')
+                        pattern = re.compile(
+                            r"\b("
+                            + "|".join(map(re.escape, gpu_host_name_map.keys()))
+                            + r")\b"
+                        )
                         result = pattern.sub(lambda x: gpu_host_name_map[x.group()], el)
                         b[0].code[i] = result
                     else:
+
                         def replace_x_with_y(expr: ast.Expr, repl_dict) -> ast.Expr:
                             expr_str = ast.unparse(expr).strip()
-                            pattern = re.compile(r'\b(' + '|'.join(map(re.escape, gpu_host_name_map.keys())) + r')\b')
-                            result = pattern.sub(lambda x: gpu_host_name_map[x.group()], expr_str)
+                            pattern = re.compile(
+                                r"\b("
+                                + "|".join(map(re.escape, gpu_host_name_map.keys()))
+                                + r")\b"
+                            )
+                            result = pattern.sub(
+                                lambda x: gpu_host_name_map[x.group()], expr_str
+                            )
                             modified_str = result
                             return ast.parse(modified_str, mode="eval").body
+
                         b[0].code[i] = replace_x_with_y(b[0].code[i], gpu_host_name_map)
             else:
                 assert isinstance(b[0].code, str)
-                pattern = re.compile(r'\b(' + '|'.join(map(re.escape, gpu_host_name_map.keys())) + r')\b')
+                pattern = re.compile(
+                    r"\b(" + "|".join(map(re.escape, gpu_host_name_map.keys())) + r")\b"
+                )
                 result = pattern.sub(lambda x: gpu_host_name_map[x.group()], b[0].code)
                 b[0].code = result
