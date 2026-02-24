@@ -692,7 +692,7 @@ void deserialize (t_grid_edges* x, std::istream& s) {
         // We only need to allocate a volume of contiguous memory, and let DaCe
         // interpret (assuming it follows the same protocol as us).
         x->inv_dual_edge_length =
-        m.read<std::remove_pointer<decltype (x->inv_dual_edge_length)>::type> (s);
+        m.read<inv_dual_edge_length_storage_t> (s);
 
     }                                 // CONCLUDING IF
     read_line (s, { "# area_edge" }); // Should contain '# area_edge'

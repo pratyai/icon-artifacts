@@ -21,12 +21,46 @@ from utils.profiling_patches import insert_timers_for_profiling, insert_synchron
 
 from utils.assignment_and_copy_kernel_to_memset_and_memcpy import AssignmentAndCopyKernelToMemsetAndMemcpy
 from utils.create_profile_sdfg import create_profile_sdfg
+from utils.pointwise_decompression import inject_pointwise_decompression
 STAGE_ID = 8
 import os
 from utils.permute_array_dimensions import PermuteArrayDimensions, inverse_strides
 
 def optimization_action(sdfg):
     """ DEFINE THE OPTIMIZATION ACTION HERE """
+    # Pointwise decompression shim for inv_dual_edge_length
+    # Run this FIRST before any other transformations to ensure 
+    # DaCe's analysis (like loop body generation) sees the updated types.
+    options = common.get_build_options()
+    lowprec_map = {
+        "fp64": dace.float64,
+        "fp32": dace.float32,
+        "fp16": dace.float16,
+        "f32": dace.float32,
+        "f64": dace.float64,
+        "f16": dace.float16,
+    }
+    external_dtype = lowprec_map.get(options["lowprec"], dace.float64)
+
+    inject_pointwise_decompression(
+        sdfg,
+        array_names=[
+            "__CG_p_patch__CG_edges__m_inv_dual_edge_length",
+            "__CG_p_metrics__m_ddqz_z_half",
+            "__CG_p_metrics__m_ddqz_z_full_e",
+            "__CG_p_metrics__m_wgtfac_e",
+            "__CG_p_metrics__m_wgtfac_c",
+            "__CG_p_metrics__m_coeff1_dwdz",
+            "__CG_p_metrics__m_coeff2_dwdz",
+            "__CG_p_int__m_rbf_vec_coeff_e",
+            "__CG_p_int__m_e_bln_c_s",
+            "__CG_p_int__m_c_lin_e",
+            "__CG_p_metrics__m_ddxn_z_full",
+            "__CG_p_metrics__m_ddxt_z_full",
+        ],
+        external_dtype=external_dtype,
+    )
+
     """
     print("Array values that can be lowered: {\n" + "\n".join(
         sorted(
@@ -144,6 +178,7 @@ def optimization_action(sdfg):
     do_profile = os.getenv('_PROFILE', '0').lower() in ('1', 'true', 'yes')
     if do_profile:
         create_profile_sdfg(sdfg)
+
     return sdfg
 
 

@@ -1,6 +1,8 @@
 #ifndef __SHARED_STRUCT_DEFS_H__
 #define __SHARED_STRUCT_DEFS_H__
 
+#include "storage_types.h"
+
 /*
 struct global_data_type
 struct t_tangent_vectors
@@ -168,7 +170,7 @@ struct t_grid_edges {
   double *f_e = {};
   double *fn_e = {};
   double *ft_e = {};
-  double *inv_dual_edge_length = {};
+  inv_dual_edge_length_storage_t *inv_dual_edge_length = {};
   double *inv_primal_edge_length = {};
   t_tangent_vectors **primal_normal_cell = {};
   int *quad_blk = {};
@@ -391,17 +393,17 @@ struct t_nh_metrics {
   int *bdy_mflx_e_blk = {};
   int bdy_mflx_e_dim = {};
   int *bdy_mflx_e_idx = {};
-  double *coeff1_dwdz = {};
-  double *coeff2_dwdz = {};
+  coeff1_dwdz_storage_t *coeff1_dwdz = {};
+  coeff2_dwdz_storage_t *coeff2_dwdz = {};
   double *coeff_gradekin = {};
   double *coeff_gradp = {};
   double *d2dexdz2_fac1_mc = {};
   double *d2dexdz2_fac2_mc = {};
   double *d_exner_dz_ref_ic = {};
-  double *ddqz_z_full_e = {};
-  double *ddqz_z_half = {};
-  double *ddxn_z_full = {};
-  double *ddxt_z_full = {};
+  ddqz_z_full_e_storage_t *ddqz_z_full_e = {};
+  ddqz_z_half_storage_t *ddqz_z_half = {};
+  ddxn_z_full_storage_t *ddxn_z_full = {};
+  ddxt_z_full_storage_t *ddxt_z_full = {};
   double *deepatmo_divh_mc = {};
   double *deepatmo_divzl_mc = {};
   double *deepatmo_divzu_mc = {};
@@ -429,8 +431,8 @@ struct t_nh_metrics {
   int *vertidx_gradp = {};
   double *vwind_expl_wgt = {};
   double *vwind_impl_wgt = {};
-  double *wgtfac_c = {};
-  double *wgtfac_e = {};
+  wgtfac_c_storage_t *wgtfac_c = {};
+  wgtfac_e_storage_t *wgtfac_e = {};
   double *wgtfacq1_c = {};
   double *wgtfacq_c = {};
   double *wgtfacq_e = {};
@@ -987,9 +989,9 @@ struct t_int_state {
   int __f2dace_SOA_rbf_vec_coeff_e_d_0_s = {};
   int __f2dace_SOA_rbf_vec_coeff_e_d_1_s = {};
   int __f2dace_SOA_rbf_vec_coeff_e_d_2_s = {};
-  double *c_lin_e = {};
+  c_lin_e_storage_t *c_lin_e = {};
   double *cells_aw_verts = {};
-  double *e_bln_c_s = {};
+  e_bln_c_s_storage_t *e_bln_c_s = {};
   double *e_flx_avg = {};
   double *geofac_div = {};
   double *geofac_grdiv = {};
@@ -998,7 +1000,7 @@ struct t_int_state {
   double *geofac_rot = {};
   double *nudgecoeff_e = {};
   double *pos_on_tplane_e = {};
-  double *rbf_vec_coeff_e = {};
+  rbf_vec_coeff_e_storage_t *rbf_vec_coeff_e = {};
 };
 
 struct t_grid_vertices {

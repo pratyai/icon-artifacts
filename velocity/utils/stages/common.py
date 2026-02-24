@@ -67,8 +67,141 @@ def compile_action(stage: int, sdfgs: Dict[str, dace.SDFG], lib,
   dace.Config.set('compiler', 'cuda', 'max_concurrent_streams', value="1")
   _build_for_integration = os.getenv('_BUILD_LIB_FOR_SOLVE_NH', '0').lower() in ('1', 'true', 'yes')
 
-  if lib:
-    assert stage == 9
+    print(f"Stage #{stage_id}: Optimising {name} from {infile}")
+
+    sdfg = dace.SDFG.from_file(infile)
+    sdfg.name = name
+    sdfg.validate()
+
+    sdfg = func(sdfg)
+
+    print(f"Stage #{stage_id}: Saved as {outfile}")
+    sdfg.save(outfile, compress=True)
+    return True
+
+
+def get_build_options(args=None):
+    """Centralize options parsing (args override env vars)."""
+    options = {
+        "release": os.getenv("_RELEASE", "0").lower() in ("1", "true", "yes"),
+        "lowprec": os.getenv("_LOWPREC", "fp64").lower(),
+        "build_for_integration": os.getenv("_BUILD_LIB_FOR_SOLVE_NH", "0").lower()
+        in ("1", "true", "yes"),
+        "tile": os.getenv("_TILE", "0").lower() in ("1", "true", "yes"),
+        "profile": os.getenv("_PROFILE", "0").lower() in ("1", "true", "yes"),
+        "reduce_bitwidth": os.getenv("_REDUCE_BITWIDTH_TRANSFORMATION", "0").lower()
+        in ("1", "true", "yes"),
+    }
+
+    if args:
+        if args.release is not None:
+            options["release"] = args.release
+        if args.lowprec is not None:
+            options["lowprec"] = args.lowprec.lower()
+        if args.integration is not None:
+            options["build_for_integration"] = args.integration
+        if args.tile is not None:
+            options["tile"] = args.tile
+        if args.profile is not None:
+            options["profile"] = args.profile
+        if args.reduce_bitwidth is not None:
+            options["reduce_bitwidth"] = args.reduce_bitwidth
+
+    # Write back to environment for any child processes or DaCe passes that check them directly
+    os.environ["_RELEASE"] = "1" if options["release"] else "0"
+    os.environ["_LOWPREC"] = options["lowprec"]
+    os.environ["_BUILD_LIB_FOR_SOLVE_NH"] = (
+        "1" if options["build_for_integration"] else "0"
+    )
+    os.environ["_TILE"] = "1" if options["tile"] else "0"
+    os.environ["_PROFILE"] = "1" if options["profile"] else "0"
+    os.environ["_REDUCE_BITWIDTH_TRANSFORMATION"] = (
+        "1" if options["reduce_bitwidth"] else "0"
+    )
+
+    return options
+
+
+def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None):
+    """Standardized main loop for all stage scripts to reduce boilerplate."""
+    argp = argparse.ArgumentParser()
+    argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=None)
+
+    # Optional overrides for environment variables
+    argp.add_argument("--release", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument(
+        "--lowprec",
+        type=str,
+        default=None,
+        choices=["fp64", "fp32", "fp16", "f32", "f64", "f16"],
+    )
+    argp.add_argument(
+        "--integration", action=argparse.BooleanOptionalAction, default=None
+    )
+    argp.add_argument("--tile", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument("--profile", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument(
+        "--reduce-bitwidth", action=argparse.BooleanOptionalAction, default=None
+    )
+
+    args = argp.parse_args()
+
+    # Default to both if neither is specified
+    if args.optimize is None and args.compile is None:
+        args.optimize, args.compile = True, True
+
+    # Initialize environment
+    get_build_options(args)
+    names = sdfg_names()
+
+    if args.optimize:
+        tasks = [(name, stage_id, optimization_action_func) for name in names]
+
+        # Disable OpenMP thread pooling inside DaCe during multiprocessing to avoid oversubscription
+        dace.config.Config.set("compiler", "num_threads", value="1")
+
+        with Pool(processes=min(len(tasks), os.cpu_count())) as pool:
+            pool.map(_optimize_single, tasks)
+
+    if args.compile:
+        sdfgs = {
+            name: dace.SDFG.from_file(stage_output(name, stage_id)) for name in names
+        }
+        kwargs = compile_extra_kwargs or {}
+        compile_action(stage_id, sdfgs, **kwargs)
+
+
+def compile_action(
+    stage: int,
+    sdfgs: Dict[str, dace.SDFG],
+    lib=False,
+    allocation_names_to_comment_out=None,
+    use_openacc_stream=False,
+):
+    dace.config.Config.set("compiler", "default_data_types", value="C")
+    options = get_build_options()
+    release = options["release"]
+
+    for name, g in sdfgs.items():
+        g.build_folder = f"{DEFAULT_CODEGEN_DIR}/stage{stage}/{name}"
+
+    sdfg_list = list(sdfgs.values())
+    unique_names(sdfg_list)
+
+    if config.instrument:
+        instrument_sdfg(sdfg_list)
+
+    dace.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
+    dace.Config.set("compiler", "cuda", "max_concurrent_streams", value="1")
+
+    # Determine build configuration
+    main_name = "main_gpu.cu" if stage >= 6 else "main.cu"
+    is_lib = lib or (stage == 8 and options["build_for_integration"]) or stage == 9
+
+    if stage == 1 and options["build_for_integration"]:
+        for sdfg in sdfg_list:
+            make_flattened_data_to_non_transient_cpu_input(sdfg)
 
     compile_if_propagated_sdfgs(
         sdfgs, gpu=True,

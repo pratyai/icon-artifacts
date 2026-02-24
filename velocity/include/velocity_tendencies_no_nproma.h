@@ -3,6 +3,7 @@
 #define __DACE_CODEGEN_VELOCITY_TENDENCIES__
 
 #include <dace/dace.h>
+#include "storage_types.h"
 
 
 
@@ -87,7 +88,7 @@ int* end_index = {};
 double* f_e = {};
 double* fn_e = {};
 double* ft_e = {};
-double* inv_dual_edge_length = {};
+inv_dual_edge_length_storage_t* inv_dual_edge_length = {};
 double* inv_primal_edge_length = {};
 int* quad_blk = {};
 int* quad_idx = {};

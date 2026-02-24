@@ -310,7 +310,7 @@ static cudaStream_t open_acc_stream;
                                 else:
                                     modified_lines.append('measure_time("Run");\n')
 
-                                i += 1
+                            i += 1
                             #raise Exception(line, check)
                 elif not is_host_check:
                     if check in line and check == dev_check and check != host_check and "{" in line:
@@ -391,18 +391,24 @@ def add_reduce_clean_up_calls(filepath: str):
         i = 0
         while i < len(lines):
             if pattern1 in lines[i]:
-                assert i < len(lines)
-                assert lines[i+1].strip() == "{"
+                # Found the function, find the opening brace
                 line = lines[i]
                 file.write(line)
-                file.write("{\n")
-                file.write("cleanup_reduce_sum_gpu();\n")
-                file.write("cleanup_reduce_maxZ_gpu();\n")
                 i += 1
+                while i < len(lines) and "{" not in lines[i]:
+                    file.write(lines[i])
+                    i += 1
+                if i < len(lines):
+                    file.write(lines[i]) # write the line with {
+                    # Get indentation from the brace line or the function line
+                    indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+                    file.write(f"{indent}  cleanup_reduce_sum_gpu();\n")
+                    file.write(f"{indent}  cleanup_reduce_maxZ_gpu();\n")
+                    i += 1
             else:
                 line = lines[i]
                 file.write(line)
-            i += 1
+                i += 1
 
 def comment_out_syncs(filepath: str, gpu: bool):
     # comment out (prepend //) any line containing cudaStreamSynchronize
@@ -770,15 +776,17 @@ def compile_if_propagated_sdfgs(
                 replace_pass_by_copy_to_pass_by_ref(f"{build_loc}/include/{sdfg_name}.h")
 
 
-    if main_name is not None:
-        sources.add(f"{main_name}")
-    else:
-        if not gpu:
-            if not lib:
-                sources.add("main.cc")
-        else:
-            if not lib:
-                sources.add("main_gpu.cu")
+    use_nvhpc = os.getenv("_USE_NVHPC", "0").lower() in ("1", "true", "yes")
+    cpp_type = {
+        "fp64": "double",
+        "fp32": "float",
+        "f32": "float",
+        "f64": "double",
+        "fp16": "half",
+        "f16": "half",
+    }.get(os.getenv("_LOWPREC", "fp64").lower(), "double")
+    low_prec_flag = f"-DLOW_PREC_TYPE={cpp_type}"
+    base_inc = f"-I{build_loc}/include -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
 
     nvhpc_flags = "-ccbin=nvc++" if use_nvhpc else ""
 
