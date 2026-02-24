@@ -14,6 +14,10 @@
 #include <string_view>
 #include <vector>
 
+#if defined(__CUDACC__)
+#include <cuda_fp16.h>
+#endif
+
 #include "velocity_tendencies_no_nproma_gpu.h"
 
 namespace serde {
@@ -109,7 +113,16 @@ void read_scalar(double& x, std::istream& s) {
   x = y;
 }
 
-void read_scalar(bool& x, std::istream& s) {
+void read_scalar(half &x, std::istream &s) {
+  if (s.eof())
+    return;
+  scroll_space(s);
+  long double y;
+  s >> y;
+  x = static_cast<half>(static_cast<float>(y));
+}
+
+void read_scalar(bool &x, std::istream &s) {
   char c;
   read_scalar(c, s);
   assert(c == '1' or c == '0');
@@ -152,20 +165,22 @@ std::pair<array_meta, T*> read_pointer(std::istream& s) {
 template <typename T>
 std::string serialize_array(T* arr);
 
-void deserialize(float* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(double* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(long double* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(int* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(long* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(long long* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(bool* x, std::istream& s) { read_scalar(*x, s); }
-void deserialize(float& x, std::istream& s) { read_scalar(x, s); }
-void deserialize(double& x, std::istream& s) { read_scalar(x, s); }
-void deserialize(long double& x, std::istream& s) { read_scalar(x, s); }
-void deserialize(int& x, std::istream& s) { read_scalar(x, s); }
-void deserialize(long& x, std::istream& s) { read_scalar(x, s); }
-void deserialize(long long& x, std::istream& s) { read_scalar(x, s); }
-void deserialize(bool& x, std::istream& s) { read_scalar(x, s); }
+void deserialize(float *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(double *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(half *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(long double *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(int *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(long *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(long long *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(bool *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(float &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(double &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(half &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(long double &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(int &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(long &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(long long &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(bool &x, std::istream &s) { read_scalar(x, s); }
 
 void deserialize(t_grid_domain_decomp_info* x, std::istream& s) {
   bool yep;
@@ -1360,6 +1375,7 @@ std::string serialize(long double x) {
   s << std::setprecision(20) << x;
   return s.str();
 }
+std::string serialize(half x) { return serialize(static_cast<float>(x)); }
 std::string serialize(bool x) { return serialize(int(x)); }
 
 std::string serialize(const t_grid_domain_decomp_info* x) {

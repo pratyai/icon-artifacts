@@ -11,8 +11,6 @@ template <typename T> inline std::string precision_name() {
     return "fp64";
   if constexpr (std::is_same_v<T, float>)
     return "fp32";
-  if constexpr (std::is_same_v<T, half>)
-    return "fp16";
   return "unknown";
 }
 

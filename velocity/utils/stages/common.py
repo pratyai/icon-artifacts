@@ -91,6 +91,7 @@ def get_build_options(args=None):
         "profile": os.getenv("_PROFILE", "0").lower() in ("1", "true", "yes"),
         "reduce_bitwidth": os.getenv("_REDUCE_BITWIDTH_TRANSFORMATION", "0").lower()
         in ("1", "true", "yes"),
+        "lower_all": os.getenv("_LOWER_ALL", "0").lower() in ("1", "true", "yes"),
     }
 
     if args:
@@ -106,6 +107,8 @@ def get_build_options(args=None):
             options["profile"] = args.profile
         if args.reduce_bitwidth is not None:
             options["reduce_bitwidth"] = args.reduce_bitwidth
+        if args.lower_all is not None:
+            options["lower_all"] = args.lower_all
 
     # Write back to environment for any child processes or DaCe passes that check them directly
     os.environ["_RELEASE"] = "1" if options["release"] else "0"
@@ -118,6 +121,7 @@ def get_build_options(args=None):
     os.environ["_REDUCE_BITWIDTH_TRANSFORMATION"] = (
         "1" if options["reduce_bitwidth"] else "0"
     )
+    os.environ["_LOWER_ALL"] = "1" if options["lower_all"] else "0"
 
     return options
 
@@ -143,6 +147,9 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
     argp.add_argument("--profile", action=argparse.BooleanOptionalAction, default=None)
     argp.add_argument(
         "--reduce-bitwidth", action=argparse.BooleanOptionalAction, default=None
+    )
+    argp.add_argument(
+        "--lower-all", action=argparse.BooleanOptionalAction, default=None
     )
 
     args = argp.parse_args()

@@ -198,7 +198,7 @@ def add_timers(file_path: str, gpu: bool, stage:int, use_openacc_stream: bool = 
             if not use_cuda_events:
                 replacement2 = '\\g<0>  //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    //cudaStreamSynchronize(__state->gpu_context->streams[0]); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
             else:
-                replacement2 = '\\g<0>  cudaEventRecord(stop1);\n    cudaEventSynchronize(stop1);\n    float milliseconds1 = 0;\n    cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     //measure_time("Host Based C++ Timer"); \n  cudaEventDestroy(start1);\n    cudaEventDestroy(stop1);\n    cudaStreamSynchronize(__state->gpu_context->streams[0]); \n  std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
+                replacement2 = '\\g<0>  cudaEventRecord(stop1);\n    cudaEventSynchronize(stop1);\n    float milliseconds1 = 0;\n    cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     //measure_time("Host Based C++ Timer"); \n  cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    cudaStreamSynchronize(__state->gpu_context->streams[0]); \n  std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
         elif stage == 9:
             if use_openacc_stream:
                 replacement2 = '\\g<0>  cudaStreamSynchronize(__state->gpu_context->streams[0]);\n    //cudaEventRecord(stop1);\n    //cudaEventSynchronize(stop1);\n    //float milliseconds1 = 0;\n    //cudaEventElapsedTime(&milliseconds1, start1, stop1);\n     measure_time("Host Based C++ Timer"); \n  //cudaEventDestroy(start1);\n    //cudaEventDestroy(stop1);\n    //cudaDeviceSynchronize(); \n  //std::cout << "CUDA Events Based Total time: " << milliseconds1*1000.0 << " us" << std::endl;\n'
@@ -569,12 +569,116 @@ def _replace_pass_by_copy_to_pass_by_ref_impl(path, type_name_tuples):
     with open(path, 'w') as f:
         f.write(content)
 
-def replace_pass_by_copy_to_pass_by_ref(path: str):
+
+def fix_mixed_precision_ambiguity(file_path: Path):
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    # Target division ambiguity: (expr) / gpu_array[index]
+    # We wrap the denominator in a float cast to force promotion and resolve operator ambiguity.
+    pattern = r"/\s*((?:gpu___CG_p_|gpu_z_)[a-zA-Z0-9_]+\[[^\]]+\])"
+    replacement = r"/ static_cast<float>(\1)"
+
+    new_content = re.sub(pattern, replacement, content)
+
+    if new_content != content:
+        with open(file_path, "w") as f:
+            f.write(new_content)
+
+
+def patch_bfp_reads(
+    code: str, bfp_gpu_names: list[str], block_size: int = 32, mantissa_bits: int = 16
+) -> str:
+    """Text-level BFP patching: fix parameter types and replace array reads
+    with bfp_decode calls for GPU arrays that were BFP-packed at the top level
+    but whose nested SDFG descriptors still say double*.
+
+    Patches:
+      - `(const) double *__restrict__ gpu_NAME` → `const uint8_t *__restrict__ gpu_NAME`
+      - `gpu_NAME[(index)]` → `bfp_decode<BS, MB>(gpu_NAME, (int)(index))`
     """
-    Replace pass-by-copy parameters with pass-by-reference in the given file.
-    This is used to avoid unnecessary copies of large data structures.
-    """
-    _replace_pass_by_copy_to_pass_by_ref_impl(path, pass_by_copy_to_pass_by_ref_tuples)
+    for gpu_name in bfp_gpu_names:
+        # 1. Fix parameter / declaration types
+        code = re.sub(
+            rf"(const\s+)?double\s*\*\s*__restrict__\s*{re.escape(gpu_name)}\b",
+            f"const uint8_t *__restrict__ {gpu_name}",
+            code,
+        )
+
+        # 1b. Fix pointer casts: (double *)(&gpu_NAME[...]) → &gpu_NAME[...]
+        code = re.sub(
+            rf"\(double\s*\*\)\s*\(\s*&{re.escape(gpu_name)}\b",
+            f"(const uint8_t *)(&{gpu_name}",
+            code,
+        )
+
+        # 2. Replace array reads: gpu_NAME[(expr)] → bfp_decode(...)
+        #    Skip pointer passes like &gpu_NAME[0] — these pass the raw
+        #    pointer to kernel launch args, not element reads.
+        result = []
+        i = 0
+        search = f"{gpu_name}["
+        while i < len(code):
+            pos = code.find(search, i)
+            if pos == -1:
+                result.append(code[i:])
+                break
+            result.append(code[i:pos])
+            # Find matching ] by counting brackets
+            bracket_start = pos + len(search) - 1  # position of [
+            depth = 1
+            j = bracket_start + 1
+            while j < len(code) and depth > 0:
+                if code[j] == "[":
+                    depth += 1
+                elif code[j] == "]":
+                    depth -= 1
+                j += 1
+            if depth != 0:
+                # Unmatched bracket — leave as-is
+                result.append(code[pos : pos + len(search)])
+                i = pos + len(search)
+                continue
+            index_expr = code[bracket_start + 1 : j - 1].strip()
+            # Check if preceded by & (address-of → pointer pass, not read)
+            text_before = code[:pos].rstrip()
+            if text_before.endswith("&"):
+                # Pointer pass: &gpu_NAME[expr] — leave as-is
+                result.append(code[pos:j])
+            else:
+                result.append(
+                    f"bfp_decode<{block_size}, {mantissa_bits}>({gpu_name}, (int)({index_expr}))"
+                )
+            i = j
+        code = "".join(result)
+
+    return code
+
+
+def _add_bfp_include(file_path: Path):
+    """Inject bfp.cuh include for BFP decode support in generated CUDA code."""
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    include = '#include "bfp.cuh"'
+    if include in content:
+        return
+
+    # Insert after the first #include line
+    new_content = re.sub(
+        r"(#include\s+[<\"][^>\"]+[>\"])",
+        rf"\1\n{include}",
+        content,
+        count=1,
+    )
+
+    if new_content != content:
+        with open(file_path, "w") as f:
+            f.write(new_content)
+
+
+# --- Compilation Flow ---
+
 
 def compile_if_propagated_sdfgs(
     sdfgs: typing.List[dace.SDFG],
@@ -666,12 +770,49 @@ def compile_if_propagated_sdfgs(
             compiler.generate_program_folder(sdfg, program_objects, sdfg.build_folder)
 
             modify_files_in_directory(build_loc)
-            #add_timers(f"{build_loc}/src/cpu/{sdfg_name}.cpp", gpu, stage)
-            # insert_measure_time_calls(build_loc, sdfg, instrument)
-            #if fix_out_val_0:
-            #      fix_out_val_0_call(f"{build_loc}/src/cpu/{sdfg_name}.cpp", "out_val_0, &cfl_clipping")
-            #      fix_out_val_0_call(f"{build_loc}/src/cpu/{sdfg_name}.cpp", "out_val_0, &maxvcfl_arr")
-            #      fix_out_val_0_call(f"{build_loc}/src/cpu/{sdfg_name}.cpp", "out_val_0, &z_w_con_c")
+
+            if os.getenv("_LOWPREC", "fp64").lower() in (
+                "fp16",
+                "f16",
+                "bfp8",
+                "bfp16",
+            ):
+                for cu_file in build_loc.rglob("*.cu"):
+                    fix_mixed_precision_ambiguity(cu_file)
+
+            # BFP decode shims in generated CUDA need bfp.cuh.
+            # Always inject — harmless no-op if no BFP arrays are present.
+            for cu_file in build_loc.rglob("*.cu"):
+                _add_bfp_include(cu_file)
+
+            # Text-level BFP patching: fix parameter types and replace
+            # double reads with bfp_decode() calls in generated kernels.
+            # The SDFG-level BFP transform only changes the top-level
+            # allocation; nested SDFGs (GPU kernels) still emit double*.
+            _lowprec = os.getenv("_LOWPREC", "fp64").lower()
+            if _lowprec.startswith("bfp"):
+                from utils.stages.compile_gpu_stage8 import BFP_ARRAYS
+
+                _bfp_gpu_names = [f"gpu_{n}" for n in BFP_ARRAYS]
+                _bfp_mbits = {"bfp8": 8, "bfp16": 16, "bfp32": 16}.get(_lowprec, 16)
+                for src_file in (
+                    list(build_loc.rglob("*.cu"))
+                    + list(build_loc.rglob("*.cpp"))
+                    + list(build_loc.rglob("*.h"))
+                ):
+                    with open(src_file, "r") as f:
+                        content = f.read()
+                    patched = patch_bfp_reads(
+                        content, _bfp_gpu_names, mantissa_bits=_bfp_mbits
+                    )
+                    if patched != content:
+                        with open(src_file, "w") as f:
+                            f.write(patched)
+
+        cpu_src = f"{build_loc}/src/cpu/{sdfg.name}.{'cu' if gpu else 'cpp'}"
+        dev_src = f"{build_loc}/src/cuda/{sdfg.name}_cuda.cu"
+        header = f"{build_loc}/include/{sdfg.name}.h"
+
         if gpu:
             _replace_cpp_with_cu(build_loc)
             if stage > 5 and rm_syncs:

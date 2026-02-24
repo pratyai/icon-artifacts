@@ -9,3 +9,5 @@ data/
 **.got
 **.want
 gotwant/
+.DS_Store
+**/.DS_Store
