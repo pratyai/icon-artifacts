@@ -28,9 +28,15 @@ def compare_data(
             "error": f"Size mismatch: {got.size} vs {want.size}",
         }
 
-    abs_diff = np.abs(got - want)
-    scale = np.maximum(np.maximum(np.abs(got), np.abs(want)), abs_tol)
-    rel_diff = abs_diff / scale
+    # Convert to float64 for stable comparison and to avoid overflow in norms
+    got_64 = got.astype(np.float64)
+    want_64 = want.astype(np.float64)
+
+    abs_diff = np.abs(got_64 - want_64)
+    # Use fmax to ignore NaNs in the scaling factor and ensure it is at least abs_tol
+    scale = np.fmax(np.fmax(np.abs(got_64), np.abs(want_64)), abs_tol)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        rel_diff = abs_diff / scale
 
     # Mismatch count logic matching math.isclose
     is_close = abs_diff <= np.maximum(
@@ -199,7 +205,17 @@ def main():
         print(f"Error: {e}")
         return
 
-    TEXT_FIELDS = {"global_data", "p_diag", "p_metrics", "p_prog", "p_int", "p_patch"}
+    TEXT_FIELDS = {
+        "global_data",
+        "p_diag",
+        "p_metrics",
+        "p_prog",
+        "p_int",
+        "p_patch",
+        "z_kin_hor_e",
+        "z_vt_ie",
+        "z_w_concorr_me",
+    }
     all_stats = []
 
     for key in sorted(test_data.keys()):
@@ -215,11 +231,10 @@ def main():
             print(f"Decompression error for {field_name}: {e}")
             continue
 
+        got_dict = parse_serialized_text(got_raw.decode("utf-8"))
+        want_dict = parse_serialized_text(want_raw.decode("utf-8"))
+
         if field_name in TEXT_FIELDS:
-            got_dict, want_dict = (
-                parse_serialized_text(got_raw.decode("utf-8")),
-                parse_serialized_text(want_raw.decode("utf-8")),
-            )
             for var in got_dict:
                 if var in want_dict:
                     stats = compare_data(got_dict[var], want_dict[var])
@@ -244,19 +259,12 @@ def main():
                         }
                     )
         else:
-            dt_test = (
-                np.float32
-                if "float" in lp_test.lower() or "fp32" in lp_test.lower()
-                else np.float64
-            )
-            dt_ref = (
-                np.float32
-                if "float" in lp_ref.lower() or "fp32" in lp_ref.lower()
-                else np.float64
-            )
+            # Simple arrays store their entries under the default "root" tag in parse_serialized_text
             stats = compare_data(
-                np.frombuffer(got_raw, dtype=dt_test),
-                np.frombuffer(want_raw, dtype=dt_ref),
+                got_dict["root"],
+                want_dict["root"],
+                abs_tol=args.atol,
+                rel_tol=args.rtol,
             )
             all_stats.append(
                 {

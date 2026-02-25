@@ -2,15 +2,27 @@
 
 #include <string>
 #include <vector>
+#include <type_traits>
+
+#include <dace/types.h>
 
 #define SQLITE_LOGGER_STRINGIFY(x) #x
 #define SQLITE_LOGGER_TOSTRING(x) SQLITE_LOGGER_STRINGIFY(x)
 
+#include <typeinfo>
+#include <iostream>
+
 template <typename T> inline std::string precision_name() {
-  if constexpr (std::is_same_v<T, double>)
+  using U = std::decay_t<T>;
+  if constexpr (std::is_same_v<U, double>)
     return "fp64";
-  if constexpr (std::is_same_v<T, float>)
+  if constexpr (std::is_same_v<U, float>)
     return "fp32";
+  if constexpr (std::is_same_v<U, dace::float16>)
+    return "fp16";
+
+  std::cerr << "CRITICAL ERROR: Unknown precision type detected: " << typeid(T).name() << std::endl;
+  std::abort();
   return "unknown";
 }
 
@@ -31,3 +43,7 @@ void save_field_to_db(const RunConfig &cfg, const std::string &field_name,
 
 void save_timing_to_db(const RunConfig &cfg, int repetition,
                        const std::string &tag, double time_us);
+
+void save_gpu_mem_to_db(const RunConfig &cfg, size_t bytes_transferred,
+                        size_t bytes_allocated, size_t bytes_real,
+                        size_t bytes_residency_increase);

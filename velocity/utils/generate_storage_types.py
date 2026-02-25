@@ -62,10 +62,7 @@ def _lowprec_cpp_type() -> str:
     }.get(os.environ.get("_LOWPREC", "fp64").lower(), "double")
 
 
-def patch_shared_struct_defs_h(
-    sdfgs,
-    include_dir: Path = _INCLUDE_DIR,
-) -> None:
+def patch_shared_struct_defs_h(sdfgs, include_dir: Path = _INCLUDE_DIR) -> None:
     """Generate shared_struct_defs.h from the .in template.
 
     Reads shared_struct_defs.h.in (committed, all pointer fields are double),

@@ -1,3 +1,4 @@
+#include "gpu_mem.h"
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
 #include <cub/cub.cuh>

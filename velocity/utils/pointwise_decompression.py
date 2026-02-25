@@ -1,16 +1,13 @@
 import dace
 from dace import nodes, dtypes
-import copy
 
 # To switch an array (e.g., inv_dual_edge_length) to FP32 external storage,
-# you must update the following files:
-# 1. include/storage_types.h:
-#    Change the typedef (e.g., inv_dual_edge_length_storage_t) to 'float'.
-# 2. utils/stages/compile_gpu_stage8.py:
-#    Change 'external_dtype' to 'dace.float32' in the inject_pointwise_decompression call.
+# update utils/stages/compile_gpu_stage8.py:
+#   - Add the array name to the appropriate active-reduction list (e.g., GRID_METRICS).
+#   - Change 'external_dtype' to 'dace.float32' in the inject_pointwise_decompression call.
 #
-# Note: ICON structs (shared_struct_defs.h) and Serde logic (serde_ref.h)
-# automatically use the storage aliases and do not require manual updates.
+# include/shared_struct_defs.h is patched at build time with concrete types
+# (patch_shared_struct_defs_h in utils/generate_storage_types.py) — no manual edits needed.
 
 
 from typing import Union, Iterable
@@ -20,10 +17,15 @@ def inject_pointwise_decompression(
     sdfg: dace.SDFG,
     array_names: Union[str, Iterable[str]],
     external_dtype: dace.typeclass,
+    skip_shims: bool = False,
 ):
     """
     Injects a pointwise decompression layer by propagating type change and inserting
     a T -> X shim at every tasklet read/write site.
+
+    If skip_shims is True, only changes the array dtype without inserting
+    cast shims — computation runs natively in external_dtype.
+    Use this for transient arrays that don't cross precision boundaries.
     """
     if isinstance(array_names, str):
         array_names = [array_names]
@@ -63,7 +65,9 @@ def inject_pointwise_decompression(
             print(f"    Array {target} already has type {external_dtype}, skipping.")
             continue
 
-        _update_recursive(sdfg, target, internal_dtype, external_dtype, visited)
+        _update_recursive(
+            sdfg, target, internal_dtype, external_dtype, visited, skip_shims
+        )
 
     sdfg.validate()
     return sdfg
@@ -75,6 +79,7 @@ def _update_recursive(
     internal_dtype: dace.typeclass,
     external_dtype: dace.typeclass,
     visited=None,
+    skip_shims: bool = False,
 ):
     if visited is None:
         visited = set()
@@ -113,6 +118,9 @@ def _update_recursive(
                         )
 
                         if is_scalar_access and isinstance(node, nodes.Tasklet):
+                            if skip_shims:
+                                # Transient: no cast shim, computation runs in external_dtype
+                                continue
                             if is_decompression:
                                 _insert_decompression_shim(
                                     state, node, edge, internal_dtype, external_dtype
@@ -131,6 +139,7 @@ def _update_recursive(
                                 internal_dtype,
                                 external_dtype,
                                 visited,
+                                skip_shims,
                             )
 
                         elif isinstance(node, nodes.AccessNode):
@@ -153,8 +162,11 @@ def _update_recursive(
                                     internal_dtype,
                                     external_dtype,
                                     visited,
+                                    skip_shims,
                                 )
                             else:
+                                if skip_shims:
+                                    continue
                                 # Real Array-to-Array Copy
                                 _insert_copy_shim(
                                     state,
@@ -174,7 +186,9 @@ def _update_recursive(
                             continue
 
                         else:
-                            # Fallback: Bulk Copy Shim for any other unhandled nodes (e.g. direct Array copies)
+                            if skip_shims:
+                                continue
+                            # Fallback: Bulk Copy Shim for any other unhandled nodes (e.g. LibraryNodes, Reduce, direct Array copies)
                             _insert_copy_shim(
                                 state,
                                 edge,
@@ -380,14 +394,75 @@ def _add_scalar_cast(
     )
 
 
+_GPU_STORAGES = {
+    dtypes.StorageType.GPU_Global,
+    dtypes.StorageType.GPU_Shared,
+}
+
+_CPU_STORAGES = {
+    dtypes.StorageType.CPU_Heap,
+    dtypes.StorageType.CPU_Pinned,
+    dtypes.StorageType.CPU_ThreadLocal,
+    dtypes.StorageType.Register,
+}
+
+
 def _add_array_cast(
     state, src_node, dst_node, internal_dtype, external_dtype, is_decompression
 ):
-    """Inserts a Map-based array cast."""
+    """Inserts a Map-based array cast.
+
+    When the source is GPU-resident and the destination is CPU-resident, a
+    proper D2H copy via an intermediate CPU transient is inserted first so the
+    CPU cast Map never dereferences a CUDA device pointer.  The reverse (H2D)
+    is handled symmetrically.
+    """
     sdfg = state.sdfg
     src_desc = sdfg.arrays[src_node.data]
     dst_desc = sdfg.arrays[dst_node.data]
     target_dtype = internal_dtype if is_decompression else external_dtype
+
+    # GPU src → CPU dst: AN→AN edge across the boundary makes DaCe emit cudaMemcpy D2H.
+    if src_desc.storage in _GPU_STORAGES and dst_desc.storage in _CPU_STORAGES:
+        cpu_tmp_name, _ = sdfg.add_array(
+            name=f"t_{src_node.data}_d2h_tmp",
+            shape=src_desc.shape,
+            dtype=src_desc.dtype,
+            transient=True,
+            storage=dtypes.StorageType.CPU_Heap,
+            find_new_name=True,
+        )
+        cpu_tmp_node = state.add_access(cpu_tmp_name)
+        state.add_edge(
+            src_node,
+            None,
+            cpu_tmp_node,
+            None,
+            dace.Memlet.from_array(src_node.data, src_desc),
+        )
+        src_node = cpu_tmp_node
+        src_desc = sdfg.arrays[cpu_tmp_name]
+
+    # CPU src → GPU dst: cast on CPU then H2D.
+    elif dst_desc.storage in _GPU_STORAGES and src_desc.storage in _CPU_STORAGES:
+        cpu_tmp_name, _ = sdfg.add_array(
+            name=f"t_{dst_node.data}_h2d_tmp",
+            shape=dst_desc.shape,
+            dtype=dst_desc.dtype,
+            transient=True,
+            storage=dtypes.StorageType.CPU_Heap,
+            find_new_name=True,
+        )
+        cpu_tmp_node = state.add_access(cpu_tmp_name)
+        state.add_edge(
+            cpu_tmp_node,
+            None,
+            dst_node,
+            None,
+            dace.Memlet.from_array(dst_node.data, dst_desc),
+        )
+        dst_node = cpu_tmp_node
+        dst_desc = sdfg.arrays[cpu_tmp_name]
 
     map_ranges = {f"i{i}": f"0:{s}" for i, s in enumerate(src_desc.shape)}
     indices = ", ".join(map_ranges.keys())

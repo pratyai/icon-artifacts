@@ -83,7 +83,10 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
 
     argp = argparse.ArgumentParser()
     argp.add_argument(
-        "--optimize", action=argparse.BooleanOptionalAction, default=False
+        "--lowprec",
+        type=str,
+        default=None,
+        choices=["fp64", "fp32", "fp16", "f32", "f64", "f16", "half"],
     )
     argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=False)
     args = argp.parse_args()
@@ -117,6 +120,24 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
         compile_action(stage_id, sdfgs, **kwargs)
 
 
+def get_final_binary_name(stage, options):
+    """Calculates the final name of the resulting binary or library."""
+    release = options["release"]
+    opt_suffix = "_release" if release else "_debug"
+    integration_suffix = (
+        "_solve_nh_integration" if options["build_for_integration"] else "_standalone"
+    )
+    lowprec_suffix = f".{options['lowprec']}"
+
+    is_lib = (stage == 8 and options["build_for_integration"]) or stage == 9
+    target = "libvelocity_gpu.so" if is_lib else "velocity_gpu"
+
+    new_name = f"{target.split('.')[0]}_stage{stage}{integration_suffix}{opt_suffix}"
+    if target.endswith(".so"):
+        new_name += ".so"
+    return f"{new_name}{lowprec_suffix}"
+
+
 def compile_action(
     stage: int,
     sdfgs: Dict[str, dace.SDFG],
@@ -148,6 +169,8 @@ def compile_action(
         for sdfg in sdfg_list:
             make_flattened_data_to_non_transient_cpu_input(sdfg)
 
+    output_name = get_final_binary_name(stage, options)
+
     compile_if_propagated_sdfgs(
         sdfg_list,
         gpu=True,
@@ -159,29 +182,7 @@ def compile_action(
         debuginfo=(stage < 8),
         allocation_names_to_comment_out=allocation_names_to_comment_out,
         use_openacc_stream=use_openacc_stream,
+        output_name=output_name,
     )
 
-    _finalize_binary(stage, release, options)
-
-
-def _finalize_binary(stage, release, options):
-    """Handles renaming and copying of the resulting binary or library."""
-    opt_suffix = "_release" if release else "_debug"
-    integration_suffix = (
-        "_solve_nh_integration" if options["build_for_integration"] else "_standalone"
-    )
-    lowprec_suffix = f".{options['lowprec']}"
-
-    target = (
-        "libvelocity_gpu.so" if options["build_for_integration"] else "velocity_gpu"
-    )
-    if not Path(target).exists():
-        return
-
-    new_name = f"{target.split('.')[0]}_stage{stage}{integration_suffix}{opt_suffix}"
-    if target.endswith(".so"):
-        new_name += ".so"
-
-    path = Path(target).rename(new_name)
-    print(f"Output available: {path}")
-    shutil.copy2(path, f"{path}{lowprec_suffix}")
+    print(f"Output available: {output_name}")

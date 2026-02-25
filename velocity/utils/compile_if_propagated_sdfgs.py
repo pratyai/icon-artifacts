@@ -40,10 +40,18 @@ def modify_file(file_path, pattern):
     modified = False
     new_lines = []
     for line in lines:
-        if pattern.match(line):
+        # Only inject static for global definitions, not function parameters or signatures
+        if pattern.match(line) and "(" not in line and "," not in line and ";" in line:
             line = pattern.sub(r"\1static int tmp_struct_symbol", line)
             modified = True
-        line = re.sub(r"\bint\s+(__(f2dace_[a-zA-Z0-9_]+));", r"static int \1;", line)
+
+        # Similar restriction for __f2dace_ variables to avoid multiple definition linker errors
+        if "__f2dace_" in line and "(" not in line and "," not in line and ";" in line:
+            line = re.sub(
+                r"\bint\s+(__(f2dace_[a-zA-Z0-9_]+));", r"static int \1;", line
+            )
+            modified = True
+
         new_lines.append(line)
 
     if modified:
@@ -424,96 +432,6 @@ def fix_mixed_precision_ambiguity(file_path: Path):
             f.write(new_content)
 
 
-def patch_bfp_reads(code: str, bfp_gpu_names: list[str], block_size: int = 32) -> str:
-    """Text-level BFP patching: fix parameter types and replace array reads
-    with bfp_decode calls for GPU arrays that were BFP-packed at the top level
-    but whose nested SDFG descriptors still say double*.
-
-    Patches:
-      - `(const) double *(__restrict__) gpu_NAME` → `const uint8_t *__restrict__ gpu_NAME`
-      - `gpu_NAME[(index)]` → `bfp_decode<BS, MB>(gpu_NAME, (int)(index))`
-    """
-    for gpu_name in bfp_gpu_names:
-        # 1. Fix parameter / declaration types (more robust regex for double*)
-        # Matches: double* gpu_NAME, const double * __restrict__ gpu_NAME, etc.
-        code = re.sub(
-            rf"(const\s+)?double\s*\*\s*(__restrict__\s+)?{re.escape(gpu_name)}\b",
-            f"const uint8_t *__restrict__ {gpu_name}",
-            code,
-        )
-
-        # 1b. Fix pointer casts: (double *)(&gpu_NAME[...]) → &gpu_NAME[...]
-        code = re.sub(
-            rf"\(double\s*\*\)\s*\(\s*&{re.escape(gpu_name)}\b",
-            f"(const uint8_t *)(&{gpu_name}",
-            code,
-        )
-
-        # 2. Replace array reads: gpu_NAME[(expr)] → bfp_decode(...)
-        #    Skip pointer passes like &gpu_NAME[0] — these pass the raw
-        #    pointer to kernel launch args, not element reads.
-        result = []
-        i = 0
-        search = f"{gpu_name}["
-        while i < len(code):
-            pos = code.find(search, i)
-            if pos == -1:
-                result.append(code[i:])
-                break
-            result.append(code[i:pos])
-            # Find matching ] by counting brackets
-            bracket_start = pos + len(search) - 1  # position of [
-            depth = 1
-            j = bracket_start + 1
-            while j < len(code) and depth > 0:
-                if code[j] == "[":
-                    depth += 1
-                elif code[j] == "]":
-                    depth -= 1
-                j += 1
-            if depth != 0:
-                # Unmatched bracket — leave as-is
-                result.append(code[pos : pos + len(search)])
-                i = pos + len(search)
-                continue
-            index_expr = code[bracket_start + 1 : j - 1].strip()
-            # Check if preceded by & (address-of → pointer pass, not read)
-            text_before = code[:pos].rstrip()
-            if text_before.endswith("&"):
-                # Pointer pass: &gpu_NAME[expr] — leave as-is
-                result.append(code[pos:j])
-            else:
-                result.append(
-                    f"bfp_decode<{block_size}>({gpu_name}, (int)({index_expr}))"
-                )
-            i = j
-        code = "".join(result)
-
-    return code
-
-
-def _add_bfp_include(file_path: Path):
-    """Inject bfp.cuh include for BFP decode support in generated CUDA code."""
-    with open(file_path, "r") as f:
-        content = f.read()
-
-    include = '#include "bfp.cuh"'
-    if include in content:
-        return
-
-    # Insert after the first #include line
-    new_content = re.sub(
-        r"(#include\s+[<\"][^>\"]+[>\"])",
-        rf"\1\n{include}",
-        content,
-        count=1,
-    )
-
-    if new_content != content:
-        with open(file_path, "w") as f:
-            f.write(new_content)
-
-
 # --- Compilation Flow ---
 
 
@@ -528,6 +446,7 @@ def compile_if_propagated_sdfgs(
     debuginfo,
     allocation_names_to_comment_out,
     use_openacc_stream,
+    output_name=None,
 ):
     from utils.generate_storage_types import (
         generate_velocity_tendencies_h,
@@ -536,11 +455,13 @@ def compile_if_propagated_sdfgs(
 
     patch_shared_struct_defs_h(sdfgs=sdfgs)
 
-    if os.getenv("SINGLE_THREADED", "0").lower() in ("1", "true", "yes"):
-        dace.config.Config.set("compiler", "num_threads", value="1")
-
     compare_structs(sdfgs)
-    sources = {"src/reductions.cpp", "src/timer.cpp"}
+    sources = {
+        "src/reductions.cpp",
+        "src/timer.cpp",
+        "src/sqlite_logger.cpp",
+        "src/gpu_mem.cpp",
+    }
     if gpu:
         sources.add("src/reductions_kernel.cu")
     from dace.codegen import codegen, compiler
@@ -816,7 +737,7 @@ def compile_if_propagated_sdfgs(
                 content = f.read()
             with open(cpu_src, "w") as f:
                 f.write(
-                    '#include "reductions_kernel.cuh"\n#include "reductions_cpu.h"\n#include "timer.h"\n'
+                    '#include "reductions_kernel.cuh"\n#include "reductions_cpu.h"\n#include "timer.h"\n#include "gpu_mem.h"\n'
                     + content
                 )
             if stage in [8, 9]:
@@ -833,7 +754,10 @@ def compile_if_propagated_sdfgs(
             with open(cpu_src, "r") as f:
                 content = f.read()
             with open(cpu_src, "w") as f:
-                f.write('#include "reductions_cpu.h"\n#include "timer.h"\n' + content)
+                f.write(
+                    '#include "reductions_cpu.h"\n#include "timer.h"\n#include "gpu_mem.h"\n'
+                    + content
+                )
             sources.add(cpu_src)
 
         if (
@@ -848,6 +772,8 @@ def compile_if_propagated_sdfgs(
             replace_pass_by_copy_to_pass_by_ref(cpu_src)
             replace_pass_by_copy_to_pass_by_ref(header)
 
+    generate_velocity_tendencies_h(sdfgs)
+
     final_main = main_name or (
         "main_gpu.cu" if gpu and not lib else "main.cc" if not gpu and not lib else None
     )
@@ -855,14 +781,30 @@ def compile_if_propagated_sdfgs(
         sources.add(final_main)
 
     use_nvhpc = os.getenv("_USE_NVHPC", "0").lower() in ("1", "true", "yes")
-    # Headers are now in the root of the stage folder (build_loc.parent)
-    base_inc = f"-I{build_loc.parent} -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
+    base_inc = f"-I{build_loc}/include -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
 
     # Use pkg-config to get correct paths for libraries loaded via Spack/Modules
     import subprocess
 
     extra_libs = ""
     for lib_name in ["sqlite3", "zlib", "libzstd"]:
+        try:
+            cflags = subprocess.check_output(
+                ["pkg-config", "--cflags", lib_name], text=True
+            ).strip()
+            lflags = subprocess.check_output(
+                ["pkg-config", "--libs", lib_name], text=True
+            ).strip()
+            base_inc += f" {cflags}"
+            extra_libs += f" {lflags}"
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+
+    # Use pkg-config to get correct paths for libraries loaded via Spack/Modules
+    import subprocess
+
+    extra_libs = ""
+    for lib_name in ["sqlite3", "zlib"]:
         try:
             cflags = subprocess.check_output(
                 ["pkg-config", "--cflags", lib_name], text=True
@@ -884,7 +826,7 @@ def compile_if_propagated_sdfgs(
             [f"--diag-suppress {x}" for x in [68, 550, 20208, 1835, 177, 20012, 1098]]
         )
         nvhpc = "-ccbin=nvc++" if use_nvhpc else ""
-        dbg = "-lineinfo"
+        dbg = "-lineinfo" if debuginfo else ""
         xcomp = f"-Xcompiler=-Wall -Xcompiler=-Wextra -Xcompiler=-Wno-unused-parameter {'' if use_nvhpc else '-Xcompiler=-Wconversion -Xcompiler=-Wno-sign-conversion -Xcompiler=-Wfloat-conversion -Xcompiler=-Wno-unknown-pragmas -Xcompiler=-faligned-new'}"
         if release:
             flags = f"{nvhpc} {suppress} {xcomp} -DNDEBUG -Xcompiler=-DNDEBUG -Xcompiler=-O3 --expt-relaxed-constexpr -gencode {arch} --use_fast_math -O3 {dbg} --ftz=true --prec-div=false --prec-sqrt=false --fmad=true -Xptxas=-O3 -Xptxas=-v -Xcompiler=-march=native -Xcompiler=-mtune=native --restrict -DNDEBUG"
@@ -898,9 +840,6 @@ def compile_if_propagated_sdfgs(
         # Add linker wrappers for memory tracking
         flags += " -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree"
 
-        # Keep PTX intermediate files for inspection (e.g. grep for .f64 ops)
-        flags += " --keep --keep-dir=ptx_out"
-
         # Pass lowered precision tag so main_gpu.cu can record it in SQLite
         lowprec_tag = os.getenv("_LOWPREC", "fp64").lower()
         flags += f' -DLOWPREC_TAG=\\"{lowprec_tag}\\"'
@@ -910,21 +849,18 @@ def compile_if_propagated_sdfgs(
     else:
         dbg = "-g" if debuginfo else ""
         if release:
-            flags = f"{low_prec_flag} {dbg} -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -O3 -DNDEBUG"
+            flags = f"{dbg} -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -O3 -DNDEBUG"
         else:
-            flags = f"{low_prec_flag} -DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unknown-pragmas -O0 -ggdb {dbg}"
-        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} -o {'libvelocity_cpu.so' if lib else 'velocity_cpu'}"
+            flags = f"-DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unknown-pragmas -O0 -ggdb -fsanitize=address,undefined -fno-omit-frame-pointer {dbg}"
 
         out_file = output_name or ("libvelocity_cpu.so" if lib else "velocity_cpu")
         cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} -lsqlite3 -lz -o {out_file}"
 
-    if gpu:
-        Path("ptx_out").mkdir(exist_ok=True)
     recompile_sh = Path("recompile.sh")
     recompile_sh.write_text(f"#!/bin/sh\nset -e\n{cmd}\n")
     recompile_sh.chmod(0o755)
     print(f"Compiling: {cmd}")
     if os.system(cmd) != 0:
+        print(f"\n❌ Compilation failed: ./{out_file}")
         exit(1)
     print(f"\n✅ Binary ready: ./{out_file}")
-    return cmd

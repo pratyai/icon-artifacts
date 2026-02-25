@@ -96,9 +96,7 @@ def compare_pair(
         rel_diff = abs_diff / scale
 
         # Mismatch count logic matching math.isclose
-        is_close = abs_diff <= np.maximum(
-            rel_tol * np.maximum(np.abs(g), np.abs(w)), abs_tol
-        )
+        is_close = abs_diff <= np.fmax(rel_tol * np.fmax(np.abs(g), np.abs(w)), abs_tol)
         mismatches = np.count_nonzero(~is_close)
 
         norm_diff = np.linalg.norm(abs_diff)
