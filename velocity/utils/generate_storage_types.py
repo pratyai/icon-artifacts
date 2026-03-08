@@ -75,6 +75,10 @@ def patch_shared_struct_defs_h(sdfgs, include_dir: Path = _INCLUDE_DIR) -> None:
     is_lowprec: dict[str, bool] = {}
     for sdfg in sdfgs:
         for name, arr in sdfg.arrays.items():
+            # GPU arrays have lowered dtype from boundary_cast — skip them;
+            # struct fields should reflect the CPU (serde) dtype.
+            if name.startswith("gpu_"):
+                continue
             cpp_name = _dace_to_cpp(name)
             low = arr.dtype in (dace.float32, dace.float16)
             # If we see it low-precision in any SDFG, treat it as low-precision

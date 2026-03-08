@@ -35,7 +35,7 @@ from utils.assignment_and_copy_kernel_to_memset_and_memcpy import (
     AssignmentAndCopyKernelToMemsetAndMemcpy,
 )
 from utils.create_profile_sdfg import create_profile_sdfg
-from utils.pointwise_decompression import inject_pointwise_decompression
+from utils.boundary_cast import inject_boundary_cast, _propagate_dtype
 from utils.bfp_compression import inject_bfp_packing
 
 STAGE_ID = 8
@@ -353,38 +353,216 @@ def optimization_action(sdfg):
         #     + PREP_ADV
         # )
 
-    # Split into non-transient (need cast shims) and transient (native precision).
-    # fp16 mixed-type operator ambiguity is resolved by fp16_operators.h.
-    can_skip_shims = external_dtype in (dace.float32, dace.float16)
-    non_transient = [
-        n for n in array_names if n in sdfg.arrays and not sdfg.arrays[n].transient
+    # Exclude BFP arrays from pointwise decompression — they get their own
+    # SDFG-level transformation via inject_bfp_packing.
+    bfp_set = set(BFP_ARRAYS)
+    array_names = [n for n in array_names if n not in bfp_set]
+
+    # Split arrays into three categories:
+    #   boundary_cast_targets: __CG_ arrays with gpu_ sibling → boundary cast at H2D/D2H
+    #     (CPU array stays double for serde, GPU gets float)
+    #   gpu_transient: transient with gpu_ sibling but NOT __CG_ → change both dtypes
+    #     (internal computation, no serde boundary)
+    #   pure_transient: no gpu_ sibling → change dtype directly
+    #   (skip gpu_ prefixed names — handled as siblings of the above)
+    boundary_cast_targets = [
+        n
+        for n in array_names
+        if n in sdfg.arrays and n.startswith("__CG_") and f"gpu_{n}" in sdfg.arrays
     ]
-    transient = [
-        n for n in array_names if n in sdfg.arrays and sdfg.arrays[n].transient
+    gpu_transient = [
+        n
+        for n in array_names
+        if n in sdfg.arrays
+        and not n.startswith("__CG_")
+        and not n.startswith("gpu_")
+        and f"gpu_{n}" in sdfg.arrays
+    ]
+    pure_transient = [
+        n
+        for n in array_names
+        if n in sdfg.arrays
+        and not n.startswith("gpu_")
+        and f"gpu_{n}" not in sdfg.arrays
+    ]
+    gpu_only = [
+        n
+        for n in array_names
+        if n in sdfg.arrays and n.startswith("gpu_") and n[4:] not in sdfg.arrays
     ]
 
-    if non_transient:
-        inject_pointwise_decompression(
+    # gpu_ arrays whose bare counterpart exists are handled as siblings
+    # by boundary_cast_targets (for __CG_) or gpu_transient (for z_*)
+    gpu_sibling = [
+        n
+        for n in array_names
+        if n in sdfg.arrays and n.startswith("gpu_") and n[4:] in sdfg.arrays
+    ]
+
+    # Verify categories are mutually exclusive and cover all arrays
+    all_categorized = (
+        set(boundary_cast_targets)
+        | set(gpu_transient)
+        | set(pure_transient)
+        | set(gpu_only)
+        | set(gpu_sibling)
+    )
+    assert len(all_categorized) == len(boundary_cast_targets) + len(
+        gpu_transient
+    ) + len(pure_transient) + len(gpu_only) + len(gpu_sibling), (
+        f"Overlapping categories detected"
+    )
+    uncategorized = [
+        n for n in array_names if n in sdfg.arrays and n not in all_categorized
+    ]
+    assert not uncategorized, f"Arrays not in any category: {uncategorized}"
+
+    _OUTPUT_CG_PREFIXES = ("__CG_p_diag__", "__CG_p_prog__")
+    bfp_targets = []
+    print(
+        f"DEBUG BFP: lowprec={options['lowprec']!r}, "
+        f"boundary_cast_targets ({len(boundary_cast_targets)}): {boundary_cast_targets}"
+    )
+    if options["lowprec"].startswith("bfp") and boundary_cast_targets:
+        for name in boundary_cast_targets:
+            is_readonly = name.startswith("__CG_") and not any(
+                name.startswith(p) for p in _OUTPUT_CG_PREFIXES
+            )
+            if is_readonly:
+                bfp_targets.append(name)
+        if bfp_targets:
+            print(
+                f"BFP: {len(bfp_targets)} read-only arrays will be BFP-packed"
+                f" (out of {len(boundary_cast_targets)} boundary_cast_targets)"
+            )
+            boundary_cast_targets = [
+                n for n in boundary_cast_targets if n not in set(bfp_targets)
+            ]
+
+    permutation = None
+    if options["permute_dimensions"]:
+        # Transpose the first two dimensions
+        permutation = [1, 0]
+
+    if boundary_cast_targets:
+        inject_boundary_cast(
             sdfg,
-            array_names=non_transient,
+            array_names=boundary_cast_targets,
             external_dtype=external_dtype,
+            permutation=permutation,
         )
-    if transient and can_skip_shims:
+    if gpu_transient:
+        # Transient arrays with GPU siblings: change both CPU and GPU dtype.
+        # No boundary cast needed — internal computation, no serde.
         print(
-            f"Lowering {len(transient)} transient arrays without shims (native {external_dtype}): {transient}"
+            f"Lowering {len(gpu_transient)} GPU transient arrays to native {external_dtype}: {gpu_transient}"
         )
-        inject_pointwise_decompression(
-            sdfg,
-            array_names=transient,
-            external_dtype=external_dtype,
-            skip_shims=True,
+        for name in gpu_transient:
+            _propagate_dtype(sdfg, name, external_dtype)
+            _propagate_dtype(sdfg, f"gpu_{name}", external_dtype)
+            if permutation:
+                from utils.boundary_cast import _propagate_permutation
+
+                _propagate_permutation(sdfg, f"gpu_{name}", permutation)
+    if pure_transient:
+        # Pure transient arrays (no GPU sibling): change dtype directly,
+        # no cast needed — computation runs natively in lower precision.
+        print(
+            f"Lowering {len(pure_transient)} pure transient arrays to native {external_dtype}: {pure_transient}"
         )
-    elif transient:
-        inject_pointwise_decompression(
-            sdfg,
-            array_names=transient,
-            external_dtype=external_dtype,
+        for name in pure_transient:
+            _propagate_dtype(sdfg, name, external_dtype)
+            if permutation:
+                from utils.boundary_cast import _propagate_permutation
+
+                _propagate_permutation(sdfg, name, permutation)
+    if gpu_only:
+        # GPU-only arrays (no CPU counterpart — created by ToGPU pass):
+        # change dtype directly.
+        print(
+            f"Lowering {len(gpu_only)} GPU-only arrays to native {external_dtype}: {gpu_only}"
         )
+        for name in gpu_only:
+            _propagate_dtype(sdfg, name, external_dtype)
+            if permutation:
+                from utils.boundary_cast import _propagate_permutation
+
+                _propagate_permutation(sdfg, name, permutation)
+
+    # Lower float64 scalars used in GPU computation.
+    # CFL-related scalars stay double (they feed the CFL reduction which is excluded).
+    _CFL_SCALARS = {
+        "max_vcfl_dyn_var_152",
+        "__CG_p_diag__m_max_vcfl_dyn",
+        "tmp_call_1",
+        "tmp_call_18",
+    }
+    if options.get("lower_all"):
+        scalars_to_lower = [
+            name
+            for name, arr in sdfg.arrays.items()
+            if isinstance(arr, dace.data.Scalar)
+            and arr.dtype == dace.float64
+            and name not in _CFL_SCALARS
+        ]
+        if scalars_to_lower:
+            print(
+                f"Lowering {len(scalars_to_lower)} float64 scalars to {external_dtype}: {scalars_to_lower}"
+            )
+            for name in scalars_to_lower:
+                _propagate_dtype(sdfg, name, external_dtype)
+
+    # Lower transient double scalars inside nested SDFGs (GPU kernel
+    # intermediates like difcoef, tmp_arg_*, w_con_e, etc.).
+    # These are not visible at the top level — _propagate_dtype doesn't
+    # reach them. Only maxvcfl must stay double (feeds CFL reduction).
+    # Scalars that are comparison results (e.g. _if_cond_*) get int32
+    # instead — they're logically boolean, not floating-point.
+    _CFL_NESTED_SCALARS = {"maxvcfl", "tmp_call_1"}
+    if options.get("lower_all"):
+        # First pass: find scalars that are comparison outputs
+        _comparison_scalars: set[str] = set()
+        for nsdfg in sdfg.all_sdfgs_recursive():
+            if nsdfg is sdfg:
+                continue
+            for state in nsdfg.states():
+                for node in state.nodes():
+                    if not isinstance(node, nodes.Tasklet):
+                        continue
+                    code = node.code.as_string
+                    if not any(
+                        op in code
+                        for op in (" > ", " < ", " >= ", " <= ", " == ", " != ")
+                    ):
+                        continue
+                    for e in state.out_edges(node):
+                        if (
+                            isinstance(e.dst, nodes.AccessNode)
+                            and e.dst.data in nsdfg.arrays
+                            and isinstance(nsdfg.arrays[e.dst.data], dace.data.Scalar)
+                        ):
+                            _comparison_scalars.add(e.dst.data)
+
+        for nsdfg in sdfg.all_sdfgs_recursive():
+            if nsdfg is sdfg:
+                continue
+            for name, arr in list(nsdfg.arrays.items()):
+                if (
+                    isinstance(arr, dace.data.Scalar)
+                    and arr.dtype == dace.float64
+                    and arr.transient
+                    and name not in _CFL_NESTED_SCALARS
+                    and name not in _CFL_SCALARS
+                ):
+                    if name in _comparison_scalars:
+                        arr.dtype = dace.int32
+                    else:
+                        arr.dtype = external_dtype
+
+    # BFP packing: change GPU arrays to uint8[packed_size], insert CPU-side
+    # pack Map, replace H2D edge with packed version.
+    if options["lowprec"].startswith("bfp") and BFP_ARRAYS:
+        inject_bfp_packing(sdfg, BFP_ARRAYS)
 
     # Apply transformations
     inverse_strides(sdfg, "gpu_levmask")

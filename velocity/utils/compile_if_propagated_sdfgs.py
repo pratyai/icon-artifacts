@@ -635,13 +635,6 @@ def compile_if_propagated_sdfgs(
                     "(0.65f / static_cast<float>(dtime_0_in))",
                     code,
                 )
-                _F05 = r"(?:float\()?0\.05f?\)?"
-                _F85 = r"(?:float\()?0\.85f?\)?"
-                code = re.sub(
-                    rf"\({_F05} / \(dtime_0_in \* \({_F85} - \(cfl_w_limit_0_in \* dtime_1_in\)\)\)\)",
-                    "(0.05f / (static_cast<float>(dtime_0_in) * (0.85f - (static_cast<float>(cfl_w_limit_0_in) * static_cast<float>(dtime_1_in)))))",
-                    code,
-                )
                 # ABI fix: non-transient scalars are lowered internally but
                 # Fortran passes double by reference.  Rename the parameter
                 # to __abi_X (double) and shadow with a lowered local.
@@ -653,66 +646,51 @@ def compile_if_propagated_sdfgs(
                         _lowered_ctype = _lt
                         break
                 if _lowered_ctype:
-                    # Only patch the 3 Fortran-facing functions, not __dace_runkernel_*
-                    _ext_fns = [
+                    for _sc in _ABI_SCALARS:
+                        code = code.replace(
+                            f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
+                        )
+                        code = code.replace(
+                            f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
+                        )
+                    # Insert shadow locals after each function's opening brace
+                    for _fn in [
                         f"__dace_init_{sdfg.name}(",
                         f"__program_{sdfg.name}(",
                         f"__program_{sdfg.name}_internal(",
-                    ]
-                    for _fn in _ext_fns:
+                    ]:
                         _pos = code.find(_fn)
                         while _pos != -1:
                             _sig_end = code.find(")", _pos)
                             if _sig_end == -1:
                                 break
                             _sig = code[_pos : _sig_end + 1]
-                            # Rename parameters in this signature
-                            _new_sig = _sig
-                            for _sc in _ABI_SCALARS:
-                                _new_sig = _new_sig.replace(
-                                    f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
+                            if "__abi_" not in _sig:
+                                _pos = code.find(_fn, _pos + len(_sig))
+                                continue
+                            _brace = code.find("{", _sig_end)
+                            if _brace != -1:
+                                _shadow = "".join(
+                                    f"\n  {_lowered_ctype} {_sc} = static_cast<{_lowered_ctype}>(__abi_{_sc});"
+                                    for _sc in _ABI_SCALARS
+                                    if f"__abi_{_sc}" in _sig
                                 )
-                                _new_sig = _new_sig.replace(
-                                    f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
-                                )
-                            code = code[:_pos] + _new_sig + code[_sig_end + 1 :]
-                            # Insert shadow locals after opening brace
-                            if "__abi_" in _new_sig:
-                                _brace = code.find("{", _pos + len(_new_sig))
-                                if _brace != -1:
-                                    _shadow = "".join(
-                                        f"\n  {_lowered_ctype} {_sc} = static_cast<{_lowered_ctype}>(__abi_{_sc});"
-                                        for _sc in _ABI_SCALARS
-                                        if f"__abi_{_sc}" in _new_sig
-                                    )
-                                    code = (
-                                        code[: _brace + 1]
-                                        + _shadow
-                                        + code[_brace + 1 :]
-                                    )
-                            _pos = code.find(_fn, _pos + len(_new_sig) + 1)
+                                code = code[: _brace + 1] + _shadow + code[_brace + 1 :]
+                            _pos = code.find(
+                                _fn, _brace + 1 if _brace != -1 else _pos + 1
+                            )
                 with open(cpu_src, "w") as f:
                     f.write(code)
                 if _lowered_ctype:
                     with open(header, "r") as f:
                         hdr = f.read()
-                    for _fn in _ext_fns:
-                        _pos = hdr.find(_fn)
-                        while _pos != -1:
-                            _sig_end = hdr.find(";", _pos)
-                            if _sig_end == -1:
-                                break
-                            _sig = hdr[_pos : _sig_end + 1]
-                            _new_sig = _sig
-                            for _sc in _ABI_SCALARS:
-                                _new_sig = _new_sig.replace(
-                                    f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
-                                )
-                                _new_sig = _new_sig.replace(
-                                    f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
-                                )
-                            hdr = hdr[:_pos] + _new_sig + hdr[_sig_end + 1 :]
-                            _pos = hdr.find(_fn, _pos + len(_new_sig) + 1)
+                    for _sc in _ABI_SCALARS:
+                        hdr = hdr.replace(
+                            f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
+                        )
+                        hdr = hdr.replace(
+                            f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
+                        )
                     with open(header, "w") as f:
                         f.write(hdr)
                 fix_levelmask_calls(dev_src, False, stage)

@@ -74,7 +74,44 @@ def get_build_options():
         "profile": os.getenv("_PROFILE", "0").lower() in ("1", "true", "yes"),
         "reduce_bitwidth": os.getenv("_REDUCE_BITWIDTH_TRANSFORMATION", "0").lower()
         in ("1", "true", "yes"),
+        "lower_all": os.getenv("_LOWER_ALL", "0").lower() in ("1", "true", "yes"),
+        "permute_dimensions": os.getenv("_PERMUTE_DIMENSIONS", "0").lower()
+        in ("1", "true", "yes"),
     }
+
+    if args:
+        if args.release is not None:
+            options["release"] = args.release
+        if args.lowprec is not None:
+            options["lowprec"] = args.lowprec.lower()
+        if args.integration is not None:
+            options["build_for_integration"] = args.integration
+        if args.tile is not None:
+            options["tile"] = args.tile
+        if args.profile is not None:
+            options["profile"] = args.profile
+        if args.reduce_bitwidth is not None:
+            options["reduce_bitwidth"] = args.reduce_bitwidth
+        if args.lower_all is not None:
+            options["lower_all"] = args.lower_all
+        if args.permute_dimensions is not None:
+            options["permute_dimensions"] = args.permute_dimensions
+
+    # Write back to environment for any child processes or DaCe passes that check them directly
+    os.environ["_RELEASE"] = "1" if options["release"] else "0"
+    os.environ["_LOWPREC"] = options["lowprec"]
+    os.environ["_BUILD_LIB_FOR_SOLVE_NH"] = (
+        "1" if options["build_for_integration"] else "0"
+    )
+    os.environ["_TILE"] = "1" if options["tile"] else "0"
+    os.environ["_PROFILE"] = "1" if options["profile"] else "0"
+    os.environ["_REDUCE_BITWIDTH_TRANSFORMATION"] = (
+        "1" if options["reduce_bitwidth"] else "0"
+    )
+    os.environ["_LOWER_ALL"] = "1" if options["lower_all"] else "0"
+    os.environ["_PERMUTE_DIMENSIONS"] = "1" if options["permute_dimensions"] else "0"
+
+    return options
 
 
 def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None):
@@ -88,7 +125,21 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
         default=None,
         choices=["fp64", "fp32", "fp16", "f32", "f64", "f16", "half"],
     )
-    argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=False)
+    argp.add_argument(
+        "--integration", action=argparse.BooleanOptionalAction, default=None
+    )
+    argp.add_argument("--tile", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument("--profile", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument(
+        "--reduce-bitwidth", action=argparse.BooleanOptionalAction, default=None
+    )
+    argp.add_argument(
+        "--lower-all", action=argparse.BooleanOptionalAction, default=None
+    )
+    argp.add_argument(
+        "--permute-dimensions", action=argparse.BooleanOptionalAction, default=None
+    )
+
     args = argp.parse_args()
 
     if not args.optimize and not args.compile:
@@ -132,10 +183,11 @@ def get_final_binary_name(stage, options):
     is_lib = (stage == 8 and options["build_for_integration"]) or stage == 9
     target = "libvelocity_gpu.so" if is_lib else "velocity_gpu"
 
-    new_name = f"{target.split('.')[0]}_stage{stage}{integration_suffix}{opt_suffix}"
+    base = target.split(".")[0]
+    new_name = f"{base}_stage{stage}{integration_suffix}{opt_suffix}{lowprec_suffix}"
     if target.endswith(".so"):
         new_name += ".so"
-    return f"{new_name}{lowprec_suffix}"
+    return new_name
 
 
 def compile_action(
