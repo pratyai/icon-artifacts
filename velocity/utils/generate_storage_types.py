@@ -130,7 +130,8 @@ def generate_velocity_tendencies_h(sdfgs, include_dir: Path = _INCLUDE_DIR) -> N
     """
     parts: list[str] = []
     for sdfg in sdfgs:
-        hdr = Path(sdfg.build_folder) / "include" / f"{sdfg.name}.h"
+        # Look in the parent of the build folder (flattened structure)
+        hdr = Path(sdfg.build_folder).parent / f"{sdfg.name}.h"
         stripped = _DACE_HDR_STRIP_RE.sub("", hdr.read_text()).strip()
         if stripped:
             parts.append(stripped)

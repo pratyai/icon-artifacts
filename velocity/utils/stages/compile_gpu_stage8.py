@@ -510,7 +510,21 @@ def optimization_action(sdfg):
                 f"Lowering {len(scalars_to_lower)} float64 scalars to {external_dtype}: {scalars_to_lower}"
             )
             for name in scalars_to_lower:
-                _propagate_dtype(sdfg, name, external_dtype)
+                desc = sdfg.arrays[name]
+                if desc.transient:
+                    # Internal transients can be safely lowered everywhere
+                    _propagate_dtype(sdfg, name, external_dtype)
+                else:
+                    # Interface parameters (non-transient): Preserve top-level double,
+                    # lower only inside nested scopes to trigger DaCe's auto-casting.
+                    for state in sdfg.states():
+                        for node in state.nodes():
+                            if isinstance(node, nodes.NestedSDFG):
+                                for edge in state.in_edges(node):
+                                    if edge.data.data == name and edge.dst_conn:
+                                        _propagate_dtype(
+                                            node.sdfg, edge.dst_conn, external_dtype
+                                        )
 
     # Lower transient double scalars inside nested SDFGs (GPU kernel
     # intermediates like difcoef, tmp_arg_*, w_con_e, etc.).

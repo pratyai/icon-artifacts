@@ -485,7 +485,9 @@ def _get_sdfg_structs(g: SDFG) -> Dict[str, Dict[str, str]]:
     }
 
 
-def _parse_shared_struct_defs(header_path: str = "include/shared_struct_defs.h") -> Tuple[Dict[str, List[Tuple[str, str]]], Dict[str, Dict[str, str]]]:
+def _parse_shared_struct_defs(
+    header_path: str = "include/shared_struct_defs.h",
+) -> Tuple[Dict[str, List[Tuple[str, str]]], Dict[str, Dict[str, str]]]:
     """Parse shared_struct_defs.h to get the full field list for each struct.
 
     Returns:
@@ -501,30 +503,30 @@ def _parse_shared_struct_defs(header_path: str = "include/shared_struct_defs.h")
 
     text = header.read_text()
     # Remove comments
-    text = re.sub(r'//[^\n]*', '', text)
+    text = re.sub(r"//[^\n]*", "", text)
 
     result = {}
     all_aliases = {}
 
     # Extract struct bodies using brace-counting (handles nested {} in initializers)
-    for m in re.finditer(r'struct\s+(\w+)\s*\{', text):
+    for m in re.finditer(r"struct\s+(\w+)\s*\{", text):
         sname = m.group(1)
         start = m.end()
         depth = 1
         pos = start
         while pos < len(text) and depth > 0:
-            if text[pos] == '{':
+            if text[pos] == "{":
                 depth += 1
-            elif text[pos] == '}':
+            elif text[pos] == "}":
                 depth -= 1
             pos += 1
-        body = text[start:pos - 1]
+        body = text[start : pos - 1]
 
         # Extract union aliases before collapsing
         aliases = {}
-        for um in re.finditer(r'union\s*\{(.*?)\}', body, flags=re.DOTALL):
+        for um in re.finditer(r"union\s*\{(.*?)\}", body, flags=re.DOTALL):
             inner = um.group(1)
-            members = re.findall(r'(\w+)\s*(?:\*{0,2})\s+(\w+)\s*;', inner)
+            members = re.findall(r"(\w+)\s*(?:\*{0,2})\s+(\w+)\s*;", inner)
             if members:
                 canonical = members[0][1]  # first member name
                 for _, mname in members:
@@ -534,22 +536,22 @@ def _parse_shared_struct_defs(header_path: str = "include/shared_struct_defs.h")
         # Collapse union blocks to first member
         def replace_union(um):
             inner = um.group(1)
-            fm = re.search(r'(\w+)\s*(\*{0,2})\s+(\w+)\s*;', inner)
+            fm = re.search(r"(\w+)\s*(\*{0,2})\s+(\w+)\s*;", inner)
             if fm:
                 ptr = fm.group(2)
                 return f"{fm.group(1)} {ptr}{fm.group(3)} = {{{{}}}};"
             return ""
 
-        body = re.sub(r'union\s*\{(.*?)\}', replace_union, body, flags=re.DOTALL)
+        body = re.sub(r"union\s*\{(.*?)\}", replace_union, body, flags=re.DOTALL)
 
         fields = []
-        for line in body.split(';'):
+        for line in body.split(";"):
             # Strip and remove any brace initializers
-            line = re.sub(r'\{[^}]*\}', '', line).strip()
+            line = re.sub(r"\{[^}]*\}", "", line).strip()
             if not line:
                 continue
             # Match: type [*[*]] name [= ...]
-            fm = re.match(r'(\w+)\s*(\*{0,2})\s*(\w+)\s*(?:=.*)?$', line)
+            fm = re.match(r"(\w+)\s*(\*{0,2})\s*(\w+)\s*(?:=.*)?$", line)
             if fm:
                 ctype = fm.group(1)
                 stars = fm.group(2)
@@ -628,9 +630,13 @@ def _generate_f90_c_glue_code(
             c_fields_for_dt = {fname for fname, _ in full_c_structs.get(dtname, [])}
             aliases_for_dt = union_aliases.get(dtname, {})
             all_known_dt = c_fields_for_dt | set(aliases_for_dt.keys())
-            active_sdfg = sdfg_structs[dtname] if not c_fields_for_dt else {
-                k: v for k, v in sdfg_structs[dtname].items() if k in all_known_dt
-            }
+            active_sdfg = (
+                sdfg_structs[dtname]
+                if not c_fields_for_dt
+                else {
+                    k: v for k, v in sdfg_structs[dtname].items() if k in all_known_dt
+                }
+            )
             # Remap to canonical names
             active_fields = {}
             for k, v in active_sdfg.items():
@@ -695,7 +701,9 @@ def _generate_f90_c_glue_code(
         aliases_for_n = union_aliases.get(n, {})
         # A field is "in the C struct" if it's a direct field OR a union alias
         all_known = c_field_names | set(aliases_for_n.keys())
-        v_filtered = {c: t for c, t in v.items() if c in all_known} if c_field_names else v
+        v_filtered = (
+            {c: t for c, t in v.items() if c in all_known} if c_field_names else v
+        )
         # Remap aliased field names to their canonical (first union member) names
         v_remapped = {}
         for c, t in v_filtered.items():

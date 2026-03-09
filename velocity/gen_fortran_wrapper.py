@@ -33,8 +33,12 @@ C_TO_FORTRAN = {
 
 # Struct types → passed as TYPE(c_ptr), VALUE
 STRUCT_TYPES = {
-    "global_data_type", "t_patch", "t_int_state",
-    "t_nh_prog", "t_nh_metrics", "t_nh_diag",
+    "global_data_type",
+    "t_patch",
+    "t_int_state",
+    "t_nh_prog",
+    "t_nh_metrics",
+    "t_nh_diag",
 }
 
 
@@ -61,13 +65,18 @@ def parse_init_params(header_text: str, variant: str) -> list[dict]:
         if len(parts) < 2:
             continue
         c_type, name = parts[0], parts[-1]
-        params.append({
-            "name": name,
-            "c_type": c_type,
-            "is_pointer": is_ptr,
-            "is_ref": is_ref,
-            "is_struct": c_type in STRUCT_TYPES,
-        })
+        # Strip __abi_ prefix from name for cleaner Fortran code
+        if name.startswith("__abi_"):
+            name = name[len("__abi_") :]
+        params.append(
+            {
+                "name": name,
+                "c_type": c_type,
+                "is_pointer": is_ptr,
+                "is_ref": is_ref,
+                "is_struct": c_type in STRUCT_TYPES,
+            }
+        )
     return params
 
 
@@ -119,9 +128,12 @@ def param_to_arg_expr(p: dict) -> str:
 
     # Named scalars
     scalar_map = {
-        "istep": "c_istep", "ntnd": "c_ntnd",
-        "lvn_only": "c_lvn_only", "ldeepatmo": "c_ldeepatmo",
-        "dtime": "c_dtime", "dt_linintp_ubc": "c_dt_linintp_ubc",
+        "istep": "c_istep",
+        "ntnd": "c_ntnd",
+        "lvn_only": "c_lvn_only",
+        "ldeepatmo": "c_ldeepatmo",
+        "dtime": "c_dtime",
+        "dt_linintp_ubc": "c_dt_linintp_ubc",
     }
     if name in scalar_map:
         return scalar_map[name]
@@ -138,7 +150,7 @@ def emit_interface(variant: str, params: list[dict]) -> list[str]:
     init = f"__dace_init_{variant}"
     lines.append(f"    FUNCTION {init}( &")
     for i, n in enumerate(pnames):
-        lines.append(f"        {n}{',' if i < len(pnames)-1 else ''} &")
+        lines.append(f"        {n}{',' if i < len(pnames) - 1 else ''} &")
     lines.append(f"    ) RESULT(state_ptr) BIND(C, NAME='{init}')")
     lines.append(f"      USE, INTRINSIC :: iso_c_binding")
     lines.append(f"      IMPLICIT NONE")
@@ -153,7 +165,7 @@ def emit_interface(variant: str, params: list[dict]) -> list[str]:
     lines.append(f"    SUBROUTINE {prog}( &")
     lines.append(f"        state_ptr, &")
     for i, n in enumerate(pnames):
-        lines.append(f"        {n}{',' if i < len(pnames)-1 else ''} &")
+        lines.append(f"        {n}{',' if i < len(pnames) - 1 else ''} &")
     lines.append(f"    ) BIND(C, NAME='{prog}')")
     lines.append(f"      USE, INTRINSIC :: iso_c_binding")
     lines.append(f"      IMPLICIT NONE")
@@ -207,11 +219,15 @@ def generate(all_params: dict[str, list[dict]]) -> str:
     L.append("  USE mo_mpi, ONLY: i_am_accel_node")
     L.append("  USE mo_nonhydrostatic_config, ONLY: lextra_diffu")
     L.append("  USE mo_run_config, ONLY: timers_level")
-    L.append("  USE mo_timer, ONLY: timer_intp, timer_solve_nh_veltend")
+    L.append(
+        "  USE mo_timer, ONLY: timer_intp, timer_solve_nh_veltend, timer_start, timer_stop"
+    )
     L.append("  USE mo_vertical_grid, ONLY: nrdmax")
     L.append("  IMPLICIT NONE")
     L.append("  PRIVATE")
-    L.append("  PUBLIC :: velocity_tendencies_gpu, velocity_gpu_init, velocity_gpu_finalize")
+    L.append(
+        "  PUBLIC :: velocity_tendencies_gpu, velocity_gpu_init, velocity_gpu_finalize"
+    )
     L.append("")
     # Module-level state pointers
     for v in VARIANTS:
@@ -232,7 +248,9 @@ def generate(all_params: dict[str, list[dict]]) -> str:
 
     # ---- velocity_gpu_init ----
     L.append("  SUBROUTINE velocity_gpu_init()")
-    L.append("    ! Placeholder — actual init happens lazily on first call per variant.")
+    L.append(
+        "    ! Placeholder — actual init happens lazily on first call per variant."
+    )
     L.append("  END SUBROUTINE velocity_gpu_init")
     L.append("")
 
@@ -251,7 +269,9 @@ def generate(all_params: dict[str, list[dict]]) -> str:
     # ---- init_global_data ----
     L.append("  SUBROUTINE init_global_data(g)")
     L.append("    TYPE(glue_global_data_type), INTENT(OUT) :: g")
-    L.append("    INTEGER(c_int), ALLOCATABLE, TARGET, SAVE :: a_nflatlev(:), a_nrdmax(:)")
+    L.append(
+        "    INTEGER(c_int), ALLOCATABLE, TARGET, SAVE :: a_nflatlev(:), a_nrdmax(:)"
+    )
     L.append("    IF (.NOT. ALLOCATED(a_nflatlev)) THEN")
     L.append("      ALLOCATE(a_nflatlev(1))")
     L.append("      a_nflatlev = INT(nflatlev, c_int)")
@@ -273,7 +293,9 @@ def generate(all_params: dict[str, list[dict]]) -> str:
     L.append("")
 
     # ---- velocity_tendencies_gpu ----
-    L.append("  SUBROUTINE velocity_tendencies_gpu(p_prog, p_patch, p_int, p_metrics, p_diag, &")
+    L.append(
+        "  SUBROUTINE velocity_tendencies_gpu(p_prog, p_patch, p_int, p_metrics, p_diag, &"
+    )
     L.append("      z_w_concorr_me, z_kin_hor_e, z_vt_ie, ntnd, istep, lvn_only, &")
     L.append("      dtime, dt_linintp_ubc, ldeepatmo)")
     L.append("    TYPE(t_nh_prog), INTENT(INOUT), TARGET :: p_prog")
@@ -281,7 +303,9 @@ def generate(all_params: dict[str, list[dict]]) -> str:
     L.append("    TYPE(t_int_state), INTENT(IN), TARGET :: p_int")
     L.append("    TYPE(t_nh_metrics), INTENT(INOUT), TARGET :: p_metrics")
     L.append("    TYPE(t_nh_diag), INTENT(INOUT), TARGET :: p_diag")
-    L.append("    REAL(vp), DIMENSION(:,:,:), INTENT(INOUT), TARGET :: z_w_concorr_me, z_kin_hor_e, z_vt_ie")
+    L.append(
+        "    REAL(vp), DIMENSION(:,:,:), INTENT(INOUT), TARGET :: z_w_concorr_me, z_kin_hor_e, z_vt_ie"
+    )
     L.append("    INTEGER, INTENT(IN) :: ntnd, istep")
     L.append("    LOGICAL, INTENT(IN) :: lvn_only, ldeepatmo")
     L.append("    REAL(wp), INTENT(IN) :: dtime, dt_linintp_ubc")
@@ -297,6 +321,8 @@ def generate(all_params: dict[str, list[dict]]) -> str:
     L.append("    ! Scalar conversions")
     L.append("    INTEGER(c_int) :: c_istep, c_ntnd, c_lvn_only, c_ldeepatmo")
     L.append("    REAL(c_double) :: c_dtime, c_dt_linintp_ubc")
+    L.append("")
+    L.append("    CALL timer_start(timer_solve_nh_veltend)")
     L.append("")
     L.append("    ! For copy-back of p_diag output arrays")
     L.append("    REAL(c_double), POINTER :: ptr_ddt_vn(:,:,:,:)")
@@ -334,7 +360,9 @@ def generate(all_params: dict[str, list[dict]]) -> str:
         lvn_bool = ".FALSE." if lvn_val == "0" else ".TRUE."
         prefix = "IF" if i == 0 else "ELSE IF"
 
-        L.append(f"    {prefix} (lvn_only .EQV. {lvn_bool} .AND. istep == {istep_val}) THEN")
+        L.append(
+            f"    {prefix} (lvn_only .EQV. {lvn_bool} .AND. istep == {istep_val}) THEN"
+        )
         L.append(f"      IF (.NOT. C_ASSOCIATED(state_{s})) THEN")
         L.append(f"        state_{s} = __dace_init_{v}( &")
         L.extend(emit_call_args(params, "          "))
@@ -360,28 +388,58 @@ def generate(all_params: dict[str, list[dict]]) -> str:
 
     # Generate copy-back for each p_diag array field
     diag_fields = [
-        ("ddt_vn_apc_pc", "ptr_ddt_vn", 4,
-         ["g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_0_s_300",
-          "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_1_s_301",
-          "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_2_s_302",
-          "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_3_s_303"]),
-        ("ddt_w_adv_pc", "ptr_ddt_w", 4,
-         ["g_diag%m___f2dace_SA_ddt_w_adv_pc_d_0_s_304",
-          "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_1_s_305",
-          "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_2_s_306",
-          "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_3_s_307"]),
-        ("vn_ie", "ptr_vn_ie", 3,
-         ["g_diag%m___f2dace_SA_vn_ie_d_0_s_294",
-          "g_diag%m___f2dace_SA_vn_ie_d_1_s_295",
-          "g_diag%m___f2dace_SA_vn_ie_d_2_s_296"]),
-        ("vt", "ptr_vt", 3,
-         ["g_diag%m___f2dace_SA_vt_d_0_s_291",
-          "g_diag%m___f2dace_SA_vt_d_1_s_292",
-          "g_diag%m___f2dace_SA_vt_d_2_s_293"]),
-        ("w_concorr_c", "ptr_w_concorr_c", 3,
-         ["g_diag%m___f2dace_SA_w_concorr_c_d_0_s_297",
-          "g_diag%m___f2dace_SA_w_concorr_c_d_1_s_298",
-          "g_diag%m___f2dace_SA_w_concorr_c_d_2_s_299"]),
+        (
+            "ddt_vn_apc_pc",
+            "ptr_ddt_vn",
+            4,
+            [
+                "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_0_s_300",
+                "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_1_s_301",
+                "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_2_s_302",
+                "g_diag%m___f2dace_SA_ddt_vn_apc_pc_d_3_s_303",
+            ],
+        ),
+        (
+            "ddt_w_adv_pc",
+            "ptr_ddt_w",
+            4,
+            [
+                "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_0_s_304",
+                "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_1_s_305",
+                "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_2_s_306",
+                "g_diag%m___f2dace_SA_ddt_w_adv_pc_d_3_s_307",
+            ],
+        ),
+        (
+            "vn_ie",
+            "ptr_vn_ie",
+            3,
+            [
+                "g_diag%m___f2dace_SA_vn_ie_d_0_s_294",
+                "g_diag%m___f2dace_SA_vn_ie_d_1_s_295",
+                "g_diag%m___f2dace_SA_vn_ie_d_2_s_296",
+            ],
+        ),
+        (
+            "vt",
+            "ptr_vt",
+            3,
+            [
+                "g_diag%m___f2dace_SA_vt_d_0_s_291",
+                "g_diag%m___f2dace_SA_vt_d_1_s_292",
+                "g_diag%m___f2dace_SA_vt_d_2_s_293",
+            ],
+        ),
+        (
+            "w_concorr_c",
+            "ptr_w_concorr_c",
+            3,
+            [
+                "g_diag%m___f2dace_SA_w_concorr_c_d_0_s_297",
+                "g_diag%m___f2dace_SA_w_concorr_c_d_1_s_298",
+                "g_diag%m___f2dace_SA_w_concorr_c_d_2_s_299",
+            ],
+        ),
     ]
 
     for field, ptr_name, _ndim, shape_exprs in diag_fields:
@@ -390,6 +448,8 @@ def generate(all_params: dict[str, list[dict]]) -> str:
         L.append(f"    p_diag%{field} = {ptr_name}")
         L.append("")
 
+    L.append("    CALL timer_stop(timer_solve_nh_veltend)")
+    L.append("")
     L.append("  END SUBROUTINE velocity_tendencies_gpu")
     L.append("")
     L.append("END MODULE vt_wrapper")
@@ -404,7 +464,8 @@ def main():
 
     all_params = {}
     for v in VARIANTS:
-        header_path = Path(args.stage_dir) / v / "include" / f"{v}.h"
+        # Headers are now in the root of the stage-dir (flattened structure)
+        header_path = Path(args.stage_dir) / f"{v}.h"
         header_text = header_path.read_text()
         params = parse_init_params(header_text, v)
         all_params[v] = params

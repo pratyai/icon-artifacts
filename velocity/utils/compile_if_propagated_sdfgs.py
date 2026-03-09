@@ -24,6 +24,54 @@ def _replace_cpp_with_cu(directory):
             print(f"Renamed: {file} -> {new_name}")
 
 
+def flatten_build_folder(build_loc: Path, sdfg_name: str, gpu: bool):
+    """
+    Moves necessary files to the parent of build_loc and removes build_loc.
+    """
+    cpu_ext = "cu" if gpu else "cpp"
+    # The files might have been renamed by _replace_cpp_with_cu or exist as .cpp/.cc
+    cpu_path = None
+    for ext in ["cu", "cpp", "cc"]:
+        p = build_loc / "src" / "cpu" / f"{sdfg_name}.{ext}"
+        if p.exists():
+            cpu_path = p
+            cpu_ext = ext
+            break
+
+    dev_path = build_loc / "src" / "cuda" / f"{sdfg_name}_cuda.cu"
+    header_path = build_loc / "include" / f"{sdfg_name}.h"
+
+    target_cpu = build_loc.parent / f"{sdfg_name}.{cpu_ext}"
+    target_dev = build_loc.parent / f"{sdfg_name}_cuda.cu"
+    target_header = build_loc.parent / f"{sdfg_name}.h"
+
+    if cpu_path and cpu_path.exists():
+        shutil.move(str(cpu_path), str(target_cpu))
+    if gpu and dev_path.exists():
+        shutil.move(str(dev_path), str(target_dev))
+    if header_path.exists():
+        shutil.move(str(header_path), str(target_header))
+
+    # Clean up the original build folder
+    shutil.rmtree(build_loc, ignore_errors=True)
+
+    # Patch includes
+    files_to_patch = [target_cpu]
+    if gpu:
+        files_to_patch.append(target_dev)
+
+    for f in files_to_patch:
+        if f.exists():
+            repl_in_file(str(f), "../../include/hash.h", "hash.h")
+            repl_in_file(str(f), f"../../include/{sdfg_name}.h", f"{sdfg_name}.h")
+
+    return (
+        str(target_cpu),
+        (str(target_dev) if gpu and target_dev.exists() else None),
+        str(target_header),
+    )
+
+
 def modify_files_in_directory(directory):
     pattern = re.compile(r"^(\s*)int tmp_struct_symbol")
     for root, _, files in os.walk(directory):
@@ -720,13 +768,13 @@ def compile_if_propagated_sdfgs(
                 )
             if stage in [8, 9]:
                 set_default_stream(cpu_src)
-                set_default_stream(dev_src)
+                if stage > 5:
+                    set_default_stream(dev_src)
 
-            # Flatten build folder: move source/header to parent and clean up
+            # Flatten build folder: move source/header to root and clean up
             cpu_src, dev_src, header = flatten_build_folder(build_loc, sdfg.name, gpu)
 
-            if dev_src:
-                sources.add(dev_src)
+            sources.add(dev_src)
             sources.add(cpu_src)
         else:
             with open(cpu_src, "r") as f:
@@ -736,6 +784,10 @@ def compile_if_propagated_sdfgs(
                     '#include "reductions_cpu.h"\n#include "timer.h"\n#include "gpu_mem.h"\n'
                     + content
                 )
+
+            # Flatten build folder: move source/header to root and clean up
+            cpu_src, _, header = flatten_build_folder(build_loc, sdfg.name, gpu)
+
             sources.add(cpu_src)
 
         if (
@@ -759,7 +811,7 @@ def compile_if_propagated_sdfgs(
         sources.add(final_main)
 
     use_nvhpc = os.getenv("_USE_NVHPC", "0").lower() in ("1", "true", "yes")
-    base_inc = f"-I{build_loc}/include -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
+    base_inc = f"-I{build_loc.parent} -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
 
     # Use pkg-config to get correct paths for libraries loaded via Spack/Modules
     import subprocess
