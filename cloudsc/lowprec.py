@@ -529,70 +529,80 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
     # Exclusion list: arrays/scalars that must stay fp64.
     # Everything NOT in this set gets lowered.
     _LOWERING_EXCLUDE = {
-        # === UNSAFE: must stay fp64 ===
-        # flux outputs (catastrophic cancellation in zqxn2d - zqx0)
-        "pfsqlf", "pfsqrf",
-        "pfsqif", "pfsqsf",
-        # high-sensitivity inputs
-        "pt", "pa",
-        "tendency_tmp_a", "tendency_tmp_cld",
-        # accumulation chain (cancellation in zqx differences)
-        "zgdph_r", "zalfaw", "zqx",
-        "zsolqa", "zexplicit",
-        # solution convergence
-        "zconvsrce", "zconvsink", "psum_solqa",
-        # moisture quantities (tiny values, lose too many digits)
-        "zvqx", "zqxfg",
-        # temperatures/pressure (large magnitude, small differences)
-        "ztold", "ztp1", "zdp",
+        # === MUST STAY FP64 ===
+        # high-sensitivity inputs (SNR < 10 dB)
+        "pt", "pa", "tendency_tmp_a",
+        # accumulation chain (SNR -51..52 dB)
+        "zsolqa", "psum_solqa", "za", "zlcust",
+        # moisture (tiny values, SNR 18 dB)
+        "zqxfg",
+        # temperature (large magnitude, small differences, SNR 75 dB)
+        "ztp1",
+        # condensation / evaporation (SNR 51..70 dB)
+        "zlcond1", "zlcond2",
+        # input params (SNR 62..105 dB)
+        "psupsat", "pq", "pap", "paph",
+        # thermodynamic (SNR ~105 dB)
+        # "zqlhs", "zdqsliqdt", "zdqsicedt",
         #
-        # === SAFE: verified lowerable to fp32 (commented out) ===
-        # flux outputs
+        # === SAFE: verified lowerable to fp32 ===
+        # (commented out — kept for reference)
+        #
+        # -- flux outputs --
+        # "pfsqlf", "pfsqrf", "pfsqif", "pfsqsf",
         # "pfcqlng", "pfcqrng", "pfcqnng", "pfcqsng",
         # "pfhpsn", "pfplsn",
-        # high-sensitivity inputs
-        # "tendency_tmp_q", "tendency_tmp_t",
-        # "pclv", "plude", "psupsat",
-        # "pq", "pap", "paph", "phrlw", "pvfl", "pvfi",
-        # accumulation chain
-        # "zqxn2d", "zqx0", "zqxn", "zqxnm1", "zlneg", "zfoealfa",
-        # solution arrays
-        # "zsolqb", "zqlhs", "zratio",
+        # -- high-sensitivity inputs (safe subgroups) --
+        # "tendency_tmp_q", "tendency_tmp_t", "tendency_tmp_cld",
+        # "pclv", "plude",
+        # "phrlw", "pvfl", "pvfi",
+        # -- accumulation chain --
+        # "zgdph_r", "zalfaw", "zqx", "zexplicit",
+        # "zqxn2d", "zqx0", "zqxn", "zqxnm1",
+        # "zlneg", "zfoealfa",
+        # "zconvsrce", "zconvsink",
+        # -- moisture --
+        # "zvqx",
+        # -- temperature / pressure --
+        # "ztold", "zdp",
+        # -- solution arrays --
+        # "zsolqb", "zratio",
         # "zsinksum", "zfallsink", "zfallsrce",
-        # phase fractions
+        # -- phase fractions --
         # "zliqfrac", "zicefrac", "zli", "zlfinalsum",
-        # flux arrays
+        # -- flux arrays --
         # "zfluxq", "zpfplsx",
-        # thermodynamic (dqs, saturation, foeew)
+        # -- thermodynamic (dqs, saturation, foeew) --
         # "zqold", "zdtgdp", "zrdtgdp",
-        # "zdqs", "zdqsmixdt", "zdqsliqdt", "zdqsicedt",
+        # "zdqs", "zdqsmixdt",
         # "zqsmix", "zqsliq", "zqsice",
         # "zfoeewmt", "zfoeew", "zfoeeliqt",
-        # condensation / evaporation
-        # "zlcond1", "zlcond2", "zrainaut", "zsnowaut",
-        # cloud fractions / cover
+        # -- condensation / evaporation --
+        # "zrainaut", "zsnowaut",
+        # -- cloud fractions / cover --
         # "zliqcld", "zicecld", "zlicld",
         # "zcovpclr", "zcovptot", "zcovpmax",
-        # "za", "zaorig", "zanewm1", "zda", "zacust", "zlcust",
-        # saturation / supersaturation
+        # "zaorig", "zanewm1", "zda", "zacust",
+        # -- saturation / supersaturation --
         # "zsupsat", "zcorqsliq", "zcorqsice", "zcorqsmix",
-        # ice nucleation
+        # -- ice nucleation --
         # "zfokoop", "zicenuclei", "zicetot",
-        # precipitation / fluxes
+        # -- precipitation / fluxes --
         # "zqpretot", "zldefr", "zldifdt", "zmf", "zrho",
         # "zsolab", "zsolac", "zmeltmax", "zfrzmax",
         # "zevaplimice", "zevaplimmix", "zcldtopdist",
         # "zrainacc", "zraincld", "zsnowcld", "zsnowrime",
-        # pressure + other
+        # -- pressure + other --
         # "zgdp", "zpsupsatsrce",
-        # non-transient arrays
+        # -- non-transient input arrays --
         # "pvfa", "pdyna", "pdynl", "pdyni",
         # "phrsw", "pvervel", "plsm", "plu", "psnde",
         # "pmfu", "pmfd",
-        # "plcrit_aer", "picrit_aer", "pre_ice", "pccn", "pnice",
+        # "plcrit_aer", "picrit_aer",
+        # "pre_ice", "pccn", "pnice",
         # "pcovptot", "prainfrac_toprfz",
         # "pfsqltur", "pfsqitur", "pfplsl", "pfhpsl",
-        # output arrays
+        # -- output arrays --
         # "tendency_loc_t", "tendency_loc_q",
         # "tendency_loc_a", "tendency_loc_cld",
     }

@@ -3,4 +3,5 @@ _dacegraphs
 __pycache__
 outputs_cpp/
 outputs_ref/
+outputs_sweep_ref/
 cloudsc_cpu_bin

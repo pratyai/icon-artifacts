@@ -63,7 +63,8 @@ def run_ref_simulation():
     nclv = 5
     # List of tendency/output arrays to potentially save
     output_arrays = ['tendency_loc_a', 'tendency_loc_t', 'tendency_loc_q', 'tendency_loc_cld',
-                     'pcovptot', 'prainfrac_toprfz', 'pfsqlf', 'pfsqif', 'pfcqnng', 'pfcqlng',
+                     'pcovptot', 'prainfrac_toprfz', 'plude',
+                     'pfsqlf', 'pfsqif', 'pfcqnng', 'pfcqlng',
                      'pfsqrf', 'pfsqsf', 'pfcqrng', 'pfcqsng', 'pfsqltur', 'pfsqitur',
                      'pfplsl', 'pfplsn', 'pfhpsl', 'pfhpsn']
     
@@ -93,7 +94,7 @@ def run_ref_simulation():
         elif name in fields:
             call_args.append(fields[name])
         else:
-            call_args.append(None)
+            raise ValueError(f"Unknown parameter '{name}' in cloudsc_py signature — not in fields or known scalars")
 
     total_time = 0
     for i in range(args.steps):

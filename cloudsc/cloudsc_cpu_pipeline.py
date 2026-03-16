@@ -7,6 +7,9 @@ from pathlib import Path
 from dace.codegen import codegen, compiler
 from dace.sdfg import infer_types
 from dace.transformation.interstate import LoopToMap
+from dace.transformation.passes import SymbolPropagation
+from dace.transformation.interstate import EndStateElimination, StartStateElimination, SymbolAliasPromotion, StateAssignElimination, StateFusion, TrueConditionElimination, FalseConditionElimination, HoistState
+from dace.transformation.interstate import ConditionFusion
 
 dace.config.Config.set("compiler", "default_data_types", value="C")
 
@@ -117,6 +120,12 @@ def main():
     # SDFG-level precision lowering (before codegen)
     from lowprec import apply_lowprec
     apply_lowprec(sdfg, args.lowprec)
+
+    # Optimizations
+    SymbolPropagation().apply_pass(sdfg, {})
+    sdfg.apply_transformations_repeated(LoopToMap)
+    sdfg.apply_transformations_repeated([SymbolAliasPromotion, EndStateElimination, StartStateElimination, StateAssignElimination, StateFusion, TrueConditionElimination, FalseConditionElimination, HoistState])
+    sdfg.simplify()
 
     # Save the lowered SDFG for inspection before codegen
     sdfg.save("cloudsc_lowered.sdfgz", compress=True)
