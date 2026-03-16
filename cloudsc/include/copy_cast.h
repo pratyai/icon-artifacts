@@ -17,16 +17,16 @@ struct CopyND<float, 1, false, 1> {
         // Same-type copy
         template <typename... Args>
         static DACE_HDFI void Copy(const float *src, float *dst,
-                                   const int &src_stride,
-                                   const Args &...src_otherdims) {
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
             dst[0] = src[0];
         }
 
         // Mixed-type copy (double -> float)
         template <typename... Args>
         static DACE_HDFI void Copy(const double *src, float *dst,
-                                   const int &src_stride,
-                                   const Args &...src_otherdims) {
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
             dst[0] = static_cast<float>(src[0]);
         }
     };
@@ -36,16 +36,16 @@ struct CopyND<float, 1, false, 1> {
         // Same-type copy
         template <typename... Args>
         static DACE_HDFI void Copy(const float *src, float *dst,
-                                   const int &dst_stride,
-                                   const Args &...dst_otherdims) {
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
             dst[0] = src[0];
         }
 
         // Mixed-type copy (float -> double)
         template <typename... Args>
         static DACE_HDFI void Copy(const float *src, double *dst,
-                                   const int &dst_stride,
-                                   const Args &...dst_otherdims) {
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
             dst[0] = static_cast<double>(src[0]);
         }
     };
@@ -58,16 +58,16 @@ struct CopyND<double, 1, false, 1> {
         // Same-type copy
         template <typename... Args>
         static DACE_HDFI void Copy(const double *src, double *dst,
-                                   const int &src_stride,
-                                   const Args &...src_otherdims) {
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
             dst[0] = src[0];
         }
 
         // Mixed-type copy (float -> double)
         template <typename... Args>
         static DACE_HDFI void Copy(const float *src, double *dst,
-                                   const int &src_stride,
-                                   const Args &...src_otherdims) {
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
             dst[0] = static_cast<double>(src[0]);
         }
     };
@@ -77,16 +77,16 @@ struct CopyND<double, 1, false, 1> {
         // Same-type copy
         template <typename... Args>
         static DACE_HDFI void Copy(const double *src, double *dst,
-                                   const int &dst_stride,
-                                   const Args &...dst_otherdims) {
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
             dst[0] = src[0];
         }
 
         // Mixed-type copy (double -> float)
         template <typename... Args>
         static DACE_HDFI void Copy(const double *src, float *dst,
-                                   const int &dst_stride,
-                                   const Args &...dst_otherdims) {
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
             dst[0] = static_cast<float>(src[0]);
         }
     };

@@ -104,6 +104,7 @@ def main():
     parser.add_argument("--lowprec", type=str, default="fp64",
                         choices=["fp64", "fp32", "fp16", "f64", "f32", "f16"])
     args = parser.parse_args()
+    print(f"Loading SDFG from {args.sdfg}...")
 
     sdfg = dace.SDFG.from_file(args.sdfg)
     sdfg.name = "cloudsc_py"
@@ -120,12 +121,6 @@ def main():
     # SDFG-level precision lowering (before codegen)
     from lowprec import apply_lowprec
     apply_lowprec(sdfg, args.lowprec)
-
-    # Optimizations
-    SymbolPropagation().apply_pass(sdfg, {})
-    sdfg.apply_transformations_repeated(LoopToMap)
-    sdfg.apply_transformations_repeated([SymbolAliasPromotion, EndStateElimination, StartStateElimination, StateAssignElimination, StateFusion, TrueConditionElimination, FalseConditionElimination, HoistState])
-    sdfg.simplify()
 
     # Save the lowered SDFG for inspection before codegen
     sdfg.save("cloudsc_lowered.sdfgz", compress=True)
@@ -171,14 +166,28 @@ def main():
             pass
 
     if args.release:
-        cpp_flags = "-O3 -std=c++20 -DNDEBUG -Wno-parentheses-equality"
+        cpp_flags = "-O3 -g -std=c++20 -DNDEBUG -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter"
     else:
-        cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality"
+        cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter"
 
-    cmd = f"c++ {cpp_flags} -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} cloudsc_main.cpp codegen/*.cpp -o cloudsc_cpu_bin -lpthread {h5_libs}"
+    cmd = (
+        f"c++ {cpp_flags} \\\n"
+        f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        "    cloudsc_main.cpp codegen/*.cpp \\\n"
+        f"    -o cloudsc_cpu_bin -lpthread {h5_libs}"
+    )
 
+    recompile_script = f"""#!/bin/bash
+set -e
+
+# Remove old binary if it exists
+rm -f cloudsc_cpu_bin
+
+# Compile
+{cmd}
+"""
     with open("recompile.sh", "w") as f:
-        f.write(f"#!/bin/bash\nset -e\n{cmd}\n")
+        f.write(recompile_script)
     os.chmod("recompile.sh", 0o755)
     print(f"Pipeline ready. Build command updated in recompile.sh (Release={args.release}, HDF5 support included)")
 
