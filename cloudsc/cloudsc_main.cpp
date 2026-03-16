@@ -3,9 +3,11 @@
 #include <vector>
 #include <chrono>
 #include <string>
+#include <cstring>
 #include <filesystem>
 #include "hdf5.h"
 #include "codegen/cloudsc_py.h"
+#include "sensitivity.h"
 
 double* load_h5_array_double(hid_t file_id, std::string name, size_t max_size) {
     double* ptr = new double[max_size];
@@ -67,9 +69,15 @@ void save_h5_array_int(hid_t file_id, std::string name, int* ptr, size_t size, i
 
 int main(int argc, char** argv) {
     int num_steps = 1;
-    if (argc > 1) num_steps = std::stoi(argv[1]);
+    if (argc > 1 && std::string(argv[1]) != "--save" && std::string(argv[1]) != "--sensitivity") num_steps = std::stoi(argv[1]);
     bool save_output = false;
-    for(int i=1; i<argc; ++i) if(std::string(argv[i]) == "--save") save_output = true;
+    bool sensitivity_mode = false;
+    double sens_eps = 1e-5;
+    for(int i=1; i<argc; ++i) {
+        if(std::string(argv[i]) == "--save") save_output = true;
+        if(std::string(argv[i]) == "--sensitivity") sensitivity_mode = true;
+        if(std::string(argv[i]) == "--sens-eps" && i+1 < argc) sens_eps = std::stod(argv[++i]);
+    }
 
     int klon = 100, klev = 137, nclv = 5;
     int ncldqi = 2, ncldql = 1, ncldqr = 3, ncldqs = 4, ncldqv = 5;
@@ -322,6 +330,239 @@ int main(int argc, char** argv) {
 
     std::cout << "Total execution time: " << total_time << "s" << std::endl;
     std::cout << "Average time per step: " << total_time / num_steps << "s" << std::endl;
+
+    if (sensitivity_mode) {
+        // Re-load fresh inputs (kernel may have mutated them)
+        if (std::filesystem::exists(input_file))
+            file_id = H5Fopen(input_file.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+        auto reload = [&](double* dst, const char* name, size_t n) {
+            if (file_id >= 0 && H5Lexists(file_id, name, H5P_DEFAULT) > 0) {
+                hid_t ds = H5Dopen2(file_id, name, H5P_DEFAULT);
+                H5Dread(ds, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, dst);
+                H5Dclose(ds);
+            }
+        };
+        size_t n2 = klon * klev, n3 = klon * (klev + 1), n4 = klon * klev * nclv;
+        reload(pt, "PT", n2); reload(pq, "PQ", n2);
+        reload(tendency_tmp_t, "TENDENCY_TMP_T", n2); reload(tendency_tmp_q, "TENDENCY_TMP_Q", n2);
+        reload(tendency_tmp_a, "TENDENCY_TMP_A", n2); reload(tendency_tmp_cld, "TENDENCY_TMP_CLD", n4);
+        reload(tendency_loc_t, "TENDENCY_LOC_T", n2); reload(tendency_loc_q, "TENDENCY_LOC_Q", n2);
+        reload(tendency_loc_a, "TENDENCY_LOC_A", n2); reload(tendency_loc_cld, "TENDENCY_LOC_CLD", n4);
+        reload(pvfa, "PVFA", n2); reload(pvfl, "PVFL", n2); reload(pvfi, "PVFI", n2);
+        reload(pdyna, "PDYNA", n2); reload(pdynl, "PDYNL", n2); reload(pdyni, "PDYNI", n2);
+        reload(phrsw, "PHRSW", n2); reload(phrlw, "PHRLW", n2);
+        reload(pvervel, "PVERVEL", n2); reload(pap, "PAP", n2); reload(paph, "PAPH", n2);
+        reload(plsm, "PLSM", n2); reload(plu, "PLU", n2); reload(plude, "PLUDE", n2);
+        reload(psnde, "PSNDE", n2); reload(pmfu, "PMFU", n2); reload(pmfd, "PMFD", n2);
+        reload(pa, "PA", n2); reload(pclv, "PCLV", n2); reload(psupsat, "PSUPSAT", n2);
+        reload(plcrit_aer, "PLCRIT_AER", n2); reload(picrit_aer, "PICRIT_AER", n2);
+        reload(pre_ice, "PRE_ICE", n2); reload(pccn, "PCCN", n2); reload(pnice, "PNICE", n2);
+        reload(pcovptot, "PCOVPTOT", n2); reload(prainfrac_toprfz, "PRAINFRAC_TOPRFZ", n2);
+        reload(pfcqlng, "PFCQLNG", n3); reload(pfcqnng, "PFCQNNG", n3);
+        reload(pfcqrng, "PFCQRNG", n3); reload(pfcqsng, "PFCQSNG", n3);
+        reload(pfsqlf, "PFSQLF", n3); reload(pfsqrf, "PFSQRF", n3);
+        reload(pfsqif, "PFSQIF", n3); reload(pfsqsf, "PFSQSF", n3);
+        reload(pfsqltur, "PFSQLTUR", n3); reload(pfsqitur, "PFSQITUR", n3);
+        reload(pfplsl, "PFPLSL", n3); reload(pfplsn, "PFPLSN", n3);
+        reload(pfhpsl, "PFHPSL", n3); reload(pfhpsn, "PFHPSN", n3);
+        if (file_id >= 0) H5Fclose(file_id);
+
+        auto save_copy = [](double* src, size_t n) {
+            double* c = new double[n]; std::memcpy(c, src, n * sizeof(double)); return c;
+        };
+        // Backup ALL arrays (kernel may mutate any of them in-place)
+        double* pt_bk = save_copy(pt, n2);
+        double* pq_bk = save_copy(pq, n2);
+        double* tendency_tmp_t_bk = save_copy(tendency_tmp_t, n2);
+        double* tendency_tmp_q_bk = save_copy(tendency_tmp_q, n2);
+        double* tendency_tmp_a_bk = save_copy(tendency_tmp_a, n2);
+        double* tendency_tmp_cld_bk = save_copy(tendency_tmp_cld, n4);
+        double* tendency_loc_t_bk = save_copy(tendency_loc_t, n2);
+        double* tendency_loc_q_bk = save_copy(tendency_loc_q, n2);
+        double* tendency_loc_a_bk = save_copy(tendency_loc_a, n2);
+        double* tendency_loc_cld_bk = save_copy(tendency_loc_cld, n4);
+        double* pvfa_bk = save_copy(pvfa, n2);
+        double* pvfl_bk = save_copy(pvfl, n2);
+        double* pvfi_bk = save_copy(pvfi, n2);
+        double* pdyna_bk = save_copy(pdyna, n2);
+        double* pdynl_bk = save_copy(pdynl, n2);
+        double* pdyni_bk = save_copy(pdyni, n2);
+        double* phrsw_bk = save_copy(phrsw, n2);
+        double* phrlw_bk = save_copy(phrlw, n2);
+        double* pvervel_bk = save_copy(pvervel, n2);
+        double* pap_bk = save_copy(pap, n2);
+        double* paph_bk = save_copy(paph, n2);
+        double* plu_bk = save_copy(plu, n2);
+        double* plude_bk = save_copy(plude, n2);
+        double* psnde_bk = save_copy(psnde, n2);
+        double* pmfu_bk = save_copy(pmfu, n2);
+        double* pmfd_bk = save_copy(pmfd, n2);
+        double* pa_bk = save_copy(pa, n2);
+        double* pclv_bk = save_copy(pclv, n4);
+        double* psupsat_bk = save_copy(psupsat, n2);
+        double* plcrit_aer_bk = save_copy(plcrit_aer, n2);
+        double* picrit_aer_bk = save_copy(picrit_aer, n2);
+        double* pre_ice_bk = save_copy(pre_ice, n2);
+        double* pccn_bk = save_copy(pccn, n2);
+        double* pnice_bk = save_copy(pnice, n2);
+        double* pcovptot_bk = save_copy(pcovptot, n2);
+        double* pfsqlf_bk = save_copy(pfsqlf, n3);
+        double* pfsqrf_bk = save_copy(pfsqrf, n3);
+        double* pfsqif_bk = save_copy(pfsqif, n3);
+        double* pfsqsf_bk = save_copy(pfsqsf, n3);
+        double* pfcqlng_bk = save_copy(pfcqlng, n3);
+        double* pfcqnng_bk = save_copy(pfcqnng, n3);
+        double* pfcqrng_bk = save_copy(pfcqrng, n3);
+        double* pfcqsng_bk = save_copy(pfcqsng, n3);
+        double* pfhpsn_bk = save_copy(pfhpsn, n3);
+        double* pfplsn_bk = save_copy(pfplsn, n3);
+        double* pfsqltur_bk = save_copy(pfsqltur, n3);
+        double* pfsqitur_bk = save_copy(pfsqitur, n3);
+        double* pfhpsl_bk = save_copy(pfhpsl, n3);
+        double* pfplsl_bk = save_copy(pfplsl, n3);
+        double* prainfrac_toprfz_bk = save_copy(prainfrac_toprfz, n2);
+        double* plsm_bk = save_copy(plsm, klon);
+
+        auto restore = [&]() {
+            std::memcpy(pt, pt_bk, n2 * sizeof(double));
+            std::memcpy(pq, pq_bk, n2 * sizeof(double));
+            std::memcpy(tendency_tmp_t, tendency_tmp_t_bk, n2 * sizeof(double));
+            std::memcpy(tendency_tmp_q, tendency_tmp_q_bk, n2 * sizeof(double));
+            std::memcpy(tendency_tmp_a, tendency_tmp_a_bk, n2 * sizeof(double));
+            std::memcpy(tendency_tmp_cld, tendency_tmp_cld_bk, n4 * sizeof(double));
+            std::memcpy(tendency_loc_t, tendency_loc_t_bk, n2 * sizeof(double));
+            std::memcpy(tendency_loc_q, tendency_loc_q_bk, n2 * sizeof(double));
+            std::memcpy(tendency_loc_a, tendency_loc_a_bk, n2 * sizeof(double));
+            std::memcpy(tendency_loc_cld, tendency_loc_cld_bk, n4 * sizeof(double));
+            std::memcpy(pvfa, pvfa_bk, n2 * sizeof(double));
+            std::memcpy(pvfl, pvfl_bk, n2 * sizeof(double));
+            std::memcpy(pvfi, pvfi_bk, n2 * sizeof(double));
+            std::memcpy(pdyna, pdyna_bk, n2 * sizeof(double));
+            std::memcpy(pdynl, pdynl_bk, n2 * sizeof(double));
+            std::memcpy(pdyni, pdyni_bk, n2 * sizeof(double));
+            std::memcpy(phrsw, phrsw_bk, n2 * sizeof(double));
+            std::memcpy(phrlw, phrlw_bk, n2 * sizeof(double));
+            std::memcpy(pvervel, pvervel_bk, n2 * sizeof(double));
+            std::memcpy(pap, pap_bk, n2 * sizeof(double));
+            std::memcpy(paph, paph_bk, n2 * sizeof(double));
+            std::memcpy(plu, plu_bk, n2 * sizeof(double));
+            std::memcpy(plude, plude_bk, n2 * sizeof(double));
+            std::memcpy(psnde, psnde_bk, n2 * sizeof(double));
+            std::memcpy(pmfu, pmfu_bk, n2 * sizeof(double));
+            std::memcpy(pmfd, pmfd_bk, n2 * sizeof(double));
+            std::memcpy(pa, pa_bk, n2 * sizeof(double));
+            std::memcpy(pclv, pclv_bk, n4 * sizeof(double));
+            std::memcpy(psupsat, psupsat_bk, n2 * sizeof(double));
+            std::memcpy(plcrit_aer, plcrit_aer_bk, n2 * sizeof(double));
+            std::memcpy(picrit_aer, picrit_aer_bk, n2 * sizeof(double));
+            std::memcpy(pre_ice, pre_ice_bk, n2 * sizeof(double));
+            std::memcpy(pccn, pccn_bk, n2 * sizeof(double));
+            std::memcpy(pnice, pnice_bk, n2 * sizeof(double));
+            std::memcpy(pcovptot, pcovptot_bk, n2 * sizeof(double));
+            std::memcpy(pfsqlf, pfsqlf_bk, n3 * sizeof(double));
+            std::memcpy(pfsqrf, pfsqrf_bk, n3 * sizeof(double));
+            std::memcpy(pfsqif, pfsqif_bk, n3 * sizeof(double));
+            std::memcpy(pfsqsf, pfsqsf_bk, n3 * sizeof(double));
+            std::memcpy(pfcqlng, pfcqlng_bk, n3 * sizeof(double));
+            std::memcpy(pfcqnng, pfcqnng_bk, n3 * sizeof(double));
+            std::memcpy(pfcqrng, pfcqrng_bk, n3 * sizeof(double));
+            std::memcpy(pfcqsng, pfcqsng_bk, n3 * sizeof(double));
+            std::memcpy(pfhpsn, pfhpsn_bk, n3 * sizeof(double));
+            std::memcpy(pfplsn, pfplsn_bk, n3 * sizeof(double));
+            std::memcpy(pfsqltur, pfsqltur_bk, n3 * sizeof(double));
+            std::memcpy(pfsqitur, pfsqitur_bk, n3 * sizeof(double));
+            std::memcpy(pfhpsl, pfhpsl_bk, n3 * sizeof(double));
+            std::memcpy(pfplsl, pfplsl_bk, n3 * sizeof(double));
+            std::memcpy(prainfrac_toprfz, prainfrac_toprfz_bk, n2 * sizeof(double));
+            std::memcpy(plsm, plsm_bk, klon * sizeof(double));
+        };
+
+        auto execute = [&]() {
+            __program_cloudsc_py(handle, ktype, ldcum, pa, pap, paph, pccn, pclv, pcovptot, pdyna, pdyni, pdynl, pfcqlng, pfcqnng, pfcqrng, pfcqsng, pfhpsl, pfhpsn, pfplsl, pfplsn, pfsqif, pfsqitur, pfsqlf, pfsqltur, pfsqrf, pfsqsf, phrlw, phrsw, picrit_aer, plcrit_aer, plsm, plu, plude, pmfd, pmfu, pnice, pq, prainfrac_toprfz, pre_ice, psnde, psupsat, pt, pvervel, pvfa, pvfi, pvfl, tendency_loc_a, tendency_loc_cld, tendency_loc_q, tendency_loc_t, tendency_tmp_a, tendency_tmp_cld, tendency_tmp_q, tendency_tmp_t, kfdia, kidia, klev, klon, ncldqi, ncldql, ncldqr, ncldqs, ncldqv, nclv, ptsphy, ydcst_rcpd, ydcst_rd, ydcst_retv, ydcst_rg, ydcst_rlmlt, ydcst_rlstt, ydcst_rlvtt, ydcst_rtt, ydcst_rv, ydthf_r2es, ydthf_r3ies, ydthf_r3les, ydthf_r4ies, ydthf_r4les, ydthf_r5alscp, ydthf_r5alvcp, ydthf_r5ies, ydthf_r5les, ydthf_ralfdcp, ydthf_ralsdcp, ydthf_ralvdcp, ydthf_rkoop1, ydthf_rkoop2, ydthf_rtice, ydthf_rticecu, ydthf_rtwat, ydthf_rtwat_rtice_r, ydthf_rtwat_rticecu_r, yrecldp_laericeauto, yrecldp_laericesed, yrecldp_laerliqautolsp, yrecldp_laerliqcoll, yrecldp_ncldtop, yrecldp_nssopt, yrecldp_ramid, yrecldp_ramin, yrecldp_rccn, yrecldp_rcl_apb1, yrecldp_rcl_apb2, yrecldp_rcl_apb3, yrecldp_rcl_cdenom1, yrecldp_rcl_cdenom2, yrecldp_rcl_cdenom3, yrecldp_rcl_const1i, yrecldp_rcl_const1r, yrecldp_rcl_const1s, yrecldp_rcl_const2i, yrecldp_rcl_const2r, yrecldp_rcl_const2s, yrecldp_rcl_const3i, yrecldp_rcl_const3r, yrecldp_rcl_const3s, yrecldp_rcl_const4i, yrecldp_rcl_const4r, yrecldp_rcl_const4s, yrecldp_rcl_const5i, yrecldp_rcl_const5r, yrecldp_rcl_const5s, yrecldp_rcl_const6i, yrecldp_rcl_const6r, yrecldp_rcl_const6s, yrecldp_rcl_const7s, yrecldp_rcl_const8s, yrecldp_rcl_fac1, yrecldp_rcl_fac2, yrecldp_rcl_fzrab, yrecldp_rcl_ka273, yrecldp_rcl_kk_cloud_num_land, yrecldp_rcl_kk_cloud_num_sea, yrecldp_rcl_kkaac, yrecldp_rcl_kkaau, yrecldp_rcl_kkbac, yrecldp_rcl_kkbaun, yrecldp_rcl_kkbauq, yrecldp_rclcrit_land, yrecldp_rclcrit_sea, yrecldp_rcldiff, yrecldp_rcldiff_convi, yrecldp_rcldtopcf, yrecldp_rcovpmin, yrecldp_rdensref, yrecldp_rdepliqrefdepth, yrecldp_rdepliqrefrate, yrecldp_riceinit, yrecldp_rkconv, yrecldp_rkooptau, yrecldp_rlcritsnow, yrecldp_rlmin, yrecldp_rnice, yrecldp_rpecons, yrecldp_rprc1, yrecldp_rprecrhmax, yrecldp_rsnowlin1, yrecldp_rsnowlin2, yrecldp_rtaumel, yrecldp_rthomo, yrecldp_rvice, yrecldp_rvrain, yrecldp_rvrfactor, yrecldp_rvsnow);
+        };
+
+        std::vector<sensitivity::Field> sens_inputs = {
+            {pt, (int)n2, "pt"},
+            {pq, (int)n2, "pq"},
+            {tendency_tmp_t, (int)n2, "tendency_tmp_t"},
+            {tendency_tmp_q, (int)n2, "tendency_tmp_q"},
+            {tendency_tmp_a, (int)n2, "tendency_tmp_a"},
+            {tendency_tmp_cld, (int)n4, "tendency_tmp_cld"},
+            {pvfa, (int)n2, "pvfa"},
+            {pvfl, (int)n2, "pvfl"},
+            {pvfi, (int)n2, "pvfi"},
+            {pdyna, (int)n2, "pdyna"},
+            {pdynl, (int)n2, "pdynl"},
+            {pdyni, (int)n2, "pdyni"},
+            {phrsw, (int)n2, "phrsw"},
+            {phrlw, (int)n2, "phrlw"},
+            {pvervel, (int)n2, "pvervel"},
+            {pap, (int)n2, "pap"},
+            {paph, (int)n2, "paph"},
+            {plsm, klon, "plsm"},
+            {plu, (int)n2, "plu"},
+            {plude, (int)n2, "plude"},
+            {psnde, (int)n2, "psnde"},
+            {pmfu, (int)n2, "pmfu"},
+            {pmfd, (int)n2, "pmfd"},
+            {pa, (int)n2, "pa"},
+            {pclv, (int)n4, "pclv"},
+            {psupsat, (int)n2, "psupsat"},
+            {plcrit_aer, (int)n2, "plcrit_aer"},
+            {picrit_aer, (int)n2, "picrit_aer"},
+            {pre_ice, (int)n2, "pre_ice"},
+            {pccn, (int)n2, "pccn"},
+            {pnice, (int)n2, "pnice"},
+        };
+
+        std::vector<sensitivity::Field> sens_outputs = {
+            {tendency_loc_t, (int)n2, "tendency_loc_t"},
+            {tendency_loc_q, (int)n2, "tendency_loc_q"},
+            {tendency_loc_a, (int)n2, "tendency_loc_a"},
+            {tendency_loc_cld, (int)n4, "tendency_loc_cld"},
+            {pcovptot, (int)n2, "pcovptot"},
+            {pfsqlf, (int)n3, "pfsqlf"},
+            {pfsqrf, (int)n3, "pfsqrf"},
+            {pfsqif, (int)n3, "pfsqif"},
+            {pfsqsf, (int)n3, "pfsqsf"},
+            {pfcqlng, (int)n3, "pfcqlng"},
+            {pfcqnng, (int)n3, "pfcqnng"},
+            {pfcqrng, (int)n3, "pfcqrng"},
+            {pfcqsng, (int)n3, "pfcqsng"},
+            {pfhpsn, (int)n3, "pfhpsn"},
+            {pfplsn, (int)n3, "pfplsn"},
+            {pfsqltur, (int)n3, "pfsqltur"},
+            {pfsqitur, (int)n3, "pfsqitur"},
+            {pfhpsl, (int)n3, "pfhpsl"},
+            {pfplsl, (int)n3, "pfplsl"},
+            {prainfrac_toprfz, klon, "prainfrac_toprfz"},
+        };
+
+        std::cerr << "Running sensitivity analysis (eps=" << sens_eps << ")...\n";
+        sensitivity::run(restore, execute, sens_inputs, sens_outputs, sens_eps);
+
+        delete[] pt_bk; delete[] pq_bk;
+        delete[] tendency_tmp_t_bk; delete[] tendency_tmp_q_bk;
+        delete[] tendency_tmp_a_bk; delete[] tendency_tmp_cld_bk;
+        delete[] tendency_loc_t_bk; delete[] tendency_loc_q_bk;
+        delete[] tendency_loc_a_bk; delete[] tendency_loc_cld_bk;
+        delete[] pvfa_bk; delete[] pvfl_bk; delete[] pvfi_bk;
+        delete[] pdyna_bk; delete[] pdynl_bk; delete[] pdyni_bk;
+        delete[] phrsw_bk; delete[] phrlw_bk; delete[] pvervel_bk;
+        delete[] pap_bk; delete[] paph_bk;
+        delete[] plu_bk; delete[] plude_bk; delete[] psnde_bk;
+        delete[] pmfu_bk; delete[] pmfd_bk;
+        delete[] pa_bk; delete[] pclv_bk; delete[] psupsat_bk;
+        delete[] plcrit_aer_bk; delete[] picrit_aer_bk;
+        delete[] pre_ice_bk; delete[] pccn_bk; delete[] pnice_bk;
+        delete[] pcovptot_bk;
+        delete[] pfsqlf_bk; delete[] pfsqrf_bk; delete[] pfsqif_bk; delete[] pfsqsf_bk;
+        delete[] pfcqlng_bk; delete[] pfcqnng_bk; delete[] pfcqrng_bk; delete[] pfcqsng_bk;
+        delete[] pfhpsn_bk; delete[] pfplsn_bk;
+        delete[] pfsqltur_bk; delete[] pfsqitur_bk;
+        delete[] pfhpsl_bk; delete[] pfplsl_bk;
+        delete[] prainfrac_toprfz_bk; delete[] plsm_bk;
+    }
 
     __dace_exit_cloudsc_py(handle);
     return 0;

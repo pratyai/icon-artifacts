@@ -1,6 +1,7 @@
 /* DaCe AUTO-GENERATED FILE. DO NOT MODIFY */
 #include "hash.h"
 #include <dace/dace.h>
+#include "copy_cast.h"
 
 struct cloudsc_py_state_t {};
 
@@ -74,90 +75,90 @@ void __program_cloudsc_py_internal(
     double yrecldp_rsnowlin1, double yrecldp_rsnowlin2, double yrecldp_rtaumel,
     double yrecldp_rthomo, double yrecldp_rvice, double yrecldp_rvrain,
     double yrecldp_rvrfactor, double yrecldp_rvsnow) {
-  double *zlcond1;
-  zlcond1 = new double DACE_ALIGN(64)[klon];
-  double *zlcond2;
-  zlcond2 = new double DACE_ALIGN(64)[klon];
-  double *zrainaut;
-  zrainaut = new double DACE_ALIGN(64)[klon];
-  double *zsnowaut;
-  zsnowaut = new double DACE_ALIGN(64)[klon];
-  double *zliqcld;
-  zliqcld = new double DACE_ALIGN(64)[klon];
-  double *zicecld;
-  zicecld = new double DACE_ALIGN(64)[klon];
-  double *zfokoop;
-  zfokoop = new double DACE_ALIGN(64)[klon];
-  double *zicenuclei;
-  zicenuclei = new double DACE_ALIGN(64)[klon];
-  double *zlicld;
-  zlicld = new double DACE_ALIGN(64)[klon];
-  double *zlfinalsum;
-  zlfinalsum = new double DACE_ALIGN(64)[klon];
-  double *zdqs;
-  zdqs = new double DACE_ALIGN(64)[klon];
+  float *zlcond1;
+  zlcond1 = new float DACE_ALIGN(64)[klon];
+  float *zlcond2;
+  zlcond2 = new float DACE_ALIGN(64)[klon];
+  float *zrainaut;
+  zrainaut = new float DACE_ALIGN(64)[klon];
+  float *zsnowaut;
+  zsnowaut = new float DACE_ALIGN(64)[klon];
+  float *zliqcld;
+  zliqcld = new float DACE_ALIGN(64)[klon];
+  float *zicecld;
+  zicecld = new float DACE_ALIGN(64)[klon];
+  float *zfokoop;
+  zfokoop = new float DACE_ALIGN(64)[klon];
+  float *zicenuclei;
+  zicenuclei = new float DACE_ALIGN(64)[klon];
+  float *zlicld;
+  zlicld = new float DACE_ALIGN(64)[klon];
+  float *zlfinalsum;
+  zlfinalsum = new float DACE_ALIGN(64)[klon];
+  float *zdqs;
+  zdqs = new float DACE_ALIGN(64)[klon];
   double *ztold;
   ztold = new double DACE_ALIGN(64)[klon];
-  double *zqold;
-  zqold = new double DACE_ALIGN(64)[klon];
-  double *zdtgdp;
-  zdtgdp = new double DACE_ALIGN(64)[klon];
-  double *zrdtgdp;
-  zrdtgdp = new double DACE_ALIGN(64)[klon];
-  double *zcovpclr;
-  zcovpclr = new double DACE_ALIGN(64)[klon];
-  double *zcovptot;
-  zcovptot = new double DACE_ALIGN(64)[klon];
-  double *zcovpmax;
-  zcovpmax = new double DACE_ALIGN(64)[klon];
-  double *zqpretot;
-  zqpretot = new double DACE_ALIGN(64)[klon];
-  double *zldefr;
-  zldefr = new double DACE_ALIGN(64)[klon];
-  double *zldifdt;
-  zldifdt = new double DACE_ALIGN(64)[klon];
-  double *zacust;
-  zacust = new double DACE_ALIGN(64)[klon];
-  double *zmf;
-  zmf = new double DACE_ALIGN(64)[klon];
-  double *zrho;
-  zrho = new double DACE_ALIGN(64)[klon];
-  double *zsolab;
-  zsolab = new double DACE_ALIGN(64)[klon];
-  double *zsolac;
-  zsolac = new double DACE_ALIGN(64)[klon];
-  double *zanewm1;
-  zanewm1 = new double DACE_ALIGN(64)[klon];
-  double *zda;
-  zda = new double DACE_ALIGN(64)[klon];
+  float *zqold;
+  zqold = new float DACE_ALIGN(64)[klon];
+  float *zdtgdp;
+  zdtgdp = new float DACE_ALIGN(64)[klon];
+  float *zrdtgdp;
+  zrdtgdp = new float DACE_ALIGN(64)[klon];
+  float *zcovpclr;
+  zcovpclr = new float DACE_ALIGN(64)[klon];
+  float *zcovptot;
+  zcovptot = new float DACE_ALIGN(64)[klon];
+  float *zcovpmax;
+  zcovpmax = new float DACE_ALIGN(64)[klon];
+  float *zqpretot;
+  zqpretot = new float DACE_ALIGN(64)[klon];
+  float *zldefr;
+  zldefr = new float DACE_ALIGN(64)[klon];
+  float *zldifdt;
+  zldifdt = new float DACE_ALIGN(64)[klon];
+  float *zacust;
+  zacust = new float DACE_ALIGN(64)[klon];
+  float *zmf;
+  zmf = new float DACE_ALIGN(64)[klon];
+  float *zrho;
+  zrho = new float DACE_ALIGN(64)[klon];
+  float *zsolab;
+  zsolab = new float DACE_ALIGN(64)[klon];
+  float *zsolac;
+  zsolac = new float DACE_ALIGN(64)[klon];
+  float *zanewm1;
+  zanewm1 = new float DACE_ALIGN(64)[klon];
+  float *zda;
+  zda = new float DACE_ALIGN(64)[klon];
   double *zdp;
   zdp = new double DACE_ALIGN(64)[klon];
-  double *zsupsat;
-  zsupsat = new double DACE_ALIGN(64)[klon];
-  double *zmeltmax;
-  zmeltmax = new double DACE_ALIGN(64)[klon];
-  double *zfrzmax;
-  zfrzmax = new double DACE_ALIGN(64)[klon];
-  double *zicetot;
-  zicetot = new double DACE_ALIGN(64)[klon];
-  double *zdqsmixdt;
-  zdqsmixdt = new double DACE_ALIGN(64)[klon];
-  double *zcorqsliq;
-  zcorqsliq = new double DACE_ALIGN(64)[klon];
-  double *zcorqsice;
-  zcorqsice = new double DACE_ALIGN(64)[klon];
-  double *zevaplimice;
-  zevaplimice = new double DACE_ALIGN(64)[klon];
-  double *zevaplimmix;
-  zevaplimmix = new double DACE_ALIGN(64)[klon];
-  double *zcldtopdist;
-  zcldtopdist = new double DACE_ALIGN(64)[klon];
-  double *zrainacc;
-  zrainacc = new double DACE_ALIGN(64)[klon];
-  double *zraincld;
-  zraincld = new double DACE_ALIGN(64)[klon];
-  double *zsnowcld;
-  zsnowcld = new double DACE_ALIGN(64)[klon];
+  float *zsupsat;
+  zsupsat = new float DACE_ALIGN(64)[klon];
+  float *zmeltmax;
+  zmeltmax = new float DACE_ALIGN(64)[klon];
+  float *zfrzmax;
+  zfrzmax = new float DACE_ALIGN(64)[klon];
+  float *zicetot;
+  zicetot = new float DACE_ALIGN(64)[klon];
+  float *zdqsmixdt;
+  zdqsmixdt = new float DACE_ALIGN(64)[klon];
+  float *zcorqsliq;
+  zcorqsliq = new float DACE_ALIGN(64)[klon];
+  float *zcorqsice;
+  zcorqsice = new float DACE_ALIGN(64)[klon];
+  float *zevaplimice;
+  zevaplimice = new float DACE_ALIGN(64)[klon];
+  float *zevaplimmix;
+  zevaplimmix = new float DACE_ALIGN(64)[klon];
+  float *zcldtopdist;
+  zcldtopdist = new float DACE_ALIGN(64)[klon];
+  float *zrainacc;
+  zrainacc = new float DACE_ALIGN(64)[klon];
+  float *zraincld;
+  zraincld = new float DACE_ALIGN(64)[klon];
+  float *zsnowcld;
+  zsnowcld = new float DACE_ALIGN(64)[klon];
   double *psum_solqa;
   psum_solqa = new double DACE_ALIGN(64)[klon];
   int *iphase;
@@ -168,115 +169,93 @@ void __program_cloudsc_py_internal(
   llfall = new int DACE_ALIGN(64)[nclv];
   double *zvqx;
   zvqx = new double DACE_ALIGN(64)[nclv];
-  double *zfoealfa;
-  zfoealfa = new double DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *zfoealfa;
+  zfoealfa = new float DACE_ALIGN(64)[(klon * (klev + 1))];
   double *ztp1;
   ztp1 = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zlcust;
-  zlcust = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zli;
-  zli = new double DACE_ALIGN(64)[(klev * klon)];
-  double *za;
-  za = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zaorig;
-  zaorig = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zliqfrac;
-  zliqfrac = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zicefrac;
-  zicefrac = new double DACE_ALIGN(64)[(klev * klon)];
+  float *zlcust;
+  zlcust = new float DACE_ALIGN(64)[(klon * nclv)];
+  float *zli;
+  zli = new float DACE_ALIGN(64)[(klev * klon)];
+  float *za;
+  za = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zaorig;
+  zaorig = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zliqfrac;
+  zliqfrac = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zicefrac;
+  zicefrac = new float DACE_ALIGN(64)[(klev * klon)];
   double *zqx;
   zqx = new double DACE_ALIGN(64)[((klev * klon) * nclv)];
-  double *zqx0;
-  zqx0 = new double DACE_ALIGN(64)[((klev * klon) * nclv)];
-  double *zqxn;
-  zqxn = new double DACE_ALIGN(64)[(klon * nclv)];
+  float *zqx0;
+  zqx0 = new float DACE_ALIGN(64)[((klev * klon) * nclv)];
+  float *zqxn;
+  zqxn = new float DACE_ALIGN(64)[(klon * nclv)];
   double *zqxfg;
   zqxfg = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zqxnm1;
-  zqxnm1 = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zfluxq;
-  zfluxq = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zpfplsx;
-  zpfplsx = new double DACE_ALIGN(64)[((klon * nclv) * (klev + 1))];
-  double *zlneg;
-  zlneg = new double DACE_ALIGN(64)[((klev * klon) * nclv)];
-  double *zqxn2d;
-  zqxn2d = new double DACE_ALIGN(64)[((klev * klon) * nclv)];
-  double *zqsmix;
-  zqsmix = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zqsliq;
-  zqsliq = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zqsice;
-  zqsice = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zfoeewmt;
-  zfoeewmt = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zfoeew;
-  zfoeew = new double DACE_ALIGN(64)[(klev * klon)];
-  double *zfoeeliqt;
-  zfoeeliqt = new double DACE_ALIGN(64)[(klev * klon)];
+  float *zqxnm1;
+  zqxnm1 = new float DACE_ALIGN(64)[(klon * nclv)];
+  float *zfluxq;
+  zfluxq = new float DACE_ALIGN(64)[(klon * nclv)];
+  float *zpfplsx;
+  zpfplsx = new float DACE_ALIGN(64)[((klon * nclv) * (klev + 1))];
+  float *zlneg;
+  zlneg = new float DACE_ALIGN(64)[((klev * klon) * nclv)];
+  float *zqxn2d;
+  zqxn2d = new float DACE_ALIGN(64)[((klev * klon) * nclv)];
+  float *zqsmix;
+  zqsmix = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zqsliq;
+  zqsliq = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zqsice;
+  zqsice = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zfoeewmt;
+  zfoeewmt = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zfoeew;
+  zfoeew = new float DACE_ALIGN(64)[(klev * klon)];
+  float *zfoeeliqt;
+  zfoeeliqt = new float DACE_ALIGN(64)[(klev * klon)];
   double *zsolqa;
   zsolqa = new double DACE_ALIGN(64)[((klon * nclv) * nclv)];
-  double *zsolqb;
-  zsolqb = new double DACE_ALIGN(64)[((klon * nclv) * nclv)];
-  double *zqlhs;
-  zqlhs = new double DACE_ALIGN(64)[((klon * nclv) * nclv)];
-  double *zratio;
-  zratio = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zsinksum;
-  zsinksum = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zfallsink;
-  zfallsink = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zfallsrce;
-  zfallsrce = new double DACE_ALIGN(64)[(klon * nclv)];
+  float *zsolqb;
+  zsolqb = new float DACE_ALIGN(64)[((klon * nclv) * nclv)];
+  float *zqlhs;
+  zqlhs = new float DACE_ALIGN(64)[((klon * nclv) * nclv)];
+  float *zratio;
+  zratio = new float DACE_ALIGN(64)[(klon * nclv)];
+  float *zsinksum;
+  zsinksum = new float DACE_ALIGN(64)[(klon * nclv)];
+  float *zfallsink;
+  zfallsink = new float DACE_ALIGN(64)[(klon * nclv)];
+  float *zfallsrce;
+  zfallsrce = new float DACE_ALIGN(64)[(klon * nclv)];
   double *zconvsrce;
   zconvsrce = new double DACE_ALIGN(64)[(klon * nclv)];
   double *zconvsink;
   zconvsink = new double DACE_ALIGN(64)[(klon * nclv)];
-  double *zpsupsatsrce;
-  zpsupsatsrce = new double DACE_ALIGN(64)[(klon * nclv)];
+  float *zpsupsatsrce;
+  zpsupsatsrce = new float DACE_ALIGN(64)[(klon * nclv)];
   double ztw1;
   double ztw2;
   double ztw3;
   double ztw4;
   double ztw5;
   double zepsilon;
-  int64_t iwarmrain;
-  int64_t ievaprain;
-  int64_t ievapsnow;
-  int64_t idepice;
   double zqtmst;
   double zrdcp;
   double zepsec;
   double zrg_r;
   double zrldcp;
-  int kfdia_plus_1;
-  int kfdia_plus_1_0;
-  int kfdia_plus_1_1;
   bool __tmp0;
-  int kfdia_plus_1_2;
-  int kfdia_plus_1_3;
-  int kfdia_plus_1_4;
-  int kfdia_plus_1_5;
-  int kfdia_plus_1_6;
-  int kfdia_plus_1_7;
   bool __tmp3;
   double zqadj;
-  double tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj;
-  double tendency_loc_t_index_0;
-  int kfdia_plus_1_8;
+  float tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj;
+  float tendency_loc_t_index_0;
   bool __tmp4;
   bool __tmp5;
   bool __tmp6;
-  int kfdia_plus_1_9;
-  double zqsliq_index;
-  int kfdia_plus_1_10;
+  float zqsliq_index;
   bool __tmp15;
-  int kfdia_plus_1_13;
-  int kfdia_plus_1_14;
-  int kfdia_plus_1_15;
-  int kfdia_plus_1_16;
-  int kfdia_plus_1_17;
-  int kfdia_plus_1_18;
   double zfacw;
   double zcor;
   double zfaci;
@@ -284,58 +263,39 @@ void __program_cloudsc_py_internal(
   double zfac;
   double __tmp26;
   double ztmpa;
-  int kfdia_plus_1_19;
   bool __tmp29;
   double zsolqa_slice_0;
   bool __tmp30;
   double zsolqa_slice_2;
-  int kfdia_plus_1_20;
-  int kfdia_plus_1_21;
   bool __tmp33;
   bool __tmp36;
   bool __tmp41;
   bool __tmp42;
   bool __tmp44;
   bool __tmp45;
-  int kfdia_plus_1_22;
   bool __tmp50;
   double zconvsrce_slice_0;
-  int ldcum_index_0;
-  int kfdia_plus_1_23;
   bool __tmp53;
-  int kfdia_plus_1_24;
-  int kfdia_plus_1_25;
   double zdtdp;
   double zdtforc;
   bool __tmp55;
-  int kfdia_plus_1_26;
   double zevap;
-  int kfdia_plus_1_27;
   bool __tmp56;
-  int kfdia_plus_1_28;
   double zmfdn;
-  int kfdia_plus_1_29;
   bool __tmp59;
-  int kfdia_plus_1_30;
   bool __tmp60;
-  int kfdia_plus_1_31;
   double zdpmxdt;
-  int kfdia_plus_1_32;
   double zqp;
   double zqsat;
   double zcor_2;
   double zcor_3;
-  int kfdia_plus_1_33;
-  double zdqs_slice_0;
-  int kfdia_plus_1_34;
+  float zdqs_slice_0;
   bool __tmp85;
-  int kfdia_plus_1_35;
   bool __tmp88;
   bool __tmp89;
   double zcdmax;
   bool __tmp97;
   bool __tmp98;
-  int kfdia_plus_1_36;
   bool __tmp102;
   double zsigk;
   double zrhc;
@@ -347,7 +307,6 @@ void __program_cloudsc_py_internal(
   bool __tmp122;
   bool __tmp123;
   bool __tmp124;
-  int kfdia_plus_1_37;
   bool __tmp127;
   bool __tmp130;
   double zvpice;
@@ -355,7 +314,6 @@ void __program_cloudsc_py_internal(
   double zice0;
   double zdepos;
   double zinfactor;
-  int kfdia_plus_1_38;
   bool __tmp147;
   bool __tmp150;
   double ztcg;
@@ -365,12 +323,8 @@ void __program_cloudsc_py_internal(
   double zpr02;
   double zterm1;
   double zterm2;
-  int kfdia_plus_1_39;
   bool __tmp160;
-  int kfdia_plus_1_40;
-  int kfdia_plus_1_41;
   bool __tmp161;
-  int kfdia_plus_1_42;
   bool __tmp168;
   bool __tmp169;
   double zzco;
@@ -385,16 +339,13 @@ void __program_cloudsc_py_internal(
   bool __tmp183;
   bool __tmp187;
   bool __tmp188;
-  int kfdia_plus_1_43;
   bool __tmp191;
   double zfallcorr;
   bool __tmp194;
-  int kfdia_plus_1_44;
   bool __tmp201;
   double zsubsat;
   double zcons1;
   bool __tmp204;
-  int kfdia_plus_1_45;
   bool __tmp207;
   double zmelt;
   int imelt_slice_minus_1;
@@ -406,7 +357,6 @@ void __program_cloudsc_py_internal(
   int imelt_slice_minus_1_1;
   double zsolqa_slice_minus_zmelt;
   int zsolqa_slice_4;
-  int kfdia_plus_1_46;
   bool __tmp208;
   bool __tmp211;
   bool __tmp213;
@@ -414,8 +364,6 @@ void __program_cloudsc_py_internal(
   double zlambda;
   double zfrz;
   bool __tmp217;
-  int kfdia_plus_1_47;
-  int kfdia_plus_1_48;
   bool __tmp220;
   int imelt_slice_minus_1_2;
   double zsolqa_slice_plus_zfrz_0;
@@ -423,7 +371,6 @@ void __program_cloudsc_py_internal(
   int imelt_slice_minus_1_3;
   double zsolqa_slice_minus_zfrz_0;
   int zsolqa_slice_6;
-  int kfdia_plus_1_49;
   double zzrh;
   bool llo1;
   double zpreclr;
@@ -432,68 +379,978 @@ void __program_cloudsc_py_internal(
   double zdenom;
   double zdpr;
   double zdpevap;
-  int kfdia_plus_1_50;
-  double zcovptot_slice_minus_expr_0;
-  int kfdia_plus_1_51;
+  float zcovptot_slice_minus_expr_0;
   double zqxfg_slice_minus_zevap_1;
-  int kfdia_plus_1_52;
   double zsolqa_slice_plus_zevap_3;
+  bool __tmp263;
+  double zanew;
+  double zzratio;
+  bool __tmp265;
+  double zexplicit;
+  bool __tmp266;
+  bool __tmp267;
+  bool __tmp268;
+  bool __tmp269;
+  double zgdph_r;
+  float pfcqsng_slice;
+  double zconst;
+  float *pq_lowered;
+  pq_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *tendency_tmp_t_lowered;
+  tendency_tmp_t_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *tendency_tmp_q_lowered;
+  tendency_tmp_q_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *tendency_loc_t_lowered;
+  tendency_loc_t_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *tendency_loc_q_lowered;
+  tendency_loc_q_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *tendency_loc_a_lowered;
+  tendency_loc_a_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *tendency_loc_cld_lowered;
+  tendency_loc_cld_lowered = new float DACE_ALIGN(64)[((klev * klon) * nclv)];
+  float *pvfa_lowered;
+  pvfa_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pvfl_lowered;
+  pvfl_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pvfi_lowered;
+  pvfi_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pdyna_lowered;
+  pdyna_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pdynl_lowered;
+  pdynl_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pdyni_lowered;
+  pdyni_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *phrsw_lowered;
+  phrsw_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *phrlw_lowered;
+  phrlw_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pvervel_lowered;
+  pvervel_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pap_lowered;
+  pap_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *paph_lowered;
+  paph_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *plsm_lowered;
+  plsm_lowered = new float DACE_ALIGN(64)[klon];
+  float *plu_lowered;
+  plu_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *plude_lowered;
+  plude_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *psnde_lowered;
+  psnde_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pmfu_lowered;
+  pmfu_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pmfd_lowered;
+  pmfd_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pclv_lowered;
+  pclv_lowered = new float DACE_ALIGN(64)[((klev * klon) * nclv)];
+  float *psupsat_lowered;
+  psupsat_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *plcrit_aer_lowered;
+  plcrit_aer_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *picrit_aer_lowered;
+  picrit_aer_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pre_ice_lowered;
+  pre_ice_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pccn_lowered;
+  pccn_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pnice_lowered;
+  pnice_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *pcovptot_lowered;
+  pcovptot_lowered = new float DACE_ALIGN(64)[(klev * klon)];
+  float *prainfrac_toprfz_lowered;
+  prainfrac_toprfz_lowered = new float DACE_ALIGN(64)[klon];
+  float *pfcqnng_lowered;
+  pfcqnng_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfcqlng_lowered;
+  pfcqlng_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfcqrng_lowered;
+  pfcqrng_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfcqsng_lowered;
+  pfcqsng_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfsqltur_lowered;
+  pfsqltur_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfsqitur_lowered;
+  pfsqitur_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfplsl_lowered;
+  pfplsl_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfplsn_lowered;
+  pfplsn_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfhpsl_lowered;
+  pfhpsl_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  float *pfhpsn_lowered;
+  pfhpsn_lowered = new float DACE_ALIGN(64)[(klon * (klev + 1))];
+  int64_t iwarmrain;
+  int64_t ievaprain;
+  int64_t ievapsnow;
+  int64_t idepice;
+  int kfdia_plus_1_6;
+  int kfdia_plus_1_13;
+  int kfdia_plus_1_85;
+  int64_t jk;
+  int kfdia_plus_1;
+  int64_t jl;
+  int64_t jm;
+  int kfdia_plus_1_0;
+  int kfdia_plus_1_1;
+  int kfdia_plus_1_2;
+  int kfdia_plus_1_3;
+  int kfdia_plus_1_4;
+  int kfdia_plus_1_5;
+  int kfdia_plus_1_7;
+  int kfdia_plus_1_8;
+  int iphase_index;
+  int iphase_index_0;
+  int kfdia_plus_1_9;
+  int kfdia_plus_1_10;
+  int kfdia_plus_1_15;
+  int kfdia_plus_1_18;
+  int kfdia_plus_1_19;
+  int kfdia_plus_1_20;
+  int kfdia_plus_1_21;
+  int kfdia_plus_1_28;
+  int kfdia_plus_1_29;
+  int kfdia_plus_1_30;
+  int kfdia_plus_1_31;
+  int kfdia_plus_1_32;
+  int kfdia_plus_1_33;
+  int kfdia_plus_1_34;
+  int kfdia_plus_1_35;
+  int kfdia_plus_1_36;
+  int kfdia_plus_1_39;
+  int kfdia_plus_1_41;
+  int kfdia_plus_1_42;
+  int kfdia_plus_1_44;
+  int kfdia_plus_1_46;
+  int kfdia_plus_1_47;
+  int kfdia_plus_1_48;
+  int kfdia_plus_1_54;
+  int kfdia_plus_1_70;
+  int kfdia_plus_1_76;
+  int kfdia_plus_1_77;
+  int kfdia_plus_1_82;
+  int kfdia_plus_1_83;
+  int kfdia_plus_1_14;
+  int64_t jn;
+  int kfdia_plus_1_16;
+  int kfdia_plus_1_17;
+  bool __tmp32;
+  int kfdia_plus_1_22;
+  int ldcum_index;
+  int ldcum_index_0;
+  int kfdia_plus_1_23;
+  int kfdia_plus_1_25;
+  int kfdia_plus_1_27;
+  int llfall_index;
+  int iphase_index_1;
+  int kfdia_plus_1_24;
+  int llfall_index_0;
+  int iphase_index_2;
+  int kfdia_plus_1_26;
+  int ktype_index;
+  bool __tmp108;
+  int kfdia_plus_1_37;
+  int kfdia_plus_1_38;
+  int llfall_index_1;
+  int kfdia_plus_1_40;
+  int kfdia_plus_1_43;
+  int iphase_index_3;
+  int kfdia_plus_1_45;
+  int imelt_index;
+  int __sym_imelt_slice_minus_1;
+  int imelt_index_0;
+  int imelt_index_1;
+  int imelt_index_2;
+  int imelt_index_3;
+  int imelt_index_4;
+  int imelt_index_5;
+  int __sym_imelt_slice_minus_1_2;
+  int imelt_index_6;
+  int imelt_index_7;
+  int imelt_index_8;
+  int kfdia_plus_1_49;
+  int kfdia_plus_1_50;
+  int kfdia_plus_1_51;
+  int kfdia_plus_1_52;
   int llfall_index_2;
   int kfdia_plus_1_53;
-  bool __tmp263;
-  int kfdia_plus_1_54;
-  double zanew;
   int kfdia_plus_1_56;
   int kfdia_plus_1_57;
   int kfdia_plus_1_58;
   int kfdia_plus_1_59;
-  int kfdia_plus_1_60;
   int kfdia_plus_1_61;
   int kfdia_plus_1_62;
   int kfdia_plus_1_63;
-  double zzratio;
-  bool __tmp265;
+  int kfdia_plus_1_60;
   int kfdia_plus_1_64;
+  int64_t jo;
   int kfdia_plus_1_65;
   int kfdia_plus_1_66;
-  double zexplicit;
   int kfdia_plus_1_67;
+  int64_t ik;
   int kfdia_plus_1_68;
   int kfdia_plus_1_69;
-  int kfdia_plus_1_70;
-  int kfdia_plus_1_71;
   int kfdia_plus_1_72;
+  int kfdia_plus_1_71;
   int kfdia_plus_1_73;
-  bool __tmp266;
   int kfdia_plus_1_74;
   int kfdia_plus_1_75;
-  int kfdia_plus_1_76;
-  int kfdia_plus_1_77;
-  bool __tmp267;
   int kfdia_plus_1_78;
-  bool __tmp268;
-  int kfdia_plus_1_79;
-  bool __tmp269;
-  int kfdia_plus_1_80;
+  int iphase_index_4;
+  int iphase_index_5;
   int kfdia_plus_1_81;
-  int kfdia_plus_1_82;
-  int kfdia_plus_1_83;
+  int kfdia_plus_1_79;
+  int kfdia_plus_1_80;
   int kfdia_plus_1_84;
-  int kfdia_plus_1_85;
   int kfdia_plus_1_86;
-  double zgdph_r;
-  double pfcqsng_slice;
   int kfdia_plus_1_87;
-  double zconst;
-  int64_t jk;
-  int64_t jl;
-  int64_t jm;
-  int64_t jn;
-  int __sym_imelt_slice_minus_1;
-  int __sym_imelt_slice_minus_1_2;
-  int64_t jo;
-  int64_t ik;
 
+  {
+
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pq[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pq_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = tendency_tmp_t[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            tendency_tmp_t_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = tendency_tmp_q[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            tendency_tmp_q_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = tendency_loc_t[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            tendency_loc_t_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = tendency_loc_q[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            tendency_loc_q_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = tendency_loc_a[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            tendency_loc_a_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < nclv; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klev; __i1 += 1) {
+          for (auto __i2 = 0; __i2 < klon; __i2 += 1) {
+            {
+              double _in = tendency_loc_cld[(
+                  (((__i0 * klev) * klon) + (__i1 * klon)) + __i2)];
+              float _out;
+
+              ///////////////////
+              _out = static_cast<float>(_in);
+              ///////////////////
+
+              tendency_loc_cld_lowered[(
+                  (((__i0 * klev) * klon) + (__i1 * klon)) + __i2)] = _out;
+            }
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pvfa[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pvfa_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pvfl[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pvfl_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pvfi[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pvfi_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pdyna[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pdyna_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pdynl[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pdynl_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pdyni[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pdyni_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = phrsw[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            phrsw_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = phrlw[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            phrlw_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pvervel[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pvervel_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pap[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pap_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = paph[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            paph_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klon; __i0 += 1) {
+        {
+          double _in = plsm[__i0];
+          float _out;
+
+          ///////////////////
+          _out = static_cast<float>(_in);
+          ///////////////////
+
+          plsm_lowered[__i0] = _out;
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = plu[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            plu_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = plude[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            plude_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = psnde[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            psnde_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pmfu[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pmfu_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pmfd[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pmfd_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < nclv; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klev; __i1 += 1) {
+          for (auto __i2 = 0; __i2 < klon; __i2 += 1) {
+            {
+              double _in =
+                  pclv[((((__i0 * klev) * klon) + (__i1 * klon)) + __i2)];
+              float _out;
+
+              ///////////////////
+              _out = static_cast<float>(_in);
+              ///////////////////
+
+              pclv_lowered[((((__i0 * klev) * klon) + (__i1 * klon)) + __i2)] =
+                  _out;
+            }
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = psupsat[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            psupsat_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = plcrit_aer[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            plcrit_aer_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = picrit_aer[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            picrit_aer_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pre_ice[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pre_ice_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pccn[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pccn_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pnice[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pnice_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pcovptot[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pcovptot_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klon; __i0 += 1) {
+        {
+          double _in = prainfrac_toprfz[__i0];
+          float _out;
+
+          ///////////////////
+          _out = static_cast<float>(_in);
+          ///////////////////
+
+          prainfrac_toprfz_lowered[__i0] = _out;
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfcqnng[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfcqnng_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfcqlng[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfcqlng_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfcqrng[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfcqrng_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfcqsng[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfcqsng_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfsqltur[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfsqltur_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfsqitur[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfsqitur_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfplsl[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfplsl_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfplsn[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfplsn_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfhpsl[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfhpsl_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            double _in = pfhpsn[((__i0 * klon) + __i1)];
+            float _out;
+
+            ///////////////////
+            _out = static_cast<float>(_in);
+            ///////////////////
+
+            pfhpsn_lowered[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+  }
+
+  iwarmrain = 2;
+
+  ievaprain = 2;
+
+  ievapsnow = 1;
+
+  idepice = 1;
   {
     double ydthf_ralsdcp_minus_ydthf_ralvdcp;
 
@@ -558,52 +1415,12 @@ void __program_cloudsc_py_internal(
       zepsilon = __out;
     }
     {
-      int64_t __out;
-
-      ///////////////////
-      // Tasklet code (assign_293_4)
-      __out = 2;
-      ///////////////////
-
-      iwarmrain = __out;
-    }
-    {
-      int64_t __out;
-
-      ///////////////////
-      // Tasklet code (assign_294_4)
-      __out = 2;
-      ///////////////////
-
-      ievaprain = __out;
-    }
-    {
-      int64_t __out;
-
-      ///////////////////
-      // Tasklet code (assign_295_4)
-      __out = 1;
-      ///////////////////
-
-      ievapsnow = __out;
-    }
-    {
-      int64_t __out;
-
-      ///////////////////
-      // Tasklet code (assign_296_4)
-      __out = 1;
-      ///////////////////
-
-      idepice = __out;
-    }
-    {
       double __in2 = ptsphy;
       double __out;
 
       ///////////////////
       // Tasklet code (_Div_)
-      __out = (1.0 / __in2);
+      __out = (float(1.0) / __in2);
       ///////////////////
 
       zqtmst = __out;
@@ -614,7 +1431,7 @@ void __program_cloudsc_py_internal(
 
       ///////////////////
       // Tasklet code (_Div_)
-      __out = (1.0 / __in2);
+      __out = (float(1.0) / __in2);
       ///////////////////
 
       zrg_r = __out;
@@ -659,7 +1476,7 @@ void __program_cloudsc_py_internal(
 
       ///////////////////
       // Tasklet code (_Div_)
-      __out = (1.0 / __in2);
+      __out = (float(1.0) / __in2);
       ///////////////////
 
       zrldcp = __out;
@@ -790,84 +1607,62 @@ void __program_cloudsc_py_internal(
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1); jl = (jl + 1)) {
       {
 
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_316_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
-          tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+          tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_317_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
-          tendency_loc_q[((jl + (klon * (jk - 1))) - 1)] = __out;
+          tendency_loc_q_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_318_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
-          tendency_loc_a[((jl + (klon * (jk - 1))) - 1)] = __out;
+          tendency_loc_a_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
       }
     }
   }
   for (jm = 1; (jm < nclv); jm = (jm + 1)) {
     for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_0 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_0 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_0); jl = (jl + 1)) {
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_322_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
-            tendency_loc_cld[(
+            tendency_loc_cld_lowered[(
                 ((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) - 1)] =
                 __out;
           }
@@ -876,42 +1671,31 @@ void __program_cloudsc_py_internal(
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_1 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_1 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_1); jl = (jl + 1)) {
       {
 
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_325_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
-          pcovptot[((jl + (klon * (jk - 1))) - 1)] = __out;
+          pcovptot_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_326_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
-          tendency_loc_cld[(
+          tendency_loc_cld_lowered[(
               ((jl + ((klev * klon) * (nclv - 1))) + (klon * (jk - 1))) - 1)] =
               __out;
         }
@@ -925,7 +1709,7 @@ void __program_cloudsc_py_internal(
 
       ///////////////////
       // Tasklet code (assign_327_4)
-      __out = 0.0;
+      __out = float(0.0);
       ///////////////////
 
       zvqx[(ncldqv - 1)] = __out;
@@ -938,7 +1722,7 @@ void __program_cloudsc_py_internal(
 
       ///////////////////
       // Tasklet code (assign_328_4)
-      __out = 0.0;
+      __out = float(0.0);
       ///////////////////
 
       zvqx[(ncldql - 1)] = __out;
@@ -1013,7 +1797,7 @@ void __program_cloudsc_py_internal(
 
         ///////////////////
         // Tasklet code (_Gt_)
-        __out = (__in1 > 0.0);
+        __out = (__in1 > float(0.0));
         ///////////////////
 
         __tmp0 = __out;
@@ -1049,52 +1833,41 @@ void __program_cloudsc_py_internal(
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_2 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_2 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_2); jl = (jl + 1)) {
       {
         double pt_index;
-        double tendency_tmp_t_index;
+        float tendency_tmp_t_index;
         double ptsphy_times_tendency_tmp_t_slice;
         double ztp1_slice;
-        double pq_index;
-        double tendency_tmp_q_index;
+        float pq_index;
+        float tendency_tmp_q_index;
         double ptsphy_times_tendency_tmp_q_slice;
         double zqx_slice;
-        double pq_index_0;
-        double tendency_tmp_q_index_0;
+        float pq_index_0;
+        float tendency_tmp_q_index_0;
         double ptsphy_times_tendency_tmp_q_slice_0;
-        double zqx0_slice;
+        float zqx0_slice;
         double pa_index;
         double tendency_tmp_a_index;
         double ptsphy_times_tendency_tmp_a_slice;
-        double za_slice;
+        float za_slice;
         double pa_index_0;
         double tendency_tmp_a_index_0;
         double ptsphy_times_tendency_tmp_a_slice_0;
-        double zaorig_slice;
+        float zaorig_slice;
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             pt + ((jl + (klon * (jk - 1))) - 1), &pt_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            tendency_tmp_t + ((jl + (klon * (jk - 1))) - 1),
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            tendency_tmp_t_lowered + ((jl + (klon * (jk - 1))) - 1),
             &tendency_tmp_t_index, 1);
         {
           double __in1 = ptsphy;
-          double __in2 = tendency_tmp_t_index;
+          float __in2 = tendency_tmp_t_index;
           double __out;
 
           ///////////////////
@@ -1128,15 +1901,15 @@ void __program_cloudsc_py_internal(
           ztp1[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pq + ((jl + (klon * (jk - 1))) - 1), &pq_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pq_lowered + ((jl + (klon * (jk - 1))) - 1), &pq_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            tendency_tmp_q + ((jl + (klon * (jk - 1))) - 1),
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            tendency_tmp_q_lowered + ((jl + (klon * (jk - 1))) - 1),
             &tendency_tmp_q_index, 1);
         {
           double __in1 = ptsphy;
-          double __in2 = tendency_tmp_q_index;
+          float __in2 = tendency_tmp_q_index;
           double __out;
 
           ///////////////////
@@ -1147,7 +1920,7 @@ void __program_cloudsc_py_internal(
           ptsphy_times_tendency_tmp_q_slice = __out;
         }
         {
-          double __in1 = pq_index;
+          float __in1 = pq_index;
           double __in2 = ptsphy_times_tendency_tmp_q_slice;
           double __out;
 
@@ -1171,15 +1944,15 @@ void __program_cloudsc_py_internal(
                1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pq + ((jl + (klon * (jk - 1))) - 1), &pq_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pq_lowered + ((jl + (klon * (jk - 1))) - 1), &pq_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            tendency_tmp_q + ((jl + (klon * (jk - 1))) - 1),
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            tendency_tmp_q_lowered + ((jl + (klon * (jk - 1))) - 1),
             &tendency_tmp_q_index_0, 1);
         {
           double __in1 = ptsphy;
-          double __in2 = tendency_tmp_q_index_0;
+          float __in2 = tendency_tmp_q_index_0;
           double __out;
 
           ///////////////////
@@ -1190,9 +1963,9 @@ void __program_cloudsc_py_internal(
           ptsphy_times_tendency_tmp_q_slice_0 = __out;
         }
         {
-          double __in1 = pq_index_0;
+          float __in1 = pq_index_0;
           double __in2 = ptsphy_times_tendency_tmp_q_slice_0;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -1202,8 +1975,8 @@ void __program_cloudsc_py_internal(
           zqx0_slice = __out;
         }
         {
-          double __inp = zqx0_slice;
-          double __out;
+          float __inp = zqx0_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_341_12)
@@ -1235,7 +2008,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = pa_index;
           double __in2 = ptsphy_times_tendency_tmp_a_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -1245,8 +2018,8 @@ void __program_cloudsc_py_internal(
           za_slice = __out;
         }
         {
-          double __inp = za_slice;
-          double __out;
+          float __inp = za_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_342_12)
@@ -1277,7 +2050,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = pa_index_0;
           double __in2 = ptsphy_times_tendency_tmp_a_slice_0;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -1287,8 +2060,8 @@ void __program_cloudsc_py_internal(
           zaorig_slice = __out;
         }
         {
-          double __inp = zaorig_slice;
-          double __out;
+          float __inp = zaorig_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_343_12)
@@ -1302,33 +2075,22 @@ void __program_cloudsc_py_internal(
   }
   for (jm = 1; (jm < nclv); jm = (jm + 1)) {
     for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_3 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_3 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_3); jl = (jl + 1)) {
         {
-          double pclv_index;
+          float pclv_index;
           double tendency_tmp_cld_index;
           double ptsphy_times_tendency_tmp_cld_slice;
           double zqx_slice_0;
-          double pclv_index_0;
+          float pclv_index_0;
           double tendency_tmp_cld_index_0;
           double ptsphy_times_tendency_tmp_cld_slice_0;
-          double zqx0_slice_0;
+          float zqx0_slice_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pclv +
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pclv_lowered +
                   (((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) - 1),
               &pclv_index, 1);
 
@@ -1349,7 +2111,7 @@ void __program_cloudsc_py_internal(
             ptsphy_times_tendency_tmp_cld_slice = __out;
           }
           {
-            double __in1 = pclv_index;
+            float __in1 = pclv_index;
             double __in2 = ptsphy_times_tendency_tmp_cld_slice;
             double __out;
 
@@ -1373,8 +2135,8 @@ void __program_cloudsc_py_internal(
                 __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pclv +
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pclv_lowered +
                   (((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) - 1),
               &pclv_index_0, 1);
 
@@ -1395,9 +2157,9 @@ void __program_cloudsc_py_internal(
             ptsphy_times_tendency_tmp_cld_slice_0 = __out;
           }
           {
-            double __in1 = pclv_index_0;
+            float __in1 = pclv_index_0;
             double __in2 = ptsphy_times_tendency_tmp_cld_slice_0;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -1407,8 +2169,8 @@ void __program_cloudsc_py_internal(
             zqx0_slice_0 = __out;
           }
           {
-            double __inp = zqx0_slice_0;
-            double __out;
+            float __inp = zqx0_slice_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_348_16)
@@ -1424,29 +2186,18 @@ void __program_cloudsc_py_internal(
   }
   for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
     for (jk = 1; (jk < (klev + 2)); jk = (jk + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_4 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_4 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_4); jl = (jl + 1)) {
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_352_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zpfplsx[(
@@ -1459,40 +2210,29 @@ void __program_cloudsc_py_internal(
   }
   for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
     for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_5 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_5 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_5); jl = (jl + 1)) {
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_356_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zqxn2d[(((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) -
                     1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_357_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zlneg[(((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) -
@@ -1502,57 +2242,35 @@ void __program_cloudsc_py_internal(
       }
     }
   }
-  {
 
-    {
-      int __in1 = kfdia;
-      int __out;
+  kfdia_plus_1_6 = (kfdia + 1);
 
-      ///////////////////
-      // Tasklet code (_Add_)
-      __out = (__in1 + int(1));
-      ///////////////////
-
-      kfdia_plus_1_6 = __out;
-    }
-  }
   for (jl = kidia; (jl < kfdia_plus_1_6); jl = (jl + 1)) {
     {
 
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_359_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        prainfrac_toprfz[(jl - 1)] = __out;
+        prainfrac_toprfz_lowered[(jl - 1)] = __out;
       }
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_7 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_7 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_7); jl = (jl + 1)) {
       {
         double zqx_index;
         double zqx_index_0;
         double zqx_slice_plus_zqx_slice;
         bool __tmp1;
-        double za_index;
+        float za_index;
         bool __tmp2;
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -1589,10 +2307,10 @@ void __program_cloudsc_py_internal(
           __tmp1 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index, 1);
         {
-          double __in1 = za_index;
+          float __in1 = za_index;
           double __in2 = yrecldp_ramin;
           bool __out;
 
@@ -1618,16 +2336,16 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp3) {
         {
-          double zlneg_index;
+          float zlneg_index;
           double zqx_index_1;
-          double zlneg_slice_plus_zqx_slice;
+          float zlneg_slice_plus_zqx_slice;
           double zqx_index_2;
-          double tendency_loc_q_index;
-          double tendency_loc_q_slice_plus_zqadj;
-          double tendency_loc_t_index;
+          float tendency_loc_q_index;
+          float tendency_loc_q_slice_plus_zqadj;
+          float tendency_loc_t_index;
           double ydthf_ralvdcp_times_zqadj;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlneg +
                   (((jl + ((klev * klon) * (ncldql - 1))) + (klon * (jk - 1))) -
                    1),
@@ -1639,9 +2357,9 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_1, 1);
           {
-            double __in1 = zlneg_index;
+            float __in1 = zlneg_index;
             double __in2 = zqx_index_1;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -1651,8 +2369,8 @@ void __program_cloudsc_py_internal(
             zlneg_slice_plus_zqx_slice = __out;
           }
           {
-            double __inp = zlneg_slice_plus_zqx_slice;
-            double __out;
+            float __inp = zlneg_slice_plus_zqx_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_364_16)
@@ -1681,13 +2399,13 @@ void __program_cloudsc_py_internal(
             zqadj = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              tendency_loc_q + ((jl + (klon * (jk - 1))) - 1),
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              tendency_loc_q_lowered + ((jl + (klon * (jk - 1))) - 1),
               &tendency_loc_q_index, 1);
           {
-            double __in1 = tendency_loc_q_index;
+            float __in1 = tendency_loc_q_index;
             double __in2 = zqadj;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -1697,19 +2415,19 @@ void __program_cloudsc_py_internal(
             tendency_loc_q_slice_plus_zqadj = __out;
           }
           {
-            double __inp = tendency_loc_q_slice_plus_zqadj;
-            double __out;
+            float __inp = tendency_loc_q_slice_plus_zqadj;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_366_16)
             __out = __inp;
             ///////////////////
 
-            tendency_loc_q[((jl + (klon * (jk - 1))) - 1)] = __out;
+            tendency_loc_q_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              tendency_loc_t + ((jl + (klon * (jk - 1))) - 1),
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              tendency_loc_t_lowered + ((jl + (klon * (jk - 1))) - 1),
               &tendency_loc_t_index, 1);
           {
             double __in1 = ydthf_ralvdcp;
@@ -1724,9 +2442,9 @@ void __program_cloudsc_py_internal(
             ydthf_ralvdcp_times_zqadj = __out;
           }
           {
-            double __in1 = tendency_loc_t_index;
+            float __in1 = tendency_loc_t_index;
             double __in2 = ydthf_ralvdcp_times_zqadj;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -1742,15 +2460,15 @@ void __program_cloudsc_py_internal(
           double zqx_slice_plus_zqx_slice_0;
 
           {
-            double __inp = tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj;
-            double __out;
+            float __inp = tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_367_16)
             __out = __inp;
             ///////////////////
 
-            tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+            tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -1790,20 +2508,20 @@ void __program_cloudsc_py_internal(
           }
         }
         {
-          double zlneg_index_0;
+          float zlneg_index_0;
           double zqx_index_5;
-          double zlneg_slice_plus_zqx_slice_0;
+          float zlneg_slice_plus_zqx_slice_0;
           double zqx_index_6;
           double zqadj_0;
-          double tendency_loc_q_index_0;
-          double tendency_loc_q_slice_plus_zqadj_0;
+          float tendency_loc_q_index_0;
+          float tendency_loc_q_slice_plus_zqadj_0;
 
           {
             double __out;
 
             ///////////////////
             // Tasklet code (assign_369_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zqx[(((jl + ((klev * klon) * (ncldql - 1))) + (klon * (jk - 1))) -
@@ -1822,15 +2540,15 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_6, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlneg +
                   (((jl + ((klev * klon) * (ncldqi - 1))) + (klon * (jk - 1))) -
                    1),
               &zlneg_index_0, 1);
           {
-            double __in1 = zlneg_index_0;
+            float __in1 = zlneg_index_0;
             double __in2 = zqx_index_5;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -1840,8 +2558,8 @@ void __program_cloudsc_py_internal(
             zlneg_slice_plus_zqx_slice_0 = __out;
           }
           {
-            double __inp = zlneg_slice_plus_zqx_slice_0;
-            double __out;
+            float __inp = zlneg_slice_plus_zqx_slice_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_370_16)
@@ -1875,13 +2593,13 @@ void __program_cloudsc_py_internal(
             zqadj = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              tendency_loc_q + ((jl + (klon * (jk - 1))) - 1),
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              tendency_loc_q_lowered + ((jl + (klon * (jk - 1))) - 1),
               &tendency_loc_q_index_0, 1);
           {
-            double __in1 = tendency_loc_q_index_0;
+            float __in1 = tendency_loc_q_index_0;
             double __in2 = zqadj;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -1891,24 +2609,24 @@ void __program_cloudsc_py_internal(
             tendency_loc_q_slice_plus_zqadj_0 = __out;
           }
           {
-            double __inp = tendency_loc_q_slice_plus_zqadj_0;
-            double __out;
+            float __inp = tendency_loc_q_slice_plus_zqadj_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_372_16)
             __out = __inp;
             ///////////////////
 
-            tendency_loc_q[((jl + (klon * (jk - 1))) - 1)] = __out;
+            tendency_loc_q_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              tendency_loc_t + ((jl + (klon * (jk - 1))) - 1),
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              tendency_loc_t_lowered + ((jl + (klon * (jk - 1))) - 1),
               &tendency_loc_t_index_0, 1);
         }
         {
           double ydthf_ralsdcp_times_zqadj;
-          double tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj;
+          float tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj;
           double zqx_index_7;
           double zqx_index_8;
           double zqx_slice_plus_zqx_slice_1;
@@ -1926,9 +2644,9 @@ void __program_cloudsc_py_internal(
             ydthf_ralsdcp_times_zqadj = __out;
           }
           {
-            double __in1 = tendency_loc_t_index_0;
+            float __in1 = tendency_loc_t_index_0;
             double __in2 = ydthf_ralsdcp_times_zqadj;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -1938,15 +2656,15 @@ void __program_cloudsc_py_internal(
             tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj = __out;
           }
           {
-            double __inp = tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj;
-            double __out;
+            float __inp = tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_373_16)
             __out = __inp;
             ///////////////////
 
-            tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+            tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -1992,18 +2710,18 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_375_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zqx[(((jl + ((klev * klon) * (ncldqi - 1))) + (klon * (jk - 1))) -
                  1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_376_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             za[((jl + (klon * (jk - 1))) - 1)] = __out;
@@ -2014,20 +2732,9 @@ void __program_cloudsc_py_internal(
   }
   for (jm = 1; (jm < nclv); jm = (jm + 1)) {
     for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_8 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_8 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_8); jl = (jl + 1)) {
         {
           double zqx_index_9;
@@ -2050,17 +2757,18 @@ void __program_cloudsc_py_internal(
           }
         }
         if (__tmp4) {
+
+          iphase_index = iphase[(jm - 1)];
           {
-            double zlneg_index_1;
+            float zlneg_index_1;
             double zqx_index_10;
-            double zlneg_slice_plus_zqx_slice_1;
+            float zlneg_slice_plus_zqx_slice_1;
             double zqx_index_11;
             double zqadj_1;
-            double tendency_loc_q_index_1;
-            double tendency_loc_q_slice_plus_zqadj_1;
-            int iphase_index;
+            float tendency_loc_q_index_1;
+            float tendency_loc_q_slice_plus_zqadj_1;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlneg +
                     (((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) -
                      1),
@@ -2071,9 +2779,9 @@ void __program_cloudsc_py_internal(
                        1),
                 &zqx_index_10, 1);
             {
-              double __in1 = zlneg_index_1;
+              float __in1 = zlneg_index_1;
               double __in2 = zqx_index_10;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -2083,8 +2791,8 @@ void __program_cloudsc_py_internal(
               zlneg_slice_plus_zqx_slice_1 = __out;
             }
             {
-              double __inp = zlneg_slice_plus_zqx_slice_1;
-              double __out;
+              float __inp = zlneg_slice_plus_zqx_slice_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_381_20)
@@ -2123,13 +2831,13 @@ void __program_cloudsc_py_internal(
               zqadj = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                tendency_loc_q + ((jl + (klon * (jk - 1))) - 1),
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                tendency_loc_q_lowered + ((jl + (klon * (jk - 1))) - 1),
                 &tendency_loc_q_index_1, 1);
             {
-              double __in1 = tendency_loc_q_index_1;
+              float __in1 = tendency_loc_q_index_1;
               double __in2 = zqadj;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -2139,26 +2847,22 @@ void __program_cloudsc_py_internal(
               tendency_loc_q_slice_plus_zqadj_1 = __out;
             }
             {
-              double __inp = tendency_loc_q_slice_plus_zqadj_1;
-              double __out;
+              float __inp = tendency_loc_q_slice_plus_zqadj_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_383_20)
               __out = __inp;
               ///////////////////
 
-              tendency_loc_q[((jl + (klon * (jk - 1))) - 1)] = __out;
+              tendency_loc_q_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
             }
-
-            dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                iphase + (jm - 1), &iphase_index, 1);
             {
-              int __in1 = iphase_index;
               bool __out;
 
               ///////////////////
               // Tasklet code (_Eq_)
-              __out = (__in1 == 1);
+              __out = (iphase_index == 1);
               ///////////////////
 
               __tmp5 = __out;
@@ -2166,12 +2870,12 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp5) {
             {
-              double tendency_loc_t_index_1;
+              float tendency_loc_t_index_1;
               double ydthf_ralvdcp_times_zqadj_0;
-              double tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj_0;
+              float tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj_0;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  tendency_loc_t + ((jl + (klon * (jk - 1))) - 1),
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  tendency_loc_t_lowered + ((jl + (klon * (jk - 1))) - 1),
                   &tendency_loc_t_index_1, 1);
               {
                 double __in1 = ydthf_ralvdcp;
@@ -2186,9 +2890,9 @@ void __program_cloudsc_py_internal(
                 ydthf_ralvdcp_times_zqadj_0 = __out;
               }
               {
-                double __in1 = tendency_loc_t_index_1;
+                float __in1 = tendency_loc_t_index_1;
                 double __in2 = ydthf_ralvdcp_times_zqadj_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -2198,30 +2902,28 @@ void __program_cloudsc_py_internal(
                 tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj_0 = __out;
               }
               {
-                double __inp = tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj_0;
-                double __out;
+                float __inp = tendency_loc_t_slice_minus_ydthf_ralvdcp_zqadj_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_385_24)
                 __out = __inp;
                 ///////////////////
 
-                tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+                tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
               }
             }
           }
-          {
-            int iphase_index_0;
 
-            dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                iphase + (jm - 1), &iphase_index_0, 1);
+          iphase_index_0 = iphase[(jm - 1)];
+          {
+
             {
-              int __in1 = iphase_index_0;
               bool __out;
 
               ///////////////////
               // Tasklet code (_Eq_)
-              __out = (__in1 == 2);
+              __out = (iphase_index_0 == 2);
               ///////////////////
 
               __tmp6 = __out;
@@ -2229,12 +2931,12 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp6) {
             {
-              double tendency_loc_t_index_2;
+              float tendency_loc_t_index_2;
               double ydthf_ralsdcp_times_zqadj_0;
-              double tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj_0;
+              float tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj_0;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  tendency_loc_t + ((jl + (klon * (jk - 1))) - 1),
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  tendency_loc_t_lowered + ((jl + (klon * (jk - 1))) - 1),
                   &tendency_loc_t_index_2, 1);
               {
                 double __in1 = ydthf_ralsdcp;
@@ -2249,9 +2951,9 @@ void __program_cloudsc_py_internal(
                 ydthf_ralsdcp_times_zqadj_0 = __out;
               }
               {
-                double __in1 = tendency_loc_t_index_2;
+                float __in1 = tendency_loc_t_index_2;
                 double __in2 = ydthf_ralsdcp_times_zqadj_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -2261,15 +2963,15 @@ void __program_cloudsc_py_internal(
                 tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj_0 = __out;
               }
               {
-                double __inp = tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj_0;
-                double __out;
+                float __inp = tendency_loc_t_slice_minus_ydthf_ralsdcp_zqadj_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_387_24)
                 __out = __inp;
                 ///////////////////
 
-                tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+                tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
               }
             }
           }
@@ -2320,7 +3022,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (assign_389_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zqx[(((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) -
@@ -2332,20 +3034,9 @@ void __program_cloudsc_py_internal(
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_9 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_9 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_9); jl = (jl + 1)) {
       {
         double ztp1_index;
@@ -2354,7 +3045,7 @@ void __program_cloudsc_py_internal(
         double expr_minus_ydthf_rtice;
         double expr_ydthf_rtice_times_ydthf_rtwat_rtice_r;
         double expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2;
-        double zfoealfa_slice;
+        float zfoealfa_slice;
         double ztp1_index_0;
         double min_ydthf_rtwat_ztp1_slice_0;
         double max_ydthf_rtice_expr_0;
@@ -2388,15 +3079,15 @@ void __program_cloudsc_py_internal(
         double __tmp8;
         double expr_expr_plus_1_0_expr_expr;
         double ydthf_r2es_times_expr_expr_1_0_expr_expr;
-        double pap_index;
+        float pap_index;
         double ydthf_r2es_expr_expr_1_0_expr_expr_div_pap_slice;
-        double zfoeewmt_slice;
-        double zqsmix_slice;
-        double zqsmix_index;
-        double zqsmix_index_0;
+        float zfoeewmt_slice;
+        float zqsmix_slice;
+        float zqsmix_index;
+        float zqsmix_index_0;
         double ydcst_retv_times_zqsmix_slice;
         double __tmp9;
-        double zqsmix_slice_div_1_0_ydcst_retv_zqsmix_slice;
+        float zqsmix_slice_div_1_0_ydcst_retv_zqsmix_slice;
         double ztp1_index_6;
         double ztp1_slice_minus_ydcst_rtt_1;
         double sign_ztp1_slice_ydcst_rtt;
@@ -2422,16 +3113,16 @@ void __program_cloudsc_py_internal(
         double ydthf_r2es_times_expr_0;
         double __tmp12;
         double zalfa_ydthf_r2es_expr_plus_1_0_zalfa_ydthf_r2es_expr;
-        double pap_index_0;
+        float pap_index_0;
         double zalfa_ydthf_r2es_expr_1_0_zalfa_ydthf_r2es_expr_div_pap_slice;
-        double zfoeew_slice;
-        double zfoeew_index;
+        float zfoeew_slice;
+        float zfoeew_index;
         double min_0_5_zfoeew_slice;
-        double zfoeew_index_0;
-        double zfoeew_index_1;
+        float zfoeew_index_0;
+        float zfoeew_index_1;
         double ydcst_retv_times_zfoeew_slice;
         double __tmp13;
-        double zqsice_slice;
+        float zqsice_slice;
         double ztp1_index_11;
         double ztp1_slice_minus_ydcst_rtt_4;
         double ydthf_r3les_times_ztp1_slice_ydcst_rtt_1;
@@ -2440,10 +3131,10 @@ void __program_cloudsc_py_internal(
         double ydthf_r3les_ztp1_slice_ydcst_rtt_div_ztp1_slice_ydthf_r4les_1;
         double exp_ydthf_r3les_ztp1_slice_ydcst_rtt_ztp1_slice_ydthf_r4les_1;
         double ydthf_r2es_times_expr_1;
-        double pap_index_1;
+        float pap_index_1;
         double ydthf_r2es_expr_div_pap_slice;
-        double zfoeeliqt_slice;
-        double zqsliq_slice;
+        float zfoeeliqt_slice;
+        float zqsliq_slice;
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index, 1);
@@ -2501,14 +3192,14 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2 = __out;
         }
         {
           double __in_b = expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (__min2)
@@ -2518,8 +3209,8 @@ void __program_cloudsc_py_internal(
           zfoealfa_slice = __out;
         }
         {
-          double __inp = zfoealfa_slice;
-          double __out;
+          float __inp = zfoealfa_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_392_12)
@@ -2608,11 +3299,11 @@ void __program_cloudsc_py_internal(
           ydthf_r2es_times_expr_1 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_1, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_1, 1);
         {
           double __in1 = ydthf_r2es_times_expr_1;
-          double __in2 = pap_index_1;
+          float __in2 = pap_index_1;
           double __out;
 
           ///////////////////
@@ -2624,18 +3315,18 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in_a = ydthf_r2es_expr_div_pap_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (__min2)
-          __out = min(__in_a, 0.5);
+          __out = min(__in_a, float(0.5));
           ///////////////////
 
           zfoeeliqt_slice = __out;
         }
         {
-          double __inp = zfoeeliqt_slice;
-          double __out;
+          float __inp = zfoeeliqt_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_400_12)
@@ -2645,11 +3336,11 @@ void __program_cloudsc_py_internal(
           zfoeeliqt[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeeliqt + ((jl + (klon * (jk - 1))) - 1), &zqsliq_slice, 1);
         {
-          double __inp = zqsliq_slice;
-          double __out;
+          float __inp = zqsliq_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_401_12)
@@ -2659,7 +3350,7 @@ void __program_cloudsc_py_internal(
           zqsliq[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index, 1);
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -2769,7 +3460,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_0 = __out;
@@ -2803,7 +3494,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_1 = __out;
@@ -2825,7 +3516,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp7 = __out;
@@ -3001,11 +3692,11 @@ void __program_cloudsc_py_internal(
           ydthf_r2es_times_expr_expr_1_0_expr_expr = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pap + ((jl + (klon * (jk - 1))) - 1), &pap_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index, 1);
         {
           double __in1 = ydthf_r2es_times_expr_expr_1_0_expr_expr;
-          double __in2 = pap_index;
+          float __in2 = pap_index;
           double __out;
 
           ///////////////////
@@ -3017,18 +3708,18 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in_a = ydthf_r2es_expr_expr_1_0_expr_expr_div_pap_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (__min2)
-          __out = min(__in_a, 0.5);
+          __out = min(__in_a, float(0.5));
           ///////////////////
 
           zfoeewmt_slice = __out;
         }
         {
-          double __inp = zfoeewmt_slice;
-          double __out;
+          float __inp = zfoeewmt_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_393_12)
@@ -3038,11 +3729,11 @@ void __program_cloudsc_py_internal(
           zfoeewmt[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeewmt + ((jl + (klon * (jk - 1))) - 1), &zqsmix_slice, 1);
         {
-          double __inp = zqsmix_slice;
-          double __out;
+          float __inp = zqsmix_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_394_12)
@@ -3052,14 +3743,14 @@ void __program_cloudsc_py_internal(
           zqsmix[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_0, 1);
         {
           double __in1 = ydcst_retv;
-          double __in2 = zqsmix_index_0;
+          float __in2 = zqsmix_index_0;
           double __out;
 
           ///////////////////
@@ -3075,15 +3766,15 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp9 = __out;
         }
         {
-          double __in1 = zqsmix_index;
+          float __in1 = zqsmix_index;
           double __in2 = __tmp9;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -3093,8 +3784,8 @@ void __program_cloudsc_py_internal(
           zqsmix_slice_div_1_0_ydcst_retv_zqsmix_slice = __out;
         }
         {
-          double __inp = zqsmix_slice_div_1_0_ydcst_retv_zqsmix_slice;
-          double __out;
+          float __inp = zqsmix_slice_div_1_0_ydcst_retv_zqsmix_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_395_12)
@@ -3147,7 +3838,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Mult_)
-          __out = (1.0 * __in2);
+          __out = (float(1.0) * __in2);
           ///////////////////
 
           __tmp10 = __out;
@@ -3169,7 +3860,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp11 = __out;
@@ -3357,11 +4048,11 @@ void __program_cloudsc_py_internal(
           zalfa_ydthf_r2es_expr_plus_1_0_zalfa_ydthf_r2es_expr = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_0, 1);
         {
           double __in1 = zalfa_ydthf_r2es_expr_plus_1_0_zalfa_ydthf_r2es_expr;
-          double __in2 = pap_index_0;
+          float __in2 = pap_index_0;
           double __out;
 
           ///////////////////
@@ -3374,18 +4065,18 @@ void __program_cloudsc_py_internal(
         {
           double __in_a =
               zalfa_ydthf_r2es_expr_1_0_zalfa_ydthf_r2es_expr_div_pap_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (__min2)
-          __out = min(__in_a, 0.5);
+          __out = min(__in_a, float(0.5));
           ///////////////////
 
           zfoeew_slice = __out;
         }
         {
-          double __inp = zfoeew_slice;
-          double __out;
+          float __inp = zfoeew_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_397_12)
@@ -3395,22 +4086,22 @@ void __program_cloudsc_py_internal(
           zfoeew[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeew + ((jl + (klon * (jk - 1))) - 1), &zfoeew_index, 1);
         {
-          double __in_b = zfoeew_index;
+          float __in_b = zfoeew_index;
           double __out;
 
           ///////////////////
           // Tasklet code (__min2)
-          __out = min(0.5, __in_b);
+          __out = min(float(0.5), __in_b);
           ///////////////////
 
           min_0_5_zfoeew_slice = __out;
         }
         {
           double __inp = min_0_5_zfoeew_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_398_12)
@@ -3420,14 +4111,14 @@ void __program_cloudsc_py_internal(
           zfoeew[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeew + ((jl + (klon * (jk - 1))) - 1), &zfoeew_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeew + ((jl + (klon * (jk - 1))) - 1), &zfoeew_index_1, 1);
         {
           double __in1 = ydcst_retv;
-          double __in2 = zfoeew_index_1;
+          float __in2 = zfoeew_index_1;
           double __out;
 
           ///////////////////
@@ -3443,15 +4134,15 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp13 = __out;
         }
         {
-          double __in1 = zfoeew_index_0;
+          float __in1 = zfoeew_index_0;
           double __in2 = __tmp13;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -3461,8 +4152,8 @@ void __program_cloudsc_py_internal(
           zqsice_slice = __out;
         }
         {
-          double __inp = zqsice_slice;
-          double __out;
+          float __inp = zqsice_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_399_12)
@@ -3473,16 +4164,16 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double zqsliq_index_0;
+        float zqsliq_index_0;
         double ydcst_retv_times_zqsliq_slice;
         double __tmp14;
-        double zqsliq_slice_div_1_0_ydcst_retv_zqsliq_slice;
+        float zqsliq_slice_div_1_0_ydcst_retv_zqsliq_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_0, 1);
         {
           double __in1 = ydcst_retv;
-          double __in2 = zqsliq_index_0;
+          float __in2 = zqsliq_index_0;
           double __out;
 
           ///////////////////
@@ -3498,15 +4189,15 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp14 = __out;
         }
         {
-          double __in1 = zqsliq_index;
+          float __in1 = zqsliq_index;
           double __in2 = __tmp14;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -3516,8 +4207,8 @@ void __program_cloudsc_py_internal(
           zqsliq_slice_div_1_0_ydcst_retv_zqsliq_slice = __out;
         }
         {
-          double __inp = zqsliq_slice_div_1_0_ydcst_retv_zqsliq_slice;
-          double __out;
+          float __inp = zqsliq_slice_div_1_0_ydcst_retv_zqsliq_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_402_12)
@@ -3530,34 +4221,23 @@ void __program_cloudsc_py_internal(
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_10 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_10 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_10); jl = (jl + 1)) {
       {
-        double za_index_0;
+        float za_index_0;
         double min_1_0_za_slice;
         double max_0_0_expr;
         double zqx_index_14;
         double zqx_index_15;
-        double zli_slice;
-        double zli_index;
+        float zli_slice;
+        float zli_index;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_0, 1);
         {
-          double __in_b = za_index_0;
+          float __in_b = za_index_0;
           double __out;
 
           ///////////////////
@@ -3580,7 +4260,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __inp = max_0_0_expr;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_405_12)
@@ -3602,7 +4282,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = zqx_index_14;
           double __in2 = zqx_index_15;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -3612,8 +4292,8 @@ void __program_cloudsc_py_internal(
           zli_slice = __out;
         }
         {
-          double __inp = zli_slice;
-          double __out;
+          float __inp = zli_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_406_12)
@@ -3623,10 +4303,10 @@ void __program_cloudsc_py_internal(
           zli[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zli + ((jl + (klon * (jk - 1))) - 1), &zli_index, 1);
         {
-          double __in1 = zli_index;
+          float __in1 = zli_index;
           double __in2 = yrecldp_rlmin;
           bool __out;
 
@@ -3641,10 +4321,10 @@ void __program_cloudsc_py_internal(
       if (__tmp15) {
         {
           double zqx_index_16;
-          double zli_index_0;
-          double zliqfrac_slice;
-          double zliqfrac_index;
-          double zicefrac_slice;
+          float zli_index_0;
+          float zliqfrac_slice;
+          float zliqfrac_index;
+          float zicefrac_slice;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqx +
@@ -3652,12 +4332,12 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_16, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zli + ((jl + (klon * (jk - 1))) - 1), &zli_index_0, 1);
           {
             double __in1 = zqx_index_16;
-            double __in2 = zli_index_0;
-            double __out;
+            float __in2 = zli_index_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Div_)
@@ -3667,8 +4347,8 @@ void __program_cloudsc_py_internal(
             zliqfrac_slice = __out;
           }
           {
-            double __inp = zliqfrac_slice;
-            double __out;
+            float __inp = zliqfrac_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_408_16)
@@ -3678,22 +4358,22 @@ void __program_cloudsc_py_internal(
             zliqfrac[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zliqfrac + ((jl + (klon * (jk - 1))) - 1), &zliqfrac_index, 1);
           {
-            double __in2 = zliqfrac_index;
-            double __out;
+            float __in2 = zliqfrac_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             zicefrac_slice = __out;
           }
           {
-            double __inp = zicefrac_slice;
-            double __out;
+            float __inp = zicefrac_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_409_16)
@@ -3707,21 +4387,21 @@ void __program_cloudsc_py_internal(
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_411_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zliqfrac[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_412_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zicefrac[((jl + (klon * (jk - 1))) - 1)] = __out;
@@ -3730,79 +4410,68 @@ void __program_cloudsc_py_internal(
       }
     }
   }
-  {
 
-    {
-      int __in1 = kfdia;
-      int __out;
+  kfdia_plus_1_13 = (kfdia + 1);
 
-      ///////////////////
-      // Tasklet code (_Add_)
-      __out = (__in1 + int(1));
-      ///////////////////
-
-      kfdia_plus_1_13 = __out;
-    }
-  }
   for (jl = kidia; (jl < kfdia_plus_1_13); jl = (jl + 1)) {
     {
 
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_422_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         zanewm1[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_423_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         zda[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_424_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         zcovpclr[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_425_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         zcovpmax[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_426_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         zcovptot[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_427_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         zcldtopdist[(jl - 1)] = __out;
@@ -3811,20 +4480,9 @@ void __program_cloudsc_py_internal(
   }
   for (jk = yrecldp_ncldtop; (jk < (klev + 1)); jk = (jk + 1)) {
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_14 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_14 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_14); jl = (jl + 1)) {
         {
           double zqxfg_slice;
@@ -3847,159 +4505,148 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_15 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_15 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_15); jl = (jl + 1)) {
       {
 
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_433_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zlicld[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_434_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zrainaut[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_435_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zrainacc[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_436_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zsnowaut[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_437_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zldefr[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_438_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zacust[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_439_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zqpretot[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_440_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zlfinalsum[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_441_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zlcond1[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_442_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zlcond2[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_443_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zsupsat[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_446_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zsolab[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_447_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zsolac[(jl - 1)] = __out;
         }
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_448_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zicetot[(jl - 1)] = __out;
@@ -4008,29 +4655,18 @@ void __program_cloudsc_py_internal(
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
       for (jn = 1; (jn < (nclv + 1)); jn = (jn + 1)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_16 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_16 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_16); jl = (jl + 1)) {
           {
 
             {
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_452_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zsolqb[(((jl + ((klon * nclv) * (jm - 1))) + (klon * (jn - 1))) -
@@ -4041,7 +4677,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (assign_453_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zsolqa[(((jl + ((klon * nclv) * (jm - 1))) + (klon * (jn - 1))) -
@@ -4052,39 +4688,28 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_17 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_17 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_17); jl = (jl + 1)) {
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_456_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zfallsrce[((jl + (klon * (jm - 1))) - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_457_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zfallsink[((jl + (klon * (jm - 1))) - 1)] = __out;
@@ -4094,7 +4719,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_458_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zconvsrce[((jl + (klon * (jm - 1))) - 1)] = __out;
@@ -4104,27 +4729,27 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_459_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zconvsink[((jl + (klon * (jm - 1))) - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_460_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zpsupsatsrce[((jl + (klon * (jm - 1))) - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_461_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zratio[((jl + (klon * (jm - 1))) - 1)] = __out;
@@ -4132,59 +4757,48 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_18 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_18 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_18); jl = (jl + 1)) {
       {
-        double *zgdp;
-        zgdp = new double DACE_ALIGN(64)[klon];
-        double *zdqsliqdt;
-        zdqsliqdt = new double DACE_ALIGN(64)[klon];
-        double paph_index_0;
-        double paph_index_1;
+        float *zgdp;
+        zgdp = new float DACE_ALIGN(64)[klon];
+        float *zdqsliqdt;
+        zdqsliqdt = new float DACE_ALIGN(64)[klon];
+        float paph_index_0;
+        float paph_index_1;
         double zdp_slice;
         double zdp_index;
-        double zgdp_slice;
-        double pap_index_3;
+        float zgdp_slice;
+        float pap_index_3;
         double ztp1_index_15;
         double ydcst_rd_times_ztp1_slice;
-        double zrho_slice;
-        double zgdp_index;
-        double zdtgdp_slice;
+        float zrho_slice;
+        float zgdp_index;
+        float zdtgdp_slice;
         double zdp_index_0;
         double ptsphy_times_ydcst_rg;
         double __tmp21;
-        double zrdtgdp_slice;
+        float zrdtgdp_slice;
         double ztp1_index_16;
         double ztp1_slice_minus_ydthf_r4les_2;
         double ztp1_slice_ydthf_r4les_pow_2;
-        double zfoeeliqt_index;
+        float zfoeeliqt_index;
         double ydcst_retv_times_zfoeeliqt_slice;
         double __tmp22;
         double zfacw_times_zcor;
-        double zqsliq_index_1;
-        double zdqsliqdt_slice;
-        double zdqsliqdt_index;
+        float zqsliq_index_1;
+        float zdqsliqdt_slice;
+        float zdqsliqdt_index;
         double ydthf_ralvdcp_times_zdqsliqdt_slice;
-        double zcorqsliq_slice;
+        float zcorqsliq_slice;
         double ztp1_index_17;
         double ztp1_slice_minus_ydthf_r4ies_1;
         double ztp1_slice_ydthf_r4ies_pow_2;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_3, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_3, 1);
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index_15, 1);
@@ -4201,9 +4815,9 @@ void __program_cloudsc_py_internal(
           ydcst_rd_times_ztp1_slice = __out;
         }
         {
-          double __in1 = pap_index_3;
+          float __in1 = pap_index_3;
           double __in2 = ydcst_rd_times_ztp1_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -4213,8 +4827,8 @@ void __program_cloudsc_py_internal(
           zrho_slice = __out;
         }
         {
-          double __inp = zrho_slice;
-          double __out;
+          float __inp = zrho_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_465_12)
@@ -4224,14 +4838,14 @@ void __program_cloudsc_py_internal(
           zrho[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            paph + (((jk * klon) + jl) - 1), &paph_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            paph_lowered + (((jk * klon) + jl) - 1), &paph_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            paph + ((jl + (klon * (jk - 1))) - 1), &paph_index_1, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            paph_lowered + ((jl + (klon * (jk - 1))) - 1), &paph_index_1, 1);
         {
-          double __in1 = paph_index_0;
-          double __in2 = paph_index_1;
+          float __in1 = paph_index_0;
+          float __in2 = paph_index_1;
           double __out;
 
           ///////////////////
@@ -4261,7 +4875,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = ydcst_rg;
           double __in2 = zdp_index;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -4271,8 +4885,8 @@ void __program_cloudsc_py_internal(
           zgdp_slice = __out;
         }
         {
-          double __inp = zgdp_slice;
-          double __out;
+          float __inp = zgdp_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_464_12)
@@ -4282,12 +4896,12 @@ void __program_cloudsc_py_internal(
           zgdp[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zgdp + (jl - 1), &zgdp_index, 1);
         {
           double __in1 = ptsphy;
-          double __in2 = zgdp_index;
-          double __out;
+          float __in2 = zgdp_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -4297,8 +4911,8 @@ void __program_cloudsc_py_internal(
           zdtgdp_slice = __out;
         }
         {
-          double __inp = zdtgdp_slice;
-          double __out;
+          float __inp = zdtgdp_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_466_12)
@@ -4325,7 +4939,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           __tmp21 = __out;
@@ -4333,7 +4947,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = zdp_index_0;
           double __in2 = __tmp21;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -4343,8 +4957,8 @@ void __program_cloudsc_py_internal(
           zrdtgdp_slice = __out;
         }
         {
-          double __inp = zrdtgdp_slice;
-          double __out;
+          float __inp = zrdtgdp_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_467_12)
@@ -4374,7 +4988,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           ztp1_slice_ydthf_r4les_pow_2 = __out;
@@ -4392,11 +5006,11 @@ void __program_cloudsc_py_internal(
           zfacw = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeeliqt + ((jl + (klon * (jk - 1))) - 1), &zfoeeliqt_index, 1);
         {
           double __in1 = ydcst_retv;
-          double __in2 = zfoeeliqt_index;
+          float __in2 = zfoeeliqt_index;
           double __out;
 
           ///////////////////
@@ -4412,7 +5026,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp22 = __out;
@@ -4423,7 +5037,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           zcor = __out;
@@ -4441,12 +5055,12 @@ void __program_cloudsc_py_internal(
           zfacw_times_zcor = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_1, 1);
         {
           double __in1 = zfacw_times_zcor;
-          double __in2 = zqsliq_index_1;
-          double __out;
+          float __in2 = zqsliq_index_1;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -4456,8 +5070,8 @@ void __program_cloudsc_py_internal(
           zdqsliqdt_slice = __out;
         }
         {
-          double __inp = zdqsliqdt_slice;
-          double __out;
+          float __inp = zdqsliqdt_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_472_12)
@@ -4467,11 +5081,11 @@ void __program_cloudsc_py_internal(
           zdqsliqdt[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zdqsliqdt + (jl - 1), &zdqsliqdt_index, 1);
         {
           double __in1 = ydthf_ralvdcp;
-          double __in2 = zdqsliqdt_index;
+          float __in2 = zdqsliqdt_index;
           double __out;
 
           ///////////////////
@@ -4483,18 +5097,18 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in2 = ydthf_ralvdcp_times_zdqsliqdt_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
-          __out = (1.0 + __in2);
+          __out = (float(1.0) + __in2);
           ///////////////////
 
           zcorqsliq_slice = __out;
         }
         {
-          double __inp = zcorqsliq_slice;
-          double __out;
+          float __inp = zcorqsliq_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_473_12)
@@ -4524,7 +5138,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           ztp1_slice_ydthf_r4ies_pow_2 = __out;
@@ -4545,29 +5159,29 @@ void __program_cloudsc_py_internal(
         delete[] zdqsliqdt;
       }
       {
-        double *zdqsicedt;
-        zdqsicedt = new double DACE_ALIGN(64)[klon];
-        double zfoeew_index_2;
+        float *zdqsicedt;
+        zdqsicedt = new float DACE_ALIGN(64)[klon];
+        float zfoeew_index_2;
         double ydcst_retv_times_zfoeew_slice_0;
         double __tmp23;
         double zcor_0;
         double zfaci_times_zcor;
-        double zqsice_index;
-        double zdqsicedt_slice;
-        double zdqsicedt_index;
+        float zqsice_index;
+        float zdqsicedt_slice;
+        float zdqsicedt_index;
         double ydthf_ralsdcp_times_zdqsicedt_slice;
-        double zcorqsice_slice;
+        float zcorqsice_slice;
         double zalfaw_times_zfacw;
         double __tmp24;
         double __tmp25;
-        double zfoeewmt_index;
+        float zfoeewmt_index;
         double ydcst_retv_times_zfoeewmt_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeew + ((jl + (klon * (jk - 1))) - 1), &zfoeew_index_2, 1);
         {
           double __in1 = ydcst_retv;
-          double __in2 = zfoeew_index_2;
+          float __in2 = zfoeew_index_2;
           double __out;
 
           ///////////////////
@@ -4583,7 +5197,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp23 = __out;
@@ -4594,7 +5208,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           zcor_0 = __out;
@@ -4623,12 +5237,12 @@ void __program_cloudsc_py_internal(
           zfaci_times_zcor = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index, 1);
         {
           double __in1 = zfaci_times_zcor;
-          double __in2 = zqsice_index;
-          double __out;
+          float __in2 = zqsice_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -4638,8 +5252,8 @@ void __program_cloudsc_py_internal(
           zdqsicedt_slice = __out;
         }
         {
-          double __inp = zdqsicedt_slice;
-          double __out;
+          float __inp = zdqsicedt_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_476_12)
@@ -4649,11 +5263,11 @@ void __program_cloudsc_py_internal(
           zdqsicedt[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zdqsicedt + (jl - 1), &zdqsicedt_index, 1);
         {
           double __in1 = ydthf_ralsdcp;
-          double __in2 = zdqsicedt_index;
+          float __in2 = zdqsicedt_index;
           double __out;
 
           ///////////////////
@@ -4665,18 +5279,18 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in2 = ydthf_ralsdcp_times_zdqsicedt_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
-          __out = (1.0 + __in2);
+          __out = (float(1.0) + __in2);
           ///////////////////
 
           zcorqsice_slice = __out;
         }
         {
-          double __inp = zcorqsice_slice;
-          double __out;
+          float __inp = zcorqsice_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_477_12)
@@ -4694,7 +5308,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp24 = __out;
@@ -4736,11 +5350,11 @@ void __program_cloudsc_py_internal(
           zfac = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfoeewmt + ((jl + (klon * (jk - 1))) - 1), &zfoeewmt_index, 1);
         {
           double __in1 = ydcst_retv;
-          double __in2 = zfoeewmt_index;
+          float __in2 = zfoeewmt_index;
           double __out;
 
           ///////////////////
@@ -4756,7 +5370,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp26 = __out;
@@ -4764,12 +5378,12 @@ void __program_cloudsc_py_internal(
         delete[] zdqsicedt;
       }
       {
-        double *zcorqsmix;
-        zcorqsmix = new double DACE_ALIGN(64)[klon];
+        float *zcorqsmix;
+        zcorqsmix = new float DACE_ALIGN(64)[klon];
         double zcor_1;
         double zfac_times_zcor;
-        double zqsmix_index_1;
-        double zdqsmixdt_slice;
+        float zqsmix_index_1;
+        float zdqsmixdt_slice;
         double ztp1_index_18;
         double min_ydthf_rtwat_ztp1_slice_2;
         double max_ydthf_rtice_expr_2;
@@ -4788,30 +5402,30 @@ void __program_cloudsc_py_internal(
         double __tmp27;
         double __tmp28;
         double expr_ydthf_ralvdcp_plus_1_0_expr_ydthf_ralsdcp;
-        double zdqsmixdt_index;
+        float zdqsmixdt_index;
         double expr_ydthf_ralvdcp_1_0_expr_ydthf_ralsdcp_times_zdqsmixdt_slice;
-        double zcorqsmix_slice;
-        double zqsmix_index_2;
+        float zcorqsmix_slice;
+        float zqsmix_index_2;
         double zqx_index_17;
-        double zqsmix_slice_minus_zqx_slice;
-        double zcorqsmix_index;
-        double zqsmix_slice_zqx_slice_div_zcorqsmix_slice;
-        double zevaplimmix_slice;
-        double zqsice_index_0;
+        float zqsmix_slice_minus_zqx_slice;
+        float zcorqsmix_index;
+        float zqsmix_slice_zqx_slice_div_zcorqsmix_slice;
+        float zevaplimmix_slice;
+        float zqsice_index_0;
         double zqx_index_19;
-        double zqsice_slice_minus_zqx_slice;
-        double zcorqsice_index;
-        double zqsice_slice_zqx_slice_div_zcorqsice_slice;
-        double zevaplimice_slice;
-        double za_index_1;
+        float zqsice_slice_minus_zqx_slice;
+        float zcorqsice_index;
+        float zqsice_slice_zqx_slice_div_zcorqsice_slice;
+        float zevaplimice_slice;
+        float za_index_1;
         double max_za_slice_zepsec;
         double zqx_index_20;
-        double zliqcld_slice;
+        float zliqcld_slice;
         double zqx_index_21;
-        double zicecld_slice;
-        double zliqcld_index;
-        double zicecld_index;
-        double zlicld_slice;
+        float zicecld_slice;
+        float zliqcld_index;
+        float zicecld_index;
+        float zlicld_slice;
 
         {
           double __in2 = __tmp26;
@@ -4819,7 +5433,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           zcor_1 = __out;
@@ -4848,15 +5462,15 @@ void __program_cloudsc_py_internal(
           zfac_times_zcor = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_1, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_2, 1);
         {
           double __in1 = zfac_times_zcor;
-          double __in2 = zqsmix_index_1;
-          double __out;
+          float __in2 = zqsmix_index_1;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -4866,8 +5480,8 @@ void __program_cloudsc_py_internal(
           zdqsmixdt_slice = __out;
         }
         {
-          double __inp = zdqsmixdt_slice;
-          double __out;
+          float __inp = zdqsmixdt_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_482_12)
@@ -4877,7 +5491,7 @@ void __program_cloudsc_py_internal(
           zdqsmixdt[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zdqsmixdt + (jl - 1), &zdqsmixdt_index, 1);
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -4975,7 +5589,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_2 = __out;
@@ -5009,7 +5623,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_3 = __out;
@@ -5031,7 +5645,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp27 = __out;
@@ -5074,7 +5688,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in1 = expr_ydthf_ralvdcp_plus_1_0_expr_ydthf_ralsdcp;
-          double __in2 = zdqsmixdt_index;
+          float __in2 = zdqsmixdt_index;
           double __out;
 
           ///////////////////
@@ -5088,18 +5702,18 @@ void __program_cloudsc_py_internal(
         {
           double __in2 =
               expr_ydthf_ralvdcp_1_0_expr_ydthf_ralsdcp_times_zdqsmixdt_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
-          __out = (1.0 + __in2);
+          __out = (float(1.0) + __in2);
           ///////////////////
 
           zcorqsmix_slice = __out;
         }
         {
-          double __inp = zcorqsmix_slice;
-          double __out;
+          float __inp = zcorqsmix_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_483_12)
@@ -5109,7 +5723,7 @@ void __program_cloudsc_py_internal(
           zcorqsmix[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zcorqsmix + (jl - 1), &zcorqsmix_index, 1);
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -5117,9 +5731,9 @@ void __program_cloudsc_py_internal(
                    1),
             &zqx_index_17, 1);
         {
-          double __in1 = zqsmix_index_2;
+          float __in1 = zqsmix_index_2;
           double __in2 = zqx_index_17;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -5129,9 +5743,9 @@ void __program_cloudsc_py_internal(
           zqsmix_slice_minus_zqx_slice = __out;
         }
         {
-          double __in1 = zqsmix_slice_minus_zqx_slice;
-          double __in2 = zcorqsmix_index;
-          double __out;
+          float __in1 = zqsmix_slice_minus_zqx_slice;
+          float __in2 = zcorqsmix_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -5141,8 +5755,8 @@ void __program_cloudsc_py_internal(
           zqsmix_slice_zqx_slice_div_zcorqsmix_slice = __out;
         }
         {
-          double __in_a = zqsmix_slice_zqx_slice_div_zcorqsmix_slice;
-          double __out;
+          float __in_a = zqsmix_slice_zqx_slice_div_zcorqsmix_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (__max2)
@@ -5152,8 +5766,8 @@ void __program_cloudsc_py_internal(
           zevaplimmix_slice = __out;
         }
         {
-          double __inp = zevaplimmix_slice;
-          double __out;
+          float __inp = zevaplimmix_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_484_12)
@@ -5168,12 +5782,12 @@ void __program_cloudsc_py_internal(
                    1),
             &zqx_index_19, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_0, 1);
         {
-          double __in1 = zqsice_index_0;
+          float __in1 = zqsice_index_0;
           double __in2 = zqx_index_19;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -5183,12 +5797,12 @@ void __program_cloudsc_py_internal(
           zqsice_slice_minus_zqx_slice = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zcorqsice + (jl - 1), &zcorqsice_index, 1);
         {
-          double __in1 = zqsice_slice_minus_zqx_slice;
-          double __in2 = zcorqsice_index;
-          double __out;
+          float __in1 = zqsice_slice_minus_zqx_slice;
+          float __in2 = zcorqsice_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -5198,8 +5812,8 @@ void __program_cloudsc_py_internal(
           zqsice_slice_zqx_slice_div_zcorqsice_slice = __out;
         }
         {
-          double __in_a = zqsice_slice_zqx_slice_div_zcorqsice_slice;
-          double __out;
+          float __in_a = zqsice_slice_zqx_slice_div_zcorqsice_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (__max2)
@@ -5209,8 +5823,8 @@ void __program_cloudsc_py_internal(
           zevaplimice_slice = __out;
         }
         {
-          double __inp = zevaplimice_slice;
-          double __out;
+          float __inp = zevaplimice_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_486_12)
@@ -5230,10 +5844,10 @@ void __program_cloudsc_py_internal(
                    1),
             &zqx_index_21, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_1, 1);
         {
-          double __in_a = za_index_1;
+          float __in_a = za_index_1;
           double __in_b = zepsec;
           double __out;
 
@@ -5250,7 +5864,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           ztmpa = __out;
@@ -5258,7 +5872,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = zqx_index_20;
           double __in2 = ztmpa;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -5268,8 +5882,8 @@ void __program_cloudsc_py_internal(
           zliqcld_slice = __out;
         }
         {
-          double __inp = zliqcld_slice;
-          double __out;
+          float __inp = zliqcld_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_488_12)
@@ -5279,12 +5893,12 @@ void __program_cloudsc_py_internal(
           zliqcld[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zliqcld + (jl - 1), &zliqcld_index, 1);
         {
           double __in1 = zqx_index_21;
           double __in2 = ztmpa;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -5294,8 +5908,8 @@ void __program_cloudsc_py_internal(
           zicecld_slice = __out;
         }
         {
-          double __inp = zicecld_slice;
-          double __out;
+          float __inp = zicecld_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_489_12)
@@ -5305,12 +5919,12 @@ void __program_cloudsc_py_internal(
           zicecld[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zicecld + (jl - 1), &zicecld_index, 1);
         {
-          double __in1 = zliqcld_index;
-          double __in2 = zicecld_index;
-          double __out;
+          float __in1 = zliqcld_index;
+          float __in2 = zicecld_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -5320,8 +5934,8 @@ void __program_cloudsc_py_internal(
           zlicld_slice = __out;
         }
         {
-          double __inp = zlicld_slice;
-          double __out;
+          float __inp = zlicld_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_490_12)
@@ -5333,20 +5947,9 @@ void __program_cloudsc_py_internal(
         delete[] zcorqsmix;
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_19 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_19 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_19); jl = (jl + 1)) {
       {
         double zqx_index_22;
@@ -5505,20 +6108,9 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_20 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_20 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_20); jl = (jl + 1)) {
       {
         double ztp1_index_20;
@@ -5541,7 +6133,7 @@ void __program_cloudsc_py_internal(
         double exp_ydthf_r3ies_ztp1_slice_ydcst_rtt_ztp1_slice_ydthf_r4ies_1;
         double ydthf_r2es_times_expr_3;
         double ydthf_r2es_expr_div_ydthf_r2es_expr;
-        double zfokoop_slice;
+        float zfokoop_slice;
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index_20, 1);
@@ -5742,7 +6334,7 @@ void __program_cloudsc_py_internal(
         {
           double __in_a = ydthf_rkoop1_minus_ydthf_rkoop2_ztp1_slice;
           double __in_b = ydthf_r2es_expr_div_ydthf_r2es_expr;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (__min2)
@@ -5752,8 +6344,8 @@ void __program_cloudsc_py_internal(
           zfokoop_slice = __out;
         }
         {
-          double __inp = zfokoop_slice;
-          double __out;
+          float __inp = zfokoop_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_499_12)
@@ -5764,25 +6356,15 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_21 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_21 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_21); jl = (jl + 1)) {
+
+      __tmp32 = (yrecldp_nssopt == 0);
       {
         double ztp1_index_25;
         bool __tmp31;
-        bool __tmp32;
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index_25, 1);
@@ -5799,24 +6381,12 @@ void __program_cloudsc_py_internal(
           __tmp31 = __out;
         }
         {
-          int __in1 = yrecldp_nssopt;
-          bool __out;
-
-          ///////////////////
-          // Tasklet code (_Eq_)
-          __out = (__in1 == 0);
-          ///////////////////
-
-          __tmp32 = __out;
-        }
-        {
           bool __in1 = __tmp31;
-          bool __in2 = __tmp32;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Or_)
-          __out = (__in1 || __in2);
+          __out = (__in1 || __tmp32);
           ///////////////////
 
           __tmp33 = __out;
@@ -5830,7 +6400,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_502_16)
-            __out = 1.0;
+            __out = float(1.0);
             ///////////////////
 
             zfac = __out;
@@ -5840,7 +6410,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_503_16)
-            __out = 1.0;
+            __out = float(1.0);
             ///////////////////
 
             zfaci = __out;
@@ -5848,37 +6418,37 @@ void __program_cloudsc_py_internal(
         }
       } else {
         {
-          double za_index_2;
-          double zfokoop_index;
-          double za_index_3;
+          float za_index_2;
+          float zfokoop_index;
+          float za_index_3;
           double __tmp34;
-          double zfokoop_slice_times_1_0_za_slice;
+          float zfokoop_slice_times_1_0_za_slice;
           double zfac_0;
           double zfaci_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_2, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_3, 1);
           {
-            double __in2 = za_index_3;
+            float __in2 = za_index_3;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp34 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zfokoop + (jl - 1), &zfokoop_index, 1);
           {
-            double __in1 = zfokoop_index;
+            float __in1 = zfokoop_index;
             double __in2 = __tmp34;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -5888,8 +6458,8 @@ void __program_cloudsc_py_internal(
             zfokoop_slice_times_1_0_za_slice = __out;
           }
           {
-            double __in1 = za_index_2;
-            double __in2 = zfokoop_slice_times_1_0_za_slice;
+            float __in1 = za_index_2;
+            float __in2 = zfokoop_slice_times_1_0_za_slice;
             double __out;
 
             ///////////////////
@@ -5936,10 +6506,10 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double za_index_4;
+        float za_index_4;
         double __tmp35;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_4, 1);
         {
           double __in2 = yrecldp_ramin;
@@ -5947,13 +6517,13 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp35 = __out;
         }
         {
-          double __in1 = za_index_4;
+          float __in1 = za_index_4;
           double __in2 = __tmp35;
           bool __out;
 
@@ -5968,12 +6538,12 @@ void __program_cloudsc_py_internal(
       if (__tmp36) {
         {
           double zqx_index_26;
-          double zqsice_index_1;
+          float zqsice_index_1;
           double zfac_times_zqsice_slice;
           double zqx_slice_minus_zfac_zqsice_slice;
-          double zcorqsice_index_0;
+          float zcorqsice_index_0;
           double zqx_slice_zfac_zqsice_slice_div_zcorqsice_slice;
-          double zsupsat_slice;
+          float zsupsat_slice;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqx +
@@ -5981,11 +6551,11 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_26, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_1, 1);
           {
             double __in1 = zfac;
-            double __in2 = zqsice_index_1;
+            float __in2 = zqsice_index_1;
             double __out;
 
             ///////////////////
@@ -6008,11 +6578,11 @@ void __program_cloudsc_py_internal(
             zqx_slice_minus_zfac_zqsice_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcorqsice + (jl - 1), &zcorqsice_index_0, 1);
           {
             double __in1 = zqx_slice_minus_zfac_zqsice_slice;
-            double __in2 = zcorqsice_index_0;
+            float __in2 = zcorqsice_index_0;
             double __out;
 
             ///////////////////
@@ -6024,7 +6594,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in_a = zqx_slice_zfac_zqsice_slice_div_zcorqsice_slice;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (__max2)
@@ -6034,8 +6604,8 @@ void __program_cloudsc_py_internal(
             zsupsat_slice = __out;
           }
           {
-            double __inp = zsupsat_slice;
-            double __out;
+            float __inp = zsupsat_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_508_16)
@@ -6048,23 +6618,23 @@ void __program_cloudsc_py_internal(
       } else {
         {
           double zqx_index_27;
-          double za_index_5;
-          double zqsice_index_2;
-          double za_slice_times_zqsice_slice;
+          float za_index_5;
+          float zqsice_index_2;
+          float za_slice_times_zqsice_slice;
           double zqx_slice_minus_za_slice_zqsice_slice;
-          double za_index_6;
+          float za_index_6;
           double __tmp37;
           double max_1_0_za_slice_zepsilon;
           double zqp1env;
-          double za_index_7;
+          float za_index_7;
           double __tmp38;
-          double zqsice_index_3;
+          float zqsice_index_3;
           double zfac_times_zqsice_slice_0;
           double zqp1env_minus_zfac_zqsice_slice;
           double __tmp39;
-          double zcorqsice_index_1;
+          float zcorqsice_index_1;
           double __tmp40;
-          double zsupsat_slice_0;
+          float zsupsat_slice_0;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqx +
@@ -6072,46 +6642,46 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_27, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_5, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_6, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_7, 1);
           {
-            double __in2 = za_index_6;
+            float __in2 = za_index_6;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp37 = __out;
           }
           {
-            double __in2 = za_index_7;
+            float __in2 = za_index_7;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp38 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_2, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_3, 1);
           {
-            double __in1 = za_index_5;
-            double __in2 = zqsice_index_2;
-            double __out;
+            float __in1 = za_index_5;
+            float __in2 = zqsice_index_2;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -6122,7 +6692,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zqx_index_27;
-            double __in2 = za_slice_times_zqsice_slice;
+            float __in2 = za_slice_times_zqsice_slice;
             double __out;
 
             ///////////////////
@@ -6158,7 +6728,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zfac;
-            double __in2 = zqsice_index_3;
+            float __in2 = zqsice_index_3;
             double __out;
 
             ///////////////////
@@ -6193,11 +6763,11 @@ void __program_cloudsc_py_internal(
             __tmp39 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcorqsice + (jl - 1), &zcorqsice_index_1, 1);
           {
             double __in1 = __tmp39;
-            double __in2 = zcorqsice_index_1;
+            float __in2 = zcorqsice_index_1;
             double __out;
 
             ///////////////////
@@ -6209,7 +6779,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in_a = __tmp40;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (__max2)
@@ -6219,8 +6789,8 @@ void __program_cloudsc_py_internal(
             zsupsat_slice_0 = __out;
           }
           {
-            double __inp = zsupsat_slice_0;
-            double __out;
+            float __inp = zsupsat_slice_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_511_16)
@@ -6232,12 +6802,12 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double zsupsat_index;
+        float zsupsat_index;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zsupsat + (jl - 1), &zsupsat_index, 1);
         {
-          double __in1 = zsupsat_index;
+          float __in1 = zsupsat_index;
           double __in2 = zepsec;
           bool __out;
 
@@ -6271,13 +6841,13 @@ void __program_cloudsc_py_internal(
         if (__tmp42) {
           {
             double zsolqa_index;
-            double zsupsat_index_0;
+            float zsupsat_index_0;
             double zsolqa_slice_plus_zsupsat_slice;
             double zsolqa_index_0;
-            double zsupsat_index_1;
+            float zsupsat_index_1;
             double zsolqa_slice_minus_zsupsat_slice;
             double zqxfg_index;
-            double zsupsat_index_2;
+            float zsupsat_index_2;
             double zqxfg_slice_plus_zsupsat_slice;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -6286,14 +6856,14 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsupsat + (jl - 1), &zsupsat_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsupsat + (jl - 1), &zsupsat_index_1, 1);
             {
               double __in1 = zsolqa_index;
-              double __in2 = zsupsat_index_0;
+              float __in2 = zsupsat_index_0;
               double __out;
 
               ///////////////////
@@ -6324,7 +6894,7 @@ void __program_cloudsc_py_internal(
                 &zsolqa_index_0, 1);
             {
               double __in1 = zsolqa_index_0;
-              double __in2 = zsupsat_index_1;
+              float __in2 = zsupsat_index_1;
               double __out;
 
               ///////////////////
@@ -6348,14 +6918,14 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsupsat + (jl - 1), &zsupsat_index_2, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldql - 1))) - 1), &zqxfg_index, 1);
             {
               double __in1 = zqxfg_index;
-              double __in2 = zsupsat_index_2;
+              float __in2 = zsupsat_index_2;
               double __out;
 
               ///////////////////
@@ -6380,13 +6950,13 @@ void __program_cloudsc_py_internal(
         } else {
           {
             double zsolqa_index_1;
-            double zsupsat_index_3;
+            float zsupsat_index_3;
             double zsolqa_slice_plus_zsupsat_slice_0;
             double zsolqa_index_2;
-            double zsupsat_index_4;
+            float zsupsat_index_4;
             double zsolqa_slice_minus_zsupsat_slice_0;
             double zqxfg_index_0;
-            double zsupsat_index_5;
+            float zsupsat_index_5;
             double zqxfg_slice_plus_zsupsat_slice_0;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -6395,14 +6965,14 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index_1, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsupsat + (jl - 1), &zsupsat_index_3, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsupsat + (jl - 1), &zsupsat_index_4, 1);
             {
               double __in1 = zsolqa_index_1;
-              double __in2 = zsupsat_index_3;
+              float __in2 = zsupsat_index_3;
               double __out;
 
               ///////////////////
@@ -6433,7 +7003,7 @@ void __program_cloudsc_py_internal(
                 &zsolqa_index_2, 1);
             {
               double __in1 = zsolqa_index_2;
-              double __in2 = zsupsat_index_4;
+              float __in2 = zsupsat_index_4;
               double __out;
 
               ///////////////////
@@ -6457,14 +7027,14 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsupsat + (jl - 1), &zsupsat_index_5, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldqi - 1))) - 1), &zqxfg_index_0, 1);
             {
               double __in1 = zqxfg_index_0;
-              double __in2 = zsupsat_index_5;
+              float __in2 = zsupsat_index_5;
               double __out;
 
               ///////////////////
@@ -6488,19 +7058,19 @@ void __program_cloudsc_py_internal(
           }
         }
         {
-          double za_index_8;
+          float za_index_8;
           double __tmp43;
-          double zsolac_slice;
+          float zsolac_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_8, 1);
           {
-            double __in2 = za_index_8;
+            float __in2 = za_index_8;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp43 = __out;
@@ -6508,7 +7078,7 @@ void __program_cloudsc_py_internal(
           {
             double __in1 = __tmp43;
             double __in2 = zfaci;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -6518,8 +7088,8 @@ void __program_cloudsc_py_internal(
             zsolac_slice = __out;
           }
           {
-            double __inp = zsolac_slice;
-            double __out;
+            float __inp = zsolac_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_521_16)
@@ -6531,12 +7101,13 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double psupsat_index;
+        float psupsat_index;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            psupsat + ((jl + (klon * (jk - 1))) - 1), &psupsat_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            psupsat_lowered + ((jl + (klon * (jk - 1))) - 1), &psupsat_index,
+            1);
         {
-          double __in1 = psupsat_index;
+          float __in1 = psupsat_index;
           double __in2 = zepsec;
           bool __out;
 
@@ -6570,11 +7141,11 @@ void __program_cloudsc_py_internal(
         if (__tmp45) {
           {
             double zsolqa_index_3;
-            double psupsat_index_0;
+            float psupsat_index_0;
             double zsolqa_slice_plus_psupsat_slice;
-            double zpsupsatsrce_slice;
+            float zpsupsatsrce_slice;
             double zqxfg_index_1;
-            double psupsat_index_1;
+            float psupsat_index_1;
             double zqxfg_slice_plus_psupsat_slice;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -6583,11 +7154,12 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index_3, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psupsat + ((jl + (klon * (jk - 1))) - 1), &psupsat_index_0, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psupsat_lowered + ((jl + (klon * (jk - 1))) - 1),
+                &psupsat_index_0, 1);
             {
               double __in1 = zsolqa_index_3;
-              double __in2 = psupsat_index_0;
+              float __in2 = psupsat_index_0;
               double __out;
 
               ///////////////////
@@ -6611,12 +7183,12 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psupsat + ((jl + (klon * (jk - 1))) - 1), &zpsupsatsrce_slice,
-                1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psupsat_lowered + ((jl + (klon * (jk - 1))) - 1),
+                &zpsupsatsrce_slice, 1);
             {
-              double __inp = zpsupsatsrce_slice;
-              double __out;
+              float __inp = zpsupsatsrce_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_525_20)
@@ -6626,14 +7198,15 @@ void __program_cloudsc_py_internal(
               zpsupsatsrce[((jl + (klon * (ncldql - 1))) - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psupsat + ((jl + (klon * (jk - 1))) - 1), &psupsat_index_1, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psupsat_lowered + ((jl + (klon * (jk - 1))) - 1),
+                &psupsat_index_1, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldql - 1))) - 1), &zqxfg_index_1, 1);
             {
               double __in1 = zqxfg_index_1;
-              double __in2 = psupsat_index_1;
+              float __in2 = psupsat_index_1;
               double __out;
 
               ///////////////////
@@ -6658,11 +7231,11 @@ void __program_cloudsc_py_internal(
         } else {
           {
             double zsolqa_index_4;
-            double psupsat_index_2;
+            float psupsat_index_2;
             double zsolqa_slice_plus_psupsat_slice_0;
-            double zpsupsatsrce_slice_0;
+            float zpsupsatsrce_slice_0;
             double zqxfg_index_2;
-            double psupsat_index_3;
+            float psupsat_index_3;
             double zqxfg_slice_plus_psupsat_slice_0;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -6671,11 +7244,12 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index_4, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psupsat + ((jl + (klon * (jk - 1))) - 1), &psupsat_index_2, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psupsat_lowered + ((jl + (klon * (jk - 1))) - 1),
+                &psupsat_index_2, 1);
             {
               double __in1 = zsolqa_index_4;
-              double __in2 = psupsat_index_2;
+              float __in2 = psupsat_index_2;
               double __out;
 
               ///////////////////
@@ -6699,12 +7273,12 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psupsat + ((jl + (klon * (jk - 1))) - 1), &zpsupsatsrce_slice_0,
-                1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psupsat_lowered + ((jl + (klon * (jk - 1))) - 1),
+                &zpsupsatsrce_slice_0, 1);
             {
-              double __inp = zpsupsatsrce_slice_0;
-              double __out;
+              float __inp = zpsupsatsrce_slice_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_529_20)
@@ -6714,14 +7288,15 @@ void __program_cloudsc_py_internal(
               zpsupsatsrce[((jl + (klon * (ncldqi - 1))) - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psupsat + ((jl + (klon * (jk - 1))) - 1), &psupsat_index_3, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psupsat_lowered + ((jl + (klon * (jk - 1))) - 1),
+                &psupsat_index_3, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldqi - 1))) - 1), &zqxfg_index_2, 1);
             {
               double __in1 = zqxfg_index_2;
-              double __in2 = psupsat_index_3;
+              float __in2 = psupsat_index_3;
               double __out;
 
               ///////////////////
@@ -6745,19 +7320,19 @@ void __program_cloudsc_py_internal(
           }
         }
         {
-          double za_index_9;
+          float za_index_9;
           double __tmp46;
-          double zsolac_slice_0;
+          float zsolac_slice_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_9, 1);
           {
-            double __in2 = za_index_9;
+            float __in2 = za_index_9;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp46 = __out;
@@ -6765,7 +7340,7 @@ void __program_cloudsc_py_internal(
           {
             double __in1 = __tmp46;
             double __in2 = zfaci;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -6775,8 +7350,8 @@ void __program_cloudsc_py_internal(
             zsolac_slice_0 = __out;
           }
           {
-            double __inp = zsolac_slice_0;
-            double __out;
+            float __inp = zsolac_slice_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_531_16)
@@ -6789,41 +7364,31 @@ void __program_cloudsc_py_internal(
       }
     }
     if (((jk < klev) && (jk >= yrecldp_ncldtop))) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_22 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_22 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_22); jl = (jl + 1)) {
+
+        ldcum_index = ldcum[(jl - 1)];
         {
-          double plude_index;
-          double zdtgdp_index;
-          double plude_slice_times_zdtgdp_slice;
-          int ldcum_index;
-          double plude_index_0;
+          float plude_index;
+          float zdtgdp_index;
+          float plude_slice_times_zdtgdp_slice;
+          float plude_index_0;
           bool __tmp47;
           bool __tmp48;
-          double plu_index;
+          float plu_index;
           bool __tmp49;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              plude + ((jl + (klon * (jk - 1))) - 1), &plude_index, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zdtgdp + (jl - 1), &zdtgdp_index, 1);
           {
-            double __in1 = plude_index;
-            double __in2 = zdtgdp_index;
-            double __out;
+            float __in1 = plude_index;
+            float __in2 = zdtgdp_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -6833,24 +7398,22 @@ void __program_cloudsc_py_internal(
             plude_slice_times_zdtgdp_slice = __out;
           }
           {
-            double __inp = plude_slice_times_zdtgdp_slice;
-            double __out;
+            float __inp = plude_slice_times_zdtgdp_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_534_16)
             __out = __inp;
             ///////////////////
 
-            plude[((jl + (klon * (jk - 1))) - 1)] = __out;
+            plude_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_0, 1);
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              ldcum + (jl - 1), &ldcum_index, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_0,
+              1);
           {
-            double __in1 = plude_index_0;
+            float __in1 = plude_index_0;
             double __in2 = yrecldp_rlmin;
             bool __out;
 
@@ -6862,22 +7425,21 @@ void __program_cloudsc_py_internal(
             __tmp47 = __out;
           }
           {
-            int __in1 = ldcum_index;
             bool __in2 = __tmp47;
             bool __out;
 
             ///////////////////
             // Tasklet code (_And_)
-            __out = (__in1 && __in2);
+            __out = (ldcum_index && __in2);
             ///////////////////
 
             __tmp48 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              plu + (((jk * klon) + jl) - 1), &plu_index, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              plu_lowered + (((jk * klon) + jl) - 1), &plu_index, 1);
           {
-            double __in1 = plu_index;
+            float __in1 = plu_index;
             double __in2 = zepsec;
             bool __out;
 
@@ -6903,29 +7465,30 @@ void __program_cloudsc_py_internal(
         }
         if (__tmp50) {
           {
-            double zsolac_index;
-            double plude_index_1;
-            double plu_index_0;
-            double plude_slice_div_plu_slice;
-            double zsolac_slice_plus_plude_slice_plu_slice;
+            float zsolac_index;
+            float plude_index_1;
+            float plu_index_0;
+            float plude_slice_div_plu_slice;
+            float zsolac_slice_plus_plude_slice_plu_slice;
             double zalfaw_0;
-            double plude_index_2;
+            float plude_index_2;
             double zconvsrce_slice;
             double __tmp51;
-            double plude_index_3;
+            float plude_index_3;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsolac + (jl - 1), &zsolac_index, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_1, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_1,
+                1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                plu + (((jk * klon) + jl) - 1), &plu_index_0, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                plu_lowered + (((jk * klon) + jl) - 1), &plu_index_0, 1);
             {
-              double __in1 = plude_index_1;
-              double __in2 = plu_index_0;
-              double __out;
+              float __in1 = plude_index_1;
+              float __in2 = plu_index_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -6935,9 +7498,9 @@ void __program_cloudsc_py_internal(
               plude_slice_div_plu_slice = __out;
             }
             {
-              double __in1 = zsolac_index;
-              double __in2 = plude_slice_div_plu_slice;
-              double __out;
+              float __in1 = zsolac_index;
+              float __in2 = plude_slice_div_plu_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -6947,8 +7510,8 @@ void __program_cloudsc_py_internal(
               zsolac_slice_plus_plude_slice_plu_slice = __out;
             }
             {
-              double __inp = zsolac_slice_plus_plude_slice_plu_slice;
-              double __out;
+              float __inp = zsolac_slice_plus_plude_slice_plu_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_536_20)
@@ -6958,11 +7521,13 @@ void __program_cloudsc_py_internal(
               zsolac[(jl - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_2, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_2,
+                1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_3, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_3,
+                1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zfoealfa + ((jl + (klon * (jk - 1))) - 1), &zalfaw_0, 1);
@@ -6979,7 +7544,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zalfaw;
-              double __in2 = plude_index_2;
+              float __in2 = plude_index_2;
               double __out;
 
               ///////////////////
@@ -7006,14 +7571,14 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp51 = __out;
             }
             {
               double __in1 = __tmp51;
-              double __in2 = plude_index_3;
+              float __in2 = plude_index_3;
               double __out;
 
               ///////////////////
@@ -7118,28 +7683,26 @@ void __program_cloudsc_py_internal(
           {
 
             {
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_543_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
-              plude[((jl + (klon * (jk - 1))) - 1)] = __out;
+              plude_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
             }
           }
         }
-        {
 
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              ldcum + (jl - 1), &ldcum_index_0, 1);
-        }
+        ldcum_index_0 = ldcum[(jl - 1)];
+
         if (ldcum_index_0) {
           {
             double zsolqa_index_7;
-            double psnde_index;
-            double zdtgdp_index_0;
-            double psnde_slice_times_zdtgdp_slice;
+            float psnde_index;
+            float zdtgdp_index_0;
+            float psnde_slice_times_zdtgdp_slice;
             double zsolqa_slice_plus_psnde_slice_zdtgdp_slice;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -7148,15 +7711,16 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index_7, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                psnde + ((jl + (klon * (jk - 1))) - 1), &psnde_index, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                psnde_lowered + ((jl + (klon * (jk - 1))) - 1), &psnde_index,
+                1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_0, 1);
             {
-              double __in1 = psnde_index;
-              double __in2 = zdtgdp_index_0;
-              double __out;
+              float __in1 = psnde_index;
+              float __in2 = zdtgdp_index_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -7167,7 +7731,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zsolqa_index_7;
-              double __in2 = psnde_slice_times_zdtgdp_slice;
+              float __in2 = psnde_slice_times_zdtgdp_slice;
               double __out;
 
               ///////////////////
@@ -7195,41 +7759,30 @@ void __program_cloudsc_py_internal(
       }
     }
     if ((jk > yrecldp_ncldtop)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_23 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_23 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_23); jl = (jl + 1)) {
         {
-          double pmfu_index;
-          double pmfd_index;
-          double pmfu_slice_plus_pmfd_slice;
-          double zdtgdp_index_1;
-          double pmfu_slice_pmfd_slice_times_zdtgdp_slice;
-          double zmf_slice;
-          double zmf_index;
-          double zanewm1_index;
-          double zacust_slice;
+          float pmfu_index;
+          float pmfd_index;
+          float pmfu_slice_plus_pmfd_slice;
+          float zdtgdp_index_1;
+          float pmfu_slice_pmfd_slice_times_zdtgdp_slice;
+          float zmf_slice;
+          float zmf_index;
+          float zanewm1_index;
+          float zacust_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pmfu + ((jl + (klon * (jk - 1))) - 1), &pmfu_index, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pmfu_lowered + ((jl + (klon * (jk - 1))) - 1), &pmfu_index, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pmfd + ((jl + (klon * (jk - 1))) - 1), &pmfd_index, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pmfd_lowered + ((jl + (klon * (jk - 1))) - 1), &pmfd_index, 1);
           {
-            double __in1 = pmfu_index;
-            double __in2 = pmfd_index;
-            double __out;
+            float __in1 = pmfu_index;
+            float __in2 = pmfd_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -7239,12 +7792,12 @@ void __program_cloudsc_py_internal(
             pmfu_slice_plus_pmfd_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zdtgdp + (jl - 1), &zdtgdp_index_1, 1);
           {
-            double __in1 = pmfu_slice_plus_pmfd_slice;
-            double __in2 = zdtgdp_index_1;
-            double __out;
+            float __in1 = pmfu_slice_plus_pmfd_slice;
+            float __in2 = zdtgdp_index_1;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -7254,8 +7807,8 @@ void __program_cloudsc_py_internal(
             pmfu_slice_pmfd_slice_times_zdtgdp_slice = __out;
           }
           {
-            double __in_b = pmfu_slice_pmfd_slice_times_zdtgdp_slice;
-            double __out;
+            float __in_b = pmfu_slice_pmfd_slice_times_zdtgdp_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (__max2)
@@ -7265,8 +7818,8 @@ void __program_cloudsc_py_internal(
             zmf_slice = __out;
           }
           {
-            double __inp = zmf_slice;
-            double __out;
+            float __inp = zmf_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_548_16)
@@ -7276,15 +7829,15 @@ void __program_cloudsc_py_internal(
             zmf[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zmf + (jl - 1), &zmf_index, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zanewm1 + (jl - 1), &zanewm1_index, 1);
           {
-            double __in1 = zmf_index;
-            double __in2 = zanewm1_index;
-            double __out;
+            float __in1 = zmf_index;
+            float __in2 = zanewm1_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -7294,8 +7847,8 @@ void __program_cloudsc_py_internal(
             zacust_slice = __out;
           }
           {
-            double __inp = zacust_slice;
-            double __out;
+            float __inp = zacust_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_549_16)
@@ -7307,35 +7860,30 @@ void __program_cloudsc_py_internal(
         }
       }
       for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
+
+        llfall_index = llfall[(jm - 1)];
+
+        iphase_index_1 = iphase[(jm - 1)];
         {
-          int llfall_index;
           bool not_llfall_slice;
-          int iphase_index_1;
           bool __tmp52;
 
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              llfall + (jm - 1), &llfall_index, 1);
           {
-            int __in = llfall_index;
             bool __out;
 
             ///////////////////
             // Tasklet code (_Not_)
-            __out = (!__in);
+            __out = (!llfall_index);
             ///////////////////
 
             not_llfall_slice = __out;
           }
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              iphase + (jm - 1), &iphase_index_1, 1);
           {
-            int __in1 = iphase_index_1;
             bool __out;
 
             ///////////////////
             // Tasklet code (_Gt_)
-            __out = (__in1 > 0);
+            __out = (iphase_index_1 > 0);
             ///////////////////
 
             __tmp52 = __out;
@@ -7354,38 +7902,27 @@ void __program_cloudsc_py_internal(
           }
         }
         if (__tmp53) {
-          {
 
-            {
-              int __in1 = kfdia;
-              int __out;
+          kfdia_plus_1_24 = (kfdia + 1);
 
-              ///////////////////
-              // Tasklet code (_Add_)
-              __out = (__in1 + int(1));
-              ///////////////////
-
-              kfdia_plus_1_24 = __out;
-            }
-          }
           for (jl = kidia; (jl < kfdia_plus_1_24); jl = (jl + 1)) {
             {
-              double zmf_index_0;
-              double zqxnm1_index;
-              double zlcust_slice;
+              float zmf_index_0;
+              float zqxnm1_index;
+              float zlcust_slice;
               double zconvsrce_index_1;
-              double zlcust_index;
+              float zlcust_index;
               double zconvsrce_slice_plus_zlcust_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zmf + (jl - 1), &zmf_index_0, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqxnm1 + ((jl + (klon * (jm - 1))) - 1), &zqxnm1_index, 1);
               {
-                double __in1 = zmf_index_0;
-                double __in2 = zqxnm1_index;
-                double __out;
+                float __in1 = zmf_index_0;
+                float __in2 = zqxnm1_index;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -7395,8 +7932,8 @@ void __program_cloudsc_py_internal(
                 zlcust_slice = __out;
               }
               {
-                double __inp = zlcust_slice;
-                double __out;
+                float __inp = zlcust_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_553_24)
@@ -7406,7 +7943,7 @@ void __program_cloudsc_py_internal(
                 zlcust[((jl + (klon * (jm - 1))) - 1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcust + ((jl + (klon * (jm - 1))) - 1), &zlcust_index, 1);
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -7414,7 +7951,7 @@ void __program_cloudsc_py_internal(
                   &zconvsrce_index_1, 1);
               {
                 double __in1 = zconvsrce_index_1;
-                double __in2 = zlcust_index;
+                float __in2 = zlcust_index;
                 double __out;
 
                 ///////////////////
@@ -7439,20 +7976,9 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_25 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_25 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_25); jl = (jl + 1)) {
         {
           double zrdcp_times_0_5;
@@ -7460,14 +7986,14 @@ void __program_cloudsc_py_internal(
           double ztp1_index_29;
           double ztp1_slice_plus_ztp1_slice;
           double zrdcp_0_5_times_ztp1_slice_ztp1_slice;
-          double paph_index_2;
-          double pap_index_6;
-          double pap_index_7;
-          double pap_slice_minus_pap_slice_0;
-          double zanewm1_index_0;
-          double zanewm1_slice_times_zdtforc;
-          double zdqsmixdt_index_0;
-          double zdqs_slice;
+          float paph_index_2;
+          float pap_index_6;
+          float pap_index_7;
+          float pap_slice_minus_pap_slice_0;
+          float zanewm1_index_0;
+          float zanewm1_slice_times_zdtforc;
+          float zdqsmixdt_index_0;
+          float zdqs_slice;
 
           {
             double __in1 = zrdcp;
@@ -7475,7 +8001,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Mult_)
-            __out = (__in1 * 0.5);
+            __out = (__in1 * float(0.5));
             ///////////////////
 
             zrdcp_times_0_5 = __out;
@@ -7511,11 +8037,11 @@ void __program_cloudsc_py_internal(
             zrdcp_0_5_times_ztp1_slice_ztp1_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              paph + ((jl + (klon * (jk - 1))) - 1), &paph_index_2, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              paph_lowered + ((jl + (klon * (jk - 1))) - 1), &paph_index_2, 1);
           {
             double __in1 = zrdcp_0_5_times_ztp1_slice_ztp1_slice;
-            double __in2 = paph_index_2;
+            float __in2 = paph_index_2;
             double __out;
 
             ///////////////////
@@ -7526,15 +8052,15 @@ void __program_cloudsc_py_internal(
             zdtdp = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_6, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_6, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pap + ((jl + (klon * (jk - 2))) - 1), &pap_index_7, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pap_lowered + ((jl + (klon * (jk - 2))) - 1), &pap_index_7, 1);
           {
-            double __in1 = pap_index_6;
-            double __in2 = pap_index_7;
-            double __out;
+            float __in1 = pap_index_6;
+            float __in2 = pap_index_7;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -7545,7 +8071,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zdtdp;
-            double __in2 = pap_slice_minus_pap_slice_0;
+            float __in2 = pap_slice_minus_pap_slice_0;
             double __out;
 
             ///////////////////
@@ -7556,12 +8082,12 @@ void __program_cloudsc_py_internal(
             zdtforc = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zanewm1 + (jl - 1), &zanewm1_index_0, 1);
           {
-            double __in1 = zanewm1_index_0;
+            float __in1 = zanewm1_index_0;
             double __in2 = zdtforc;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -7571,12 +8097,12 @@ void __program_cloudsc_py_internal(
             zanewm1_slice_times_zdtforc = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zdqsmixdt + (jl - 1), &zdqsmixdt_index_0, 1);
           {
-            double __in1 = zanewm1_slice_times_zdtforc;
-            double __in2 = zdqsmixdt_index_0;
-            double __out;
+            float __in1 = zanewm1_slice_times_zdtforc;
+            float __in2 = zdqsmixdt_index_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -7586,8 +8112,8 @@ void __program_cloudsc_py_internal(
             zdqs_slice = __out;
           }
           {
-            double __inp = zdqs_slice;
-            double __out;
+            float __inp = zdqs_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_558_16)
@@ -7599,35 +8125,30 @@ void __program_cloudsc_py_internal(
         }
       }
       for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
+
+        llfall_index_0 = llfall[(jm - 1)];
+
+        iphase_index_2 = iphase[(jm - 1)];
         {
-          int llfall_index_0;
           bool not_llfall_slice_0;
-          int iphase_index_2;
           bool __tmp54;
 
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              llfall + (jm - 1), &llfall_index_0, 1);
           {
-            int __in = llfall_index_0;
             bool __out;
 
             ///////////////////
             // Tasklet code (_Not_)
-            __out = (!__in);
+            __out = (!llfall_index_0);
             ///////////////////
 
             not_llfall_slice_0 = __out;
           }
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              iphase + (jm - 1), &iphase_index_2, 1);
           {
-            int __in1 = iphase_index_2;
             bool __out;
 
             ///////////////////
             // Tasklet code (_Gt_)
-            __out = (__in1 > 0);
+            __out = (iphase_index_2 > 0);
             ///////////////////
 
             __tmp54 = __out;
@@ -7646,59 +8167,48 @@ void __program_cloudsc_py_internal(
           }
         }
         if (__tmp55) {
-          {
 
-            {
-              int __in1 = kfdia;
-              int __out;
+          kfdia_plus_1_26 = (kfdia + 1);
 
-              ///////////////////
-              // Tasklet code (_Add_)
-              __out = (__in1 + int(1));
-              ///////////////////
-
-              kfdia_plus_1_26 = __out;
-            }
-          }
           for (jl = kidia; (jl < kfdia_plus_1_26); jl = (jl + 1)) {
             {
-              double zlcust_index_0;
-              double zdqs_index;
-              double zlcust_slice_minus_zdqs_slice;
+              float zlcust_index_0;
+              float zdqs_index;
+              float zlcust_slice_minus_zdqs_slice;
               double zlfinal;
-              double zlcust_index_1;
-              double zlcust_slice_minus_zlfinal;
-              double zevaplimmix_index;
-              double zlcust_index_2;
+              float zlcust_index_1;
+              float zlcust_slice_minus_zlfinal;
+              float zevaplimmix_index;
+              float zlcust_index_2;
               double zlfinal_0;
-              double zlfinalsum_index;
-              double zlfinalsum_slice_plus_zlfinal;
+              float zlfinalsum_index;
+              float zlfinalsum_slice_plus_zlfinal;
               double zsolqa_index_8;
-              double zlcust_index_3;
+              float zlcust_index_3;
               double zsolqa_slice_plus_zlcust_slice;
               double zsolqa_index_9;
               double zsolqa_slice_plus_zevap;
               double zsolqa_index_10;
               double zsolqa_slice_minus_zevap;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcust + ((jl + (klon * (jm - 1))) - 1), &zlcust_index_0, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcust + ((jl + (klon * (jm - 1))) - 1), &zlcust_index_1, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcust + ((jl + (klon * (jm - 1))) - 1), &zlcust_index_2, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcust + ((jl + (klon * (jm - 1))) - 1), &zlcust_index_3, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zdqs + (jl - 1), &zdqs_index, 1);
               {
-                double __in1 = zlcust_index_0;
-                double __in2 = zdqs_index;
-                double __out;
+                float __in1 = zlcust_index_0;
+                float __in2 = zdqs_index;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -7708,7 +8218,7 @@ void __program_cloudsc_py_internal(
                 zlcust_slice_minus_zdqs_slice = __out;
               }
               {
-                double __in_b = zlcust_slice_minus_zdqs_slice;
+                float __in_b = zlcust_slice_minus_zdqs_slice;
                 double __out;
 
                 ///////////////////
@@ -7719,9 +8229,9 @@ void __program_cloudsc_py_internal(
                 zlfinal = __out;
               }
               {
-                double __in1 = zlcust_index_1;
+                float __in1 = zlcust_index_1;
                 double __in2 = zlfinal;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -7731,11 +8241,11 @@ void __program_cloudsc_py_internal(
                 zlcust_slice_minus_zlfinal = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zevaplimmix + (jl - 1), &zevaplimmix_index, 1);
               {
-                double __in_a = zlcust_slice_minus_zlfinal;
-                double __in_b = zevaplimmix_index;
+                float __in_a = zlcust_slice_minus_zlfinal;
+                float __in_b = zevaplimmix_index;
                 double __out;
 
                 ///////////////////
@@ -7746,7 +8256,7 @@ void __program_cloudsc_py_internal(
                 zevap = __out;
               }
               {
-                double __in1 = zlcust_index_2;
+                float __in1 = zlcust_index_2;
                 double __in2 = zevap;
                 double __out;
 
@@ -7769,12 +8279,12 @@ void __program_cloudsc_py_internal(
                 zlfinal = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlfinalsum + (jl - 1), &zlfinalsum_index, 1);
               {
-                double __in1 = zlfinalsum_index;
+                float __in1 = zlfinalsum_index;
                 double __in2 = zlfinal;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
@@ -7784,8 +8294,8 @@ void __program_cloudsc_py_internal(
                 zlfinalsum_slice_plus_zlfinal = __out;
               }
               {
-                double __inp = zlfinalsum_slice_plus_zlfinal;
-                double __out;
+                float __inp = zlfinalsum_slice_plus_zlfinal;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_565_24)
@@ -7802,7 +8312,7 @@ void __program_cloudsc_py_internal(
                   &zsolqa_index_8, 1);
               {
                 double __in1 = zsolqa_index_8;
-                double __in2 = zlcust_index_3;
+                float __in2 = zlcust_index_3;
                 double __out;
 
                 ///////////////////
@@ -7891,28 +8401,17 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_27 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_27 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_27); jl = (jl + 1)) {
         {
-          double zlfinalsum_index_0;
+          float zlfinalsum_index_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlfinalsum + (jl - 1), &zlfinalsum_index_0, 1);
           {
-            double __in1 = zlfinalsum_index_0;
+            float __in1 = zlfinalsum_index_0;
             double __in2 = zepsec;
             bool __out;
 
@@ -7928,11 +8427,11 @@ void __program_cloudsc_py_internal(
           {
 
             {
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_571_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zacust[(jl - 1)] = __out;
@@ -7940,19 +8439,19 @@ void __program_cloudsc_py_internal(
           }
         }
         {
-          double zsolac_index_0;
-          double zacust_index;
-          double zsolac_slice_plus_zacust_slice;
+          float zsolac_index_0;
+          float zacust_index;
+          float zsolac_slice_plus_zacust_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsolac + (jl - 1), &zsolac_index_0, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zacust + (jl - 1), &zacust_index, 1);
           {
-            double __in1 = zsolac_index_0;
-            double __in2 = zacust_index;
-            double __out;
+            float __in1 = zsolac_index_0;
+            float __in2 = zacust_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -7962,8 +8461,8 @@ void __program_cloudsc_py_internal(
             zsolac_slice_plus_zacust_slice = __out;
           }
           {
-            double __inp = zsolac_slice_plus_zacust_slice;
-            double __out;
+            float __inp = zsolac_slice_plus_zacust_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_572_16)
@@ -7975,44 +8474,33 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_28 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_28 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_28); jl = (jl + 1)) {
       if ((jk < klev)) {
         {
-          double pmfu_index_0;
-          double pmfd_index_0;
-          double pmfu_slice_plus_pmfd_slice_0;
-          double zdtgdp_index_2;
-          double pmfu_slice_pmfd_slice_times_zdtgdp_slice_0;
-          double zsolab_index;
-          double zsolab_slice_plus_zmfdn;
-          double zsolqb_index;
-          double zsolqb_slice_plus_zmfdn;
-          double zsolqb_index_0;
-          double zsolqb_slice_plus_zmfdn_0;
+          float pmfu_index_0;
+          float pmfd_index_0;
+          float pmfu_slice_plus_pmfd_slice_0;
+          float zdtgdp_index_2;
+          float pmfu_slice_pmfd_slice_times_zdtgdp_slice_0;
+          float zsolab_index;
+          float zsolab_slice_plus_zmfdn;
+          float zsolqb_index;
+          float zsolqb_slice_plus_zmfdn;
+          float zsolqb_index_0;
+          float zsolqb_slice_plus_zmfdn_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pmfu + (((jk * klon) + jl) - 1), &pmfu_index_0, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pmfu_lowered + (((jk * klon) + jl) - 1), &pmfu_index_0, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pmfd + (((jk * klon) + jl) - 1), &pmfd_index_0, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pmfd_lowered + (((jk * klon) + jl) - 1), &pmfd_index_0, 1);
           {
-            double __in1 = pmfu_index_0;
-            double __in2 = pmfd_index_0;
-            double __out;
+            float __in1 = pmfu_index_0;
+            float __in2 = pmfd_index_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -8022,12 +8510,12 @@ void __program_cloudsc_py_internal(
             pmfu_slice_plus_pmfd_slice_0 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zdtgdp + (jl - 1), &zdtgdp_index_2, 1);
           {
-            double __in1 = pmfu_slice_plus_pmfd_slice_0;
-            double __in2 = zdtgdp_index_2;
-            double __out;
+            float __in1 = pmfu_slice_plus_pmfd_slice_0;
+            float __in2 = zdtgdp_index_2;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -8037,7 +8525,7 @@ void __program_cloudsc_py_internal(
             pmfu_slice_pmfd_slice_times_zdtgdp_slice_0 = __out;
           }
           {
-            double __in_b = pmfu_slice_pmfd_slice_times_zdtgdp_slice_0;
+            float __in_b = pmfu_slice_pmfd_slice_times_zdtgdp_slice_0;
             double __out;
 
             ///////////////////
@@ -8059,12 +8547,12 @@ void __program_cloudsc_py_internal(
             zconvsink[((jl + (klon * (ncldql - 1))) - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsolab + (jl - 1), &zsolab_index, 1);
           {
-            double __in1 = zsolab_index;
+            float __in1 = zsolab_index;
             double __in2 = zmfdn;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -8074,8 +8562,8 @@ void __program_cloudsc_py_internal(
             zsolab_slice_plus_zmfdn = __out;
           }
           {
-            double __inp = zsolab_slice_plus_zmfdn;
-            double __out;
+            float __inp = zsolab_slice_plus_zmfdn;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_576_16)
@@ -8085,15 +8573,15 @@ void __program_cloudsc_py_internal(
             zsolab[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsolqb + (((jl + ((klon * nclv) * (ncldql - 1))) +
                          (klon * (ncldql - 1))) -
                         1),
               &zsolqb_index, 1);
           {
-            double __in1 = zsolqb_index;
+            float __in1 = zsolqb_index;
             double __in2 = zmfdn;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -8103,8 +8591,8 @@ void __program_cloudsc_py_internal(
             zsolqb_slice_plus_zmfdn = __out;
           }
           {
-            double __inp = zsolqb_slice_plus_zmfdn;
-            double __out;
+            float __inp = zsolqb_slice_plus_zmfdn;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_577_16)
@@ -8116,15 +8604,15 @@ void __program_cloudsc_py_internal(
                     1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsolqb + (((jl + ((klon * nclv) * (ncldqi - 1))) +
                          (klon * (ncldqi - 1))) -
                         1),
               &zsolqb_index_0, 1);
           {
-            double __in1 = zsolqb_index_0;
+            float __in1 = zsolqb_index_0;
             double __in2 = zmfdn;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -8134,8 +8622,8 @@ void __program_cloudsc_py_internal(
             zsolqb_slice_plus_zmfdn_0 = __out;
           }
           {
-            double __inp = zsolqb_slice_plus_zmfdn_0;
-            double __out;
+            float __inp = zsolqb_slice_plus_zmfdn_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_578_16)
@@ -8163,32 +8651,22 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_29 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_29 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_29); jl = (jl + 1)) {
+
+      ktype_index = ktype[(jl - 1)];
       {
-        double zldifdt_slice;
-        int ktype_index;
+        float zldifdt_slice;
         bool __tmp57;
-        double plude_index_4;
+        float plude_index_4;
         bool __tmp58;
 
         {
           double __in1 = yrecldp_rcldiff;
           double __in2 = ptsphy;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -8198,8 +8676,8 @@ void __program_cloudsc_py_internal(
           zldifdt_slice = __out;
         }
         {
-          double __inp = zldifdt_slice;
-          double __out;
+          float __inp = zldifdt_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_582_12)
@@ -8208,25 +8686,21 @@ void __program_cloudsc_py_internal(
 
           zldifdt[(jl - 1)] = __out;
         }
-
-        dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-            ktype + (jl - 1), &ktype_index, 1);
         {
-          int __in1 = ktype_index;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Gt_)
-          __out = (__in1 > 0);
+          __out = (ktype_index > 0);
           ///////////////////
 
           __tmp57 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_4, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_4, 1);
         {
-          double __in1 = plude_index_4;
+          float __in1 = plude_index_4;
           double __in2 = zepsec;
           bool __out;
 
@@ -8252,14 +8726,14 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp59) {
         {
-          double zldifdt_index;
+          float zldifdt_index;
           double yrecldp_rcldiff_convi_times_zldifdt_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zldifdt + (jl - 1), &zldifdt_index, 1);
           {
             double __in1 = yrecldp_rcldiff_convi;
-            double __in2 = zldifdt_index;
+            float __in2 = zldifdt_index;
             double __out;
 
             ///////////////////
@@ -8271,7 +8745,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __inp = yrecldp_rcldiff_convi_times_zldifdt_slice;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_584_16)
@@ -8283,28 +8757,17 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_30 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_30 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_30); jl = (jl + 1)) {
       {
-        double zli_index_1;
+        float zli_index_1;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zli + ((jl + (klon * (jk - 1))) - 1), &zli_index_1, 1);
         {
-          double __in1 = zli_index_1;
+          float __in1 = zli_index_1;
           double __in2 = zepsec;
           bool __out;
 
@@ -8318,43 +8781,43 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp60) {
         {
-          double zldifdt_index_0;
-          double zqsmix_index_3;
+          float zldifdt_index_0;
+          float zqsmix_index_3;
           double zqx_index_28;
-          double zqsmix_slice_minus_zqx_slice_0;
+          float zqsmix_slice_minus_zqx_slice_0;
           double max_zqsmix_slice_zqx_slice_0_0;
           double ze;
-          double za_index_10;
+          float za_index_10;
           double zleros;
-          double zevaplimmix_index_0;
+          float zevaplimmix_index_0;
           double min_zleros_zevaplimmix_slice;
-          double zli_index_2;
+          float zli_index_2;
           double min_zleros_zli_slice;
-          double zlicld_index;
+          float zlicld_index;
           double zaeros;
-          double zsolac_index_1;
-          double zsolac_slice_minus_zaeros;
+          float zsolac_index_1;
+          float zsolac_slice_minus_zaeros;
           double zsolqa_index_11;
-          double zliqfrac_index_0;
-          double zliqfrac_slice_times_zleros;
+          float zliqfrac_index_0;
+          float zliqfrac_slice_times_zleros;
           double zsolqa_slice_plus_zliqfrac_slice_zleros;
           double zsolqa_index_12;
-          double zliqfrac_index_1;
-          double zliqfrac_slice_times_zleros_0;
+          float zliqfrac_index_1;
+          float zliqfrac_slice_times_zleros_0;
           double zsolqa_slice_minus_zliqfrac_slice_zleros;
           double zsolqa_index_13;
-          double zicefrac_index;
-          double zicefrac_slice_times_zleros;
+          float zicefrac_index;
+          float zicefrac_slice_times_zleros;
           double zsolqa_slice_plus_zicefrac_slice_zleros;
           double zsolqa_index_14;
-          double zicefrac_index_0;
-          double zicefrac_slice_times_zleros_0;
+          float zicefrac_index_0;
+          float zicefrac_slice_times_zleros_0;
           double zsolqa_slice_minus_zicefrac_slice_zleros;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zldifdt + (jl - 1), &zldifdt_index_0, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_3, 1);
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -8363,9 +8826,9 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_28, 1);
           {
-            double __in1 = zqsmix_index_3;
+            float __in1 = zqsmix_index_3;
             double __in2 = zqx_index_28;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -8375,7 +8838,7 @@ void __program_cloudsc_py_internal(
             zqsmix_slice_minus_zqx_slice_0 = __out;
           }
           {
-            double __in_a = zqsmix_slice_minus_zqx_slice_0;
+            float __in_a = zqsmix_slice_minus_zqx_slice_0;
             double __out;
 
             ///////////////////
@@ -8386,7 +8849,7 @@ void __program_cloudsc_py_internal(
             max_zqsmix_slice_zqx_slice_0_0 = __out;
           }
           {
-            double __in1 = zldifdt_index_0;
+            float __in1 = zldifdt_index_0;
             double __in2 = max_zqsmix_slice_zqx_slice_0_0;
             double __out;
 
@@ -8398,10 +8861,10 @@ void __program_cloudsc_py_internal(
             ze = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_10, 1);
           {
-            double __in1 = za_index_10;
+            float __in1 = za_index_10;
             double __in2 = ze;
             double __out;
 
@@ -8413,11 +8876,11 @@ void __program_cloudsc_py_internal(
             zleros = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zevaplimmix + (jl - 1), &zevaplimmix_index_0, 1);
           {
             double __in_a = zleros;
-            double __in_b = zevaplimmix_index_0;
+            float __in_b = zevaplimmix_index_0;
             double __out;
 
             ///////////////////
@@ -8439,11 +8902,11 @@ void __program_cloudsc_py_internal(
             zleros = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zli + ((jl + (klon * (jk - 1))) - 1), &zli_index_2, 1);
           {
             double __in_a = zleros;
-            double __in_b = zli_index_2;
+            float __in_b = zli_index_2;
             double __out;
 
             ///////////////////
@@ -8465,11 +8928,11 @@ void __program_cloudsc_py_internal(
             zleros = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlicld + (jl - 1), &zlicld_index, 1);
           {
             double __in1 = zleros;
-            double __in2 = zlicld_index;
+            float __in2 = zlicld_index;
             double __out;
 
             ///////////////////
@@ -8480,12 +8943,12 @@ void __program_cloudsc_py_internal(
             zaeros = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsolac + (jl - 1), &zsolac_index_1, 1);
           {
-            double __in1 = zsolac_index_1;
+            float __in1 = zsolac_index_1;
             double __in2 = zaeros;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -8495,8 +8958,8 @@ void __program_cloudsc_py_internal(
             zsolac_slice_minus_zaeros = __out;
           }
           {
-            double __inp = zsolac_slice_minus_zaeros;
-            double __out;
+            float __inp = zsolac_slice_minus_zaeros;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_592_16)
@@ -8512,15 +8975,15 @@ void __program_cloudsc_py_internal(
                         1),
               &zsolqa_index_11, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zliqfrac + ((jl + (klon * (jk - 1))) - 1), &zliqfrac_index_0, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zliqfrac + ((jl + (klon * (jk - 1))) - 1), &zliqfrac_index_1, 1);
           {
-            double __in1 = zliqfrac_index_0;
+            float __in1 = zliqfrac_index_0;
             double __in2 = zleros;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -8531,7 +8994,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zsolqa_index_11;
-            double __in2 = zliqfrac_slice_times_zleros;
+            float __in2 = zliqfrac_slice_times_zleros;
             double __out;
 
             ///////////////////
@@ -8561,9 +9024,9 @@ void __program_cloudsc_py_internal(
                         1),
               &zsolqa_index_12, 1);
           {
-            double __in1 = zliqfrac_index_1;
+            float __in1 = zliqfrac_index_1;
             double __in2 = zleros;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -8574,7 +9037,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zsolqa_index_12;
-            double __in2 = zliqfrac_slice_times_zleros_0;
+            float __in2 = zliqfrac_slice_times_zleros_0;
             double __out;
 
             ///////////////////
@@ -8604,15 +9067,15 @@ void __program_cloudsc_py_internal(
                         1),
               &zsolqa_index_13, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zicefrac + ((jl + (klon * (jk - 1))) - 1), &zicefrac_index, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zicefrac + ((jl + (klon * (jk - 1))) - 1), &zicefrac_index_0, 1);
           {
-            double __in1 = zicefrac_index;
+            float __in1 = zicefrac_index;
             double __in2 = zleros;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -8623,7 +9086,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zsolqa_index_13;
-            double __in2 = zicefrac_slice_times_zleros;
+            float __in2 = zicefrac_slice_times_zleros;
             double __out;
 
             ///////////////////
@@ -8653,9 +9116,9 @@ void __program_cloudsc_py_internal(
                         1),
               &zsolqa_index_14, 1);
           {
-            double __in1 = zicefrac_index_0;
+            float __in1 = zicefrac_index_0;
             double __in2 = zleros;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -8666,7 +9129,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zsolqa_index_14;
-            double __in2 = zicefrac_slice_times_zleros_0;
+            float __in2 = zicefrac_slice_times_zleros_0;
             double __out;
 
             ///////////////////
@@ -8692,25 +9155,14 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_31 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_31 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_31); jl = (jl + 1)) {
       {
         double ztp1_index_30;
         double zrdcp_times_ztp1_slice;
-        double pap_index_8;
+        float pap_index_8;
         double zdtdp_0;
         double zdp_index_1;
 
@@ -8729,11 +9181,11 @@ void __program_cloudsc_py_internal(
           zrdcp_times_ztp1_slice = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_8, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_8, 1);
         {
           double __in1 = zrdcp_times_ztp1_slice;
-          double __in2 = pap_index_8;
+          float __in2 = pap_index_8;
           double __out;
 
           ///////////////////
@@ -8774,7 +9226,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (assign_600_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zmfdn = __out;
@@ -8782,18 +9234,18 @@ void __program_cloudsc_py_internal(
       }
       if ((jk < klev)) {
         {
-          double pmfu_index_1;
-          double pmfd_index_1;
+          float pmfu_index_1;
+          float pmfd_index_1;
           double zmfdn_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pmfu + (((jk * klon) + jl) - 1), &pmfu_index_1, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pmfu_lowered + (((jk * klon) + jl) - 1), &pmfu_index_1, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pmfd + (((jk * klon) + jl) - 1), &pmfd_index_1, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pmfd_lowered + (((jk * klon) + jl) - 1), &pmfd_index_1, 1);
           {
-            double __in1 = pmfu_index_1;
-            double __in2 = pmfd_index_1;
+            float __in1 = pmfu_index_1;
+            float __in2 = pmfd_index_1;
             double __out;
 
             ///////////////////
@@ -8817,19 +9269,19 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double pvervel_index;
+        float pvervel_index;
         double __tmp61;
-        double pmfu_index_2;
-        double pmfd_index_2;
-        double pmfu_slice_plus_pmfd_slice_1;
-        double pmfu_slice_pmfd_slice_plus_zmfdn;
+        float pmfu_index_2;
+        float pmfd_index_2;
+        float pmfu_slice_plus_pmfd_slice_1;
+        float pmfu_slice_pmfd_slice_plus_zmfdn;
         double __tmp62;
         double zwtot;
         double neg_zdpmxdt;
         double max_expr_zwtot;
         double min_zdpmxdt_expr;
-        double phrsw_index;
-        double phrlw_index;
+        float phrsw_index;
+        float phrlw_index;
         double zzzdt;
         double zdpmxdt_times_zdtdp;
         double neg_zdpmxdt_0;
@@ -8837,38 +9289,39 @@ void __program_cloudsc_py_internal(
         double max_expr_zdtdp_zzzdt;
         double min_zdpmxdt_zdtdp_expr;
         double expr_times_ptsphy;
-        double zldefr_index;
+        float zldefr_index;
         double ydthf_ralfdcp_times_zldefr_slice;
         double zdtdiab;
         double zdtdp_times_zwtot;
         double zdtdp_zwtot_times_ptsphy;
         double zdtforc_0;
-        double zqold_slice;
+        float zqold_slice;
         double ztold_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pvervel + ((jl + (klon * (jk - 1))) - 1), &pvervel_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pvervel_lowered + ((jl + (klon * (jk - 1))) - 1), &pvervel_index,
+            1);
         {
           double __in2 = ydcst_rg;
           double __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
-          __out = (0.5 * __in2);
+          __out = (float(0.5) * __in2);
           ///////////////////
 
           __tmp61 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pmfu + ((jl + (klon * (jk - 1))) - 1), &pmfu_index_2, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pmfu_lowered + ((jl + (klon * (jk - 1))) - 1), &pmfu_index_2, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pmfd + ((jl + (klon * (jk - 1))) - 1), &pmfd_index_2, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pmfd_lowered + ((jl + (klon * (jk - 1))) - 1), &pmfd_index_2, 1);
         {
-          double __in1 = pmfu_index_2;
-          double __in2 = pmfd_index_2;
-          double __out;
+          float __in1 = pmfu_index_2;
+          float __in2 = pmfd_index_2;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -8878,9 +9331,9 @@ void __program_cloudsc_py_internal(
           pmfu_slice_plus_pmfd_slice_1 = __out;
         }
         {
-          double __in1 = pmfu_slice_plus_pmfd_slice_1;
+          float __in1 = pmfu_slice_plus_pmfd_slice_1;
           double __in2 = zmfdn;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -8891,7 +9344,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in1 = __tmp61;
-          double __in2 = pmfu_slice_pmfd_slice_plus_zmfdn;
+          float __in2 = pmfu_slice_pmfd_slice_plus_zmfdn;
           double __out;
 
           ///////////////////
@@ -8902,7 +9355,7 @@ void __program_cloudsc_py_internal(
           __tmp62 = __out;
         }
         {
-          double __in1 = pvervel_index;
+          float __in1 = pvervel_index;
           double __in2 = __tmp62;
           double __out;
 
@@ -8971,14 +9424,14 @@ void __program_cloudsc_py_internal(
           neg_zdpmxdt_0 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            phrsw + ((jl + (klon * (jk - 1))) - 1), &phrsw_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            phrsw_lowered + ((jl + (klon * (jk - 1))) - 1), &phrsw_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            phrlw + ((jl + (klon * (jk - 1))) - 1), &phrlw_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            phrlw_lowered + ((jl + (klon * (jk - 1))) - 1), &phrlw_index, 1);
         {
-          double __in1 = phrsw_index;
-          double __in2 = phrlw_index;
+          float __in1 = phrsw_index;
+          float __in2 = phrlw_index;
           double __out;
 
           ///////////////////
@@ -9073,11 +9526,11 @@ void __program_cloudsc_py_internal(
           zdtdp_zwtot_times_ptsphy = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zldefr + (jl - 1), &zldefr_index, 1);
         {
           double __in1 = ydthf_ralfdcp;
-          double __in2 = zldefr_index;
+          float __in2 = zldefr_index;
           double __out;
 
           ///////////////////
@@ -9123,11 +9576,11 @@ void __program_cloudsc_py_internal(
           zdtforc = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqold_slice, 1);
         {
-          double __inp = zqold_slice;
-          double __out;
+          float __inp = zqold_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_608_12)
@@ -9209,23 +9662,12 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_32 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_32 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_32); jl = (jl + 1)) {
       {
-        double pap_index_9;
+        float pap_index_9;
         double ztp1_index_33;
         double min_ydthf_rtwat_ztp1_slice_4;
         double max_ydthf_rtice_expr_4;
@@ -9263,15 +9705,15 @@ void __program_cloudsc_py_internal(
         double ydcst_retv_times_zqsat;
         double __tmp65;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_9, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_9, 1);
         {
-          double __in2 = pap_index_9;
+          float __in2 = pap_index_9;
           double __out;
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           zqp = __out;
@@ -9384,7 +9826,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_4 = __out;
@@ -9418,7 +9860,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_5 = __out;
@@ -9440,7 +9882,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp63 = __out;
@@ -9633,7 +10075,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (__min2)
-          __out = min(0.5, __in_b);
+          __out = min(float(0.5), __in_b);
           ///////////////////
 
           min_0_5_zqsat = __out;
@@ -9667,7 +10109,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp65 = __out;
@@ -9678,7 +10120,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           zcor_2 = __out;
@@ -9686,8 +10128,8 @@ void __program_cloudsc_py_internal(
       }
       {
         double zqsat_times_zcor;
-        double zqsmix_index_4;
-        double zqsmix_slice_minus_zqsat;
+        float zqsmix_index_4;
+        float zqsmix_slice_minus_zqsat;
         double zqsat_times_zcor_0;
         double ztp1_index_39;
         double min_ydthf_rtwat_ztp1_slice_6;
@@ -9743,8 +10185,8 @@ void __program_cloudsc_py_internal(
         double expr_ydthf_ralvdcp_plus_1_0_expr_ydthf_ralsdcp_0;
         double expr_ydthf_ralvdcp_1_0_expr_ydthf_ralsdcp_times_zcond;
         double ztp1_slice_plus_expr_ydthf_ralvdcp_1_0_expr_ydthf_ralsdcp_zcond;
-        double zqsmix_index_5;
-        double zqsmix_slice_minus_zcond;
+        float zqsmix_index_5;
+        float zqsmix_slice_minus_zcond;
         double ztp1_index_46;
         double min_ydthf_rtwat_ztp1_slice_10;
         double max_ydthf_rtice_expr_10;
@@ -9830,15 +10272,15 @@ void __program_cloudsc_py_internal(
           zqsat_times_zcor_0 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_4, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_5, 1);
         {
-          double __in1 = zqsmix_index_4;
+          float __in1 = zqsmix_index_4;
           double __in2 = zqsat;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -10030,7 +10472,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_6 = __out;
@@ -10064,7 +10506,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_7 = __out;
@@ -10086,7 +10528,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp67 = __out;
@@ -10109,7 +10551,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_8 = __out;
@@ -10143,7 +10585,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_9 = __out;
@@ -10165,7 +10607,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp72 = __out;
@@ -10200,7 +10642,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           ztp1_slice_ydthf_r4les_pow_2_0 = __out;
@@ -10211,7 +10653,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           __tmp66 = __out;
@@ -10258,7 +10700,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           ztp1_slice_ydthf_r4ies_pow_2_0 = __out;
@@ -10269,7 +10711,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           __tmp69 = __out;
@@ -10320,13 +10762,13 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Add_)
-          __out = (1.0 + __in2);
+          __out = (float(1.0) + __in2);
           ///////////////////
 
           __tmp71 = __out;
         }
         {
-          double __in1 = zqsmix_slice_minus_zqsat;
+          float __in1 = zqsmix_slice_minus_zqsat;
           double __in2 = __tmp71;
           double __out;
 
@@ -10338,9 +10780,9 @@ void __program_cloudsc_py_internal(
           zcond = __out;
         }
         {
-          double __in1 = zqsmix_index_5;
+          float __in1 = zqsmix_index_5;
           double __in2 = zcond;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -10350,8 +10792,8 @@ void __program_cloudsc_py_internal(
           zqsmix_slice_minus_zcond = __out;
         }
         {
-          double __inp = zqsmix_slice_minus_zcond;
-          double __out;
+          float __inp = zqsmix_slice_minus_zcond;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_621_12)
@@ -10505,7 +10947,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_10 = __out;
@@ -10587,7 +11029,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_11 = __out;
@@ -10609,7 +11051,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp74 = __out;
@@ -10801,7 +11243,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (__min2)
-          __out = min(0.5, __in_b);
+          __out = min(float(0.5), __in_b);
           ///////////////////
 
           min_0_5_zqsat_0 = __out;
@@ -10835,7 +11277,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp76 = __out;
@@ -10846,7 +11288,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           zcor_3 = __out;
@@ -10854,8 +11296,8 @@ void __program_cloudsc_py_internal(
       }
       {
         double zqsat_times_zcor_1;
-        double zqsmix_index_6;
-        double zqsmix_slice_minus_zqsat_0;
+        float zqsmix_index_6;
+        float zqsmix_slice_minus_zqsat_0;
         double zqsat_times_zcor_2;
         double ztp1_index_52;
         double min_ydthf_rtwat_ztp1_slice_12;
@@ -10911,8 +11353,8 @@ void __program_cloudsc_py_internal(
         double expr_ydthf_ralvdcp_plus_1_0_expr_ydthf_ralsdcp_1;
         double expr_ydthf_ralvdcp_1_0_expr_ydthf_ralsdcp_times_zcond1;
         double ztp1_slice_plus_expr_ydthf_ralvdcp_1_0_expr_ydthf_ralsdcp_zcond1;
-        double zqsmix_index_7;
-        double zqsmix_slice_minus_zcond1;
+        float zqsmix_index_7;
+        float zqsmix_slice_minus_zcond1;
 
         {
           double __inp = zcor_3;
@@ -10961,15 +11403,15 @@ void __program_cloudsc_py_internal(
           zqsat_times_zcor_2 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_6, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_7, 1);
         {
-          double __in1 = zqsmix_index_6;
+          float __in1 = zqsmix_index_6;
           double __in2 = zqsat;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -11161,7 +11603,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_12 = __out;
@@ -11195,7 +11637,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_13 = __out;
@@ -11217,7 +11659,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp78 = __out;
@@ -11240,7 +11682,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_14 = __out;
@@ -11274,7 +11716,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_15 = __out;
@@ -11296,7 +11738,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp83 = __out;
@@ -11331,7 +11773,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           ztp1_slice_ydthf_r4les_pow_2_1 = __out;
@@ -11342,7 +11784,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           __tmp77 = __out;
@@ -11389,7 +11831,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Pow_)
-          __out = (dace::math::ipow(__in1, 2));
+          __out = (((__in1) * (__in1)));
           ///////////////////
 
           ztp1_slice_ydthf_r4ies_pow_2_1 = __out;
@@ -11400,7 +11842,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           __tmp80 = __out;
@@ -11452,13 +11894,13 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Add_)
-          __out = (1.0 + __in2);
+          __out = (float(1.0) + __in2);
           ///////////////////
 
           __tmp82 = __out;
         }
         {
-          double __in1 = zqsmix_slice_minus_zqsat_0;
+          float __in1 = zqsmix_slice_minus_zqsat_0;
           double __in2 = __tmp82;
           double __out;
 
@@ -11470,9 +11912,9 @@ void __program_cloudsc_py_internal(
           zcond1 = __out;
         }
         {
-          double __in1 = zqsmix_index_7;
+          float __in1 = zqsmix_index_7;
           double __in2 = zcond1;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -11482,8 +11924,8 @@ void __program_cloudsc_py_internal(
           zqsmix_slice_minus_zcond1 = __out;
         }
         {
-          double __inp = zqsmix_slice_minus_zcond1;
-          double __out;
+          float __inp = zqsmix_slice_minus_zcond1;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_628_12)
@@ -11567,34 +12009,23 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_33 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_33 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_33); jl = (jl + 1)) {
       {
-        double zqsmix_index_8;
-        double zqold_index;
+        float zqsmix_index_8;
+        float zqold_index;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_8, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqold + (jl - 1), &zqold_index, 1);
         {
-          double __in1 = zqsmix_index_8;
-          double __in2 = zqold_index;
-          double __out;
+          float __in1 = zqsmix_index_8;
+          float __in2 = zqold_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -11605,12 +12036,12 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double zqsmix_slice_0;
+        float zqsmix_slice_0;
         double ztp1_slice_0;
 
         {
-          double __inp = zdqs_slice_0;
-          double __out;
+          float __inp = zdqs_slice_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_630_12)
@@ -11620,11 +12051,11 @@ void __program_cloudsc_py_internal(
           zdqs[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqold + (jl - 1), &zqsmix_slice_0, 1);
         {
-          double __inp = zqsmix_slice_0;
-          double __out;
+          float __inp = zqsmix_slice_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_631_12)
@@ -11649,33 +12080,22 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_34 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_34 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_34); jl = (jl + 1)) {
       {
-        double zdqs_index_0;
+        float zdqs_index_0;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zdqs + (jl - 1), &zdqs_index_0, 1);
         {
-          double __in1 = zdqs_index_0;
+          float __in1 = zdqs_index_0;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Gt_)
-          __out = (__in1 > 0.0);
+          __out = (__in1 > float(0.0));
           ///////////////////
 
           __tmp85 = __out;
@@ -11683,46 +12103,46 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp85) {
         {
-          double za_index_11;
-          double zdqs_index_1;
-          double zlicld_index_0;
+          float za_index_11;
+          float zdqs_index_1;
+          float zlicld_index_0;
           double min_zdqs_slice_zlicld_slice;
           double zlevap;
-          double zevaplimmix_index_1;
+          float zevaplimmix_index_1;
           double min_zlevap_zevaplimmix_slice;
-          double zqsmix_index_9;
+          float zqsmix_index_9;
           double zqx_index_29;
-          double zqsmix_slice_minus_zqx_slice_1;
+          float zqsmix_slice_minus_zqx_slice_1;
           double max_zqsmix_slice_zqx_slice_0_0_0;
           double min_zlevap_expr;
           double zsolqa_index_15;
-          double zliqfrac_index_3;
-          double zliqfrac_slice_times_zlevap;
+          float zliqfrac_index_3;
+          float zliqfrac_slice_times_zlevap;
           double zsolqa_slice_plus_zliqfrac_slice_zlevap;
           double zsolqa_index_16;
-          double zliqfrac_index_4;
-          double zliqfrac_slice_times_zlevap_0;
+          float zliqfrac_index_4;
+          float zliqfrac_slice_times_zlevap_0;
           double zsolqa_slice_minus_zliqfrac_slice_zlevap;
           double zsolqa_index_17;
-          double zicefrac_index_2;
-          double zicefrac_slice_times_zlevap;
+          float zicefrac_index_2;
+          float zicefrac_slice_times_zlevap;
           double zsolqa_slice_plus_zicefrac_slice_zlevap;
           double zsolqa_index_18;
-          double zicefrac_index_3;
-          double zicefrac_slice_times_zlevap_0;
+          float zicefrac_index_3;
+          float zicefrac_slice_times_zlevap_0;
           double zsolqa_slice_minus_zicefrac_slice_zlevap;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_11, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zdqs + (jl - 1), &zdqs_index_1, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlicld + (jl - 1), &zlicld_index_0, 1);
           {
-            double __in_a = zdqs_index_1;
-            double __in_b = zlicld_index_0;
+            float __in_a = zdqs_index_1;
+            float __in_b = zlicld_index_0;
             double __out;
 
             ///////////////////
@@ -11733,7 +12153,7 @@ void __program_cloudsc_py_internal(
             min_zdqs_slice_zlicld_slice = __out;
           }
           {
-            double __in1 = za_index_11;
+            float __in1 = za_index_11;
             double __in2 = min_zdqs_slice_zlicld_slice;
             double __out;
 
@@ -11745,11 +12165,11 @@ void __program_cloudsc_py_internal(
             zlevap = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zevaplimmix + (jl - 1), &zevaplimmix_index_1, 1);
           {
             double __in_a = zlevap;
-            double __in_b = zevaplimmix_index_1;
+            float __in_b = zevaplimmix_index_1;
             double __out;
 
             ///////////////////
@@ -11771,7 +12191,7 @@ void __program_cloudsc_py_internal(
             zlevap = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_9, 1);
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -11780,9 +12200,9 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_29, 1);
           {
-            double __in1 = zqsmix_index_9;
+            float __in1 = zqsmix_index_9;
             double __in2 = zqx_index_29;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -11792,7 +12212,7 @@ void __program_cloudsc_py_internal(
             zqsmix_slice_minus_zqx_slice_1 = __out;
           }
           {
-            double __in_a = zqsmix_slice_minus_zqx_slice_1;
+            float __in_a = zqsmix_slice_minus_zqx_slice_1;
             double __out;
 
             ///////////////////
@@ -11826,15 +12246,15 @@ void __program_cloudsc_py_internal(
             zlevap = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zliqfrac + ((jl + (klon * (jk - 1))) - 1), &zliqfrac_index_3, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zliqfrac + ((jl + (klon * (jk - 1))) - 1), &zliqfrac_index_4, 1);
           {
-            double __in1 = zliqfrac_index_3;
+            float __in1 = zliqfrac_index_3;
             double __in2 = zlevap;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -11844,9 +12264,9 @@ void __program_cloudsc_py_internal(
             zliqfrac_slice_times_zlevap = __out;
           }
           {
-            double __in1 = zliqfrac_index_4;
+            float __in1 = zliqfrac_index_4;
             double __in2 = zlevap;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -11856,15 +12276,15 @@ void __program_cloudsc_py_internal(
             zliqfrac_slice_times_zlevap_0 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zicefrac + ((jl + (klon * (jk - 1))) - 1), &zicefrac_index_2, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zicefrac + ((jl + (klon * (jk - 1))) - 1), &zicefrac_index_3, 1);
           {
-            double __in1 = zicefrac_index_2;
+            float __in1 = zicefrac_index_2;
             double __in2 = zlevap;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -11874,9 +12294,9 @@ void __program_cloudsc_py_internal(
             zicefrac_slice_times_zlevap = __out;
           }
           {
-            double __in1 = zicefrac_index_3;
+            float __in1 = zicefrac_index_3;
             double __in2 = zlevap;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -11893,7 +12313,7 @@ void __program_cloudsc_py_internal(
               &zsolqa_index_15, 1);
           {
             double __in1 = zsolqa_index_15;
-            double __in2 = zliqfrac_slice_times_zlevap;
+            float __in2 = zliqfrac_slice_times_zlevap;
             double __out;
 
             ///////////////////
@@ -11924,7 +12344,7 @@ void __program_cloudsc_py_internal(
               &zsolqa_index_16, 1);
           {
             double __in1 = zsolqa_index_16;
-            double __in2 = zliqfrac_slice_times_zlevap_0;
+            float __in2 = zliqfrac_slice_times_zlevap_0;
             double __out;
 
             ///////////////////
@@ -11955,7 +12375,7 @@ void __program_cloudsc_py_internal(
               &zsolqa_index_17, 1);
           {
             double __in1 = zsolqa_index_17;
-            double __in2 = zicefrac_slice_times_zlevap;
+            float __in2 = zicefrac_slice_times_zlevap;
             double __out;
 
             ///////////////////
@@ -11986,7 +12406,7 @@ void __program_cloudsc_py_internal(
               &zsolqa_index_18, 1);
           {
             double __in1 = zsolqa_index_18;
-            double __in2 = zicefrac_slice_times_zlevap_0;
+            float __in2 = zicefrac_slice_times_zlevap_0;
             double __out;
 
             ///////////////////
@@ -12012,32 +12432,21 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_35 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_35 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_35); jl = (jl + 1)) {
       {
-        double za_index_12;
+        float za_index_12;
         bool __tmp86;
-        double zdqs_index_2;
+        float zdqs_index_2;
         double neg_yrecldp_rlmin;
         bool __tmp87;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_12, 1);
         {
-          double __in1 = za_index_12;
+          float __in1 = za_index_12;
           double __in2 = zepsec;
           bool __out;
 
@@ -12049,7 +12458,7 @@ void __program_cloudsc_py_internal(
           __tmp86 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zdqs + (jl - 1), &zdqs_index_2, 1);
         {
           double __in = yrecldp_rlmin;
@@ -12063,7 +12472,7 @@ void __program_cloudsc_py_internal(
           neg_yrecldp_rlmin = __out;
         }
         {
-          double __in1 = zdqs_index_2;
+          float __in1 = zdqs_index_2;
           double __in2 = neg_yrecldp_rlmin;
           bool __out;
 
@@ -12089,15 +12498,15 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp88) {
         {
-          double zdqs_index_3;
+          float zdqs_index_3;
           double neg_zdqs_slice;
-          double zlcond1_slice;
-          double za_index_13;
+          float zlcond1_slice;
+          float za_index_13;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zdqs + (jl - 1), &zdqs_index_3, 1);
           {
-            double __in = zdqs_index_3;
+            float __in = zdqs_index_3;
             double __out;
 
             ///////////////////
@@ -12109,7 +12518,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in_a = neg_zdqs_slice;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (__max2)
@@ -12119,8 +12528,8 @@ void __program_cloudsc_py_internal(
             zlcond1_slice = __out;
           }
           {
-            double __inp = zlcond1_slice;
-            double __out;
+            float __inp = zlcond1_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_646_16)
@@ -12130,10 +12539,10 @@ void __program_cloudsc_py_internal(
             zlcond1[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_13, 1);
           {
-            double __in1 = za_index_13;
+            float __in1 = za_index_13;
             bool __out;
 
             ///////////////////
@@ -12146,14 +12555,14 @@ void __program_cloudsc_py_internal(
         }
         if (__tmp89) {
           {
-            double zqsmix_index_10;
+            float zqsmix_index_10;
             double ydcst_retv_times_zqsmix_slice_0;
             double __tmp90;
             double zcor_4;
             double zqx_index_30;
-            double zqsmix_index_11;
+            float zqsmix_index_11;
             double zqx_slice_minus_zqsmix_slice;
-            double zqsmix_index_12;
+            float zqsmix_index_12;
             double zcor_times_zqsmix_slice;
             double ztp1_index_59;
             double min_ydthf_rtwat_ztp1_slice_16;
@@ -12188,17 +12597,17 @@ void __program_cloudsc_py_internal(
                 zcor_zqsmix_slice_times_expr_ydthf_r5alvcp_1_0_ztp1_slice_ydthf_r4les_2_1_0_expr_ydthf_r5alscp_1_0_ztp1_slice_ydthf_r4ies_2;
             double __tmp96;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_10, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_11, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_12, 1);
             {
               double __in1 = ydcst_retv;
-              double __in2 = zqsmix_index_10;
+              float __in2 = zqsmix_index_10;
               double __out;
 
               ///////////////////
@@ -12214,7 +12623,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp90 = __out;
@@ -12225,7 +12634,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Div_)
-              __out = (1.0 / __in2);
+              __out = (float(1.0) / __in2);
               ///////////////////
 
               zcor_4 = __out;
@@ -12243,7 +12652,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zcor;
-              double __in2 = zqsmix_index_12;
+              float __in2 = zqsmix_index_12;
               double __out;
 
               ///////////////////
@@ -12261,7 +12670,7 @@ void __program_cloudsc_py_internal(
                 &zqx_index_30, 1);
             {
               double __in1 = zqx_index_30;
-              double __in2 = zqsmix_index_11;
+              float __in2 = zqsmix_index_11;
               double __out;
 
               ///////////////////
@@ -12373,7 +12782,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Pow_)
-              __out = (dace::math::ipow(__in1, 2));
+              __out = (((__in1) * (__in1)));
               ///////////////////
 
               expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_16 = __out;
@@ -12407,7 +12816,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Pow_)
-              __out = (dace::math::ipow(__in1, 2));
+              __out = (((__in1) * (__in1)));
               ///////////////////
 
               expr_ydthf_rtice_ydthf_rtwat_rtice_r_pow_2_17 = __out;
@@ -12429,7 +12838,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp92 = __out;
@@ -12464,7 +12873,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Pow_)
-              __out = (dace::math::ipow(__in1, 2));
+              __out = (((__in1) * (__in1)));
               ///////////////////
 
               ztp1_slice_ydthf_r4les_pow_2_2 = __out;
@@ -12475,7 +12884,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Div_)
-              __out = (1.0 / __in2);
+              __out = (float(1.0) / __in2);
               ///////////////////
 
               __tmp91 = __out;
@@ -12522,7 +12931,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Pow_)
-              __out = (dace::math::ipow(__in1, 2));
+              __out = (((__in1) * (__in1)));
               ///////////////////
 
               ztp1_slice_ydthf_r4ies_pow_2_2 = __out;
@@ -12533,7 +12942,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Div_)
-              __out = (1.0 / __in2);
+              __out = (float(1.0) / __in2);
               ///////////////////
 
               __tmp94 = __out;
@@ -12585,7 +12994,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Add_)
-              __out = (1.0 + __in2);
+              __out = (float(1.0) + __in2);
               ///////////////////
 
               __tmp96 = __out;
@@ -12606,11 +13015,11 @@ void __program_cloudsc_py_internal(
         } else {
           {
             double zqx_index_31;
-            double za_index_14;
-            double zqsmix_index_13;
-            double za_slice_times_zqsmix_slice;
+            float za_index_14;
+            float zqsmix_index_13;
+            float za_slice_times_zqsmix_slice;
             double zqx_slice_minus_za_slice_zqsmix_slice;
-            double za_index_15;
+            float za_index_15;
             double zcdmax_0;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -12619,18 +13028,18 @@ void __program_cloudsc_py_internal(
                        1),
                 &zqx_index_31, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_14, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_15, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsmix + ((jl + (klon * (jk - 1))) - 1), &zqsmix_index_13, 1);
             {
-              double __in1 = za_index_14;
-              double __in2 = zqsmix_index_13;
-              double __out;
+              float __in1 = za_index_14;
+              float __in2 = zqsmix_index_13;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -12641,7 +13050,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zqx_index_31;
-              double __in2 = za_slice_times_zqsmix_slice;
+              float __in2 = za_slice_times_zqsmix_slice;
               double __out;
 
               ///////////////////
@@ -12653,7 +13062,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zqx_slice_minus_za_slice_zqsmix_slice;
-              double __in2 = za_index_15;
+              float __in2 = za_index_15;
               double __out;
 
               ///////////////////
@@ -12677,18 +13086,18 @@ void __program_cloudsc_py_internal(
           }
         }
         {
-          double zlcond1_index;
+          float zlcond1_index;
           double min_zlcond1_slice_zcdmax;
           double max_expr_0_0;
-          double za_index_16;
-          double zlcond1_index_0;
-          double za_slice_times_zlcond1_slice;
-          double zlcond1_index_1;
+          float za_index_16;
+          float zlcond1_index_0;
+          float za_slice_times_zlcond1_slice;
+          float zlcond1_index_1;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlcond1 + (jl - 1), &zlcond1_index, 1);
           {
-            double __in_a = zlcond1_index;
+            float __in_a = zlcond1_index;
             double __in_b = zcdmax;
             double __out;
 
@@ -12712,7 +13121,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __inp = max_expr_0_0;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_652_16)
@@ -12722,15 +13131,15 @@ void __program_cloudsc_py_internal(
             zlcond1[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlcond1 + (jl - 1), &zlcond1_index_0, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_16, 1);
           {
-            double __in1 = za_index_16;
-            double __in2 = zlcond1_index_0;
-            double __out;
+            float __in1 = za_index_16;
+            float __in2 = zlcond1_index_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -12740,8 +13149,8 @@ void __program_cloudsc_py_internal(
             za_slice_times_zlcond1_slice = __out;
           }
           {
-            double __inp = za_slice_times_zlcond1_slice;
-            double __out;
+            float __inp = za_slice_times_zlcond1_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_653_16)
@@ -12751,10 +13160,10 @@ void __program_cloudsc_py_internal(
             zlcond1[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zlcond1 + (jl - 1), &zlcond1_index_1, 1);
           {
-            double __in1 = zlcond1_index_1;
+            float __in1 = zlcond1_index_1;
             double __in2 = yrecldp_rlmin;
             bool __out;
 
@@ -12770,11 +13179,11 @@ void __program_cloudsc_py_internal(
           {
 
             {
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_655_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zlcond1[(jl - 1)] = __out;
@@ -12802,13 +13211,13 @@ void __program_cloudsc_py_internal(
         if (__tmp98) {
           {
             double zsolqa_index_19;
-            double zlcond1_index_2;
+            float zlcond1_index_2;
             double zsolqa_slice_plus_zlcond1_slice;
             double zsolqa_index_20;
-            double zlcond1_index_3;
+            float zlcond1_index_3;
             double zsolqa_slice_minus_zlcond1_slice;
             double zqxfg_index_3;
-            double zlcond1_index_4;
+            float zlcond1_index_4;
             double zqxfg_slice_plus_zlcond1_slice;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -12817,14 +13226,14 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index_19, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond1 + (jl - 1), &zlcond1_index_2, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond1 + (jl - 1), &zlcond1_index_3, 1);
             {
               double __in1 = zsolqa_index_19;
-              double __in2 = zlcond1_index_2;
+              float __in2 = zlcond1_index_2;
               double __out;
 
               ///////////////////
@@ -12855,7 +13264,7 @@ void __program_cloudsc_py_internal(
                 &zsolqa_index_20, 1);
             {
               double __in1 = zsolqa_index_20;
-              double __in2 = zlcond1_index_3;
+              float __in2 = zlcond1_index_3;
               double __out;
 
               ///////////////////
@@ -12879,14 +13288,14 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond1 + (jl - 1), &zlcond1_index_4, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldql - 1))) - 1), &zqxfg_index_3, 1);
             {
               double __in1 = zqxfg_index_3;
-              double __in2 = zlcond1_index_4;
+              float __in2 = zlcond1_index_4;
               double __out;
 
               ///////////////////
@@ -12911,13 +13320,13 @@ void __program_cloudsc_py_internal(
         } else {
           {
             double zsolqa_index_21;
-            double zlcond1_index_5;
+            float zlcond1_index_5;
             double zsolqa_slice_plus_zlcond1_slice_0;
             double zsolqa_index_22;
-            double zlcond1_index_6;
+            float zlcond1_index_6;
             double zsolqa_slice_minus_zlcond1_slice_0;
             double zqxfg_index_4;
-            double zlcond1_index_7;
+            float zlcond1_index_7;
             double zqxfg_slice_plus_zlcond1_slice_0;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -12926,14 +13335,14 @@ void __program_cloudsc_py_internal(
                           1),
                 &zsolqa_index_21, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond1 + (jl - 1), &zlcond1_index_5, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond1 + (jl - 1), &zlcond1_index_6, 1);
             {
               double __in1 = zsolqa_index_21;
-              double __in2 = zlcond1_index_5;
+              float __in2 = zlcond1_index_5;
               double __out;
 
               ///////////////////
@@ -12964,7 +13373,7 @@ void __program_cloudsc_py_internal(
                 &zsolqa_index_22, 1);
             {
               double __in1 = zsolqa_index_22;
-              double __in2 = zlcond1_index_6;
+              float __in2 = zlcond1_index_6;
               double __out;
 
               ///////////////////
@@ -12988,14 +13397,14 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond1 + (jl - 1), &zlcond1_index_7, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldqi - 1))) - 1), &zqxfg_index_4, 1);
             {
               double __in1 = zqxfg_index_4;
-              double __in2 = zlcond1_index_7;
+              float __in2 = zlcond1_index_7;
               double __out;
 
               ///////////////////
@@ -13020,30 +13429,19 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_36 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_36 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_36); jl = (jl + 1)) {
       {
-        double zdqs_index_4;
+        float zdqs_index_4;
         double neg_yrecldp_rlmin_0;
         bool __tmp99;
-        double za_index_17;
+        float za_index_17;
         double __tmp100;
         bool __tmp101;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zdqs + (jl - 1), &zdqs_index_4, 1);
         {
           double __in = yrecldp_rlmin;
@@ -13057,7 +13455,7 @@ void __program_cloudsc_py_internal(
           neg_yrecldp_rlmin_0 = __out;
         }
         {
-          double __in1 = zdqs_index_4;
+          float __in1 = zdqs_index_4;
           double __in2 = neg_yrecldp_rlmin_0;
           bool __out;
 
@@ -13069,7 +13467,7 @@ void __program_cloudsc_py_internal(
           __tmp99 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_17, 1);
         {
           double __in2 = zepsec;
@@ -13077,13 +13475,13 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp100 = __out;
         }
         {
-          double __in1 = za_index_17;
+          float __in1 = za_index_17;
           double __in2 = __tmp100;
           bool __out;
 
@@ -13109,17 +13507,17 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp102) {
         {
-          double pap_index_10;
-          double paph_index_3;
+          float pap_index_10;
+          float paph_index_3;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_10, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_10, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              paph + ((jl + (klev * klon)) - 1), &paph_index_3, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              paph_lowered + ((jl + (klev * klon)) - 1), &paph_index_3, 1);
           {
-            double __in1 = pap_index_10;
-            double __in2 = paph_index_3;
+            float __in1 = pap_index_10;
+            float __in2 = paph_index_3;
             double __out;
 
             ///////////////////
@@ -13144,7 +13542,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp103 = __out;
@@ -13177,7 +13575,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Pow_)
-              __out = (dace::math::ipow(__in1, 2));
+              __out = (((__in1) * (__in1)));
               ///////////////////
 
               zsigk_0_8_0_2_pow_2 = __out;
@@ -13226,11 +13624,11 @@ void __program_cloudsc_py_internal(
         if ((yrecldp_nssopt == 0)) {
           {
             double zqx_index_32;
-            double za_index_18;
-            double zqsice_index_4;
-            double za_slice_times_zqsice_slice_0;
+            float za_index_18;
+            float zqsice_index_4;
+            float za_slice_times_zqsice_slice_0;
             double zqx_slice_minus_za_slice_zqsice_slice_0;
-            double za_index_19;
+            float za_index_19;
             double __tmp105;
             double max_zepsec_1_0_za_slice;
             double max_0_0_zqe;
@@ -13241,29 +13639,29 @@ void __program_cloudsc_py_internal(
                        1),
                 &zqx_index_32, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_18, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_19, 1);
             {
-              double __in2 = za_index_19;
+              float __in2 = za_index_19;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp105 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_4, 1);
             {
-              double __in1 = za_index_18;
-              double __in2 = zqsice_index_4;
-              double __out;
+              float __in1 = za_index_18;
+              float __in2 = zqsice_index_4;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -13274,7 +13672,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zqx_index_32;
-              double __in2 = za_slice_times_zqsice_slice_0;
+              float __in2 = za_slice_times_zqsice_slice_0;
               double __out;
 
               ///////////////////
@@ -13335,11 +13733,11 @@ void __program_cloudsc_py_internal(
           if ((yrecldp_nssopt == 1)) {
             {
               double zqx_index_33;
-              double za_index_20;
-              double zqsice_index_5;
-              double za_slice_times_zqsice_slice_1;
+              float za_index_20;
+              float zqsice_index_5;
+              float za_slice_times_zqsice_slice_1;
               double zqx_slice_minus_za_slice_zqsice_slice_1;
-              double za_index_21;
+              float za_index_21;
               double __tmp106;
               double max_zepsec_1_0_za_slice_0;
               double zqe_0;
@@ -13351,29 +13749,29 @@ void __program_cloudsc_py_internal(
                          1),
                   &zqx_index_33, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   za + ((jl + (klon * (jk - 1))) - 1), &za_index_20, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   za + ((jl + (klon * (jk - 1))) - 1), &za_index_21, 1);
               {
-                double __in2 = za_index_21;
+                float __in2 = za_index_21;
                 double __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (1.0 - __in2);
+                __out = (float(1.0) - __in2);
                 ///////////////////
 
                 __tmp106 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_5, 1);
               {
-                double __in1 = za_index_20;
-                double __in2 = zqsice_index_5;
-                double __out;
+                float __in1 = za_index_20;
+                float __in2 = zqsice_index_5;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -13384,7 +13782,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = zqx_index_33;
-                double __in2 = za_slice_times_zqsice_slice_1;
+                float __in2 = za_slice_times_zqsice_slice_1;
                 double __out;
 
                 ///////////////////
@@ -13478,7 +13876,7 @@ void __program_cloudsc_py_internal(
               if ((yrecldp_nssopt == 3)) {
                 {
                   double zqx_index_34;
-                  double zli_index_3;
+                  float zli_index_3;
                   double zqe_2;
 
                   dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -13487,11 +13885,11 @@ void __program_cloudsc_py_internal(
                              1),
                       &zqx_index_34, 1);
 
-                  dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                  dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                       zli + ((jl + (klon * (jk - 1))) - 1), &zli_index_3, 1);
                   {
                     double __in1 = zqx_index_34;
-                    double __in2 = zli_index_3;
+                    float __in2 = zli_index_3;
                     double __out;
 
                     ///////////////////
@@ -13517,10 +13915,11 @@ void __program_cloudsc_py_internal(
             }
           }
         }
+
+        __tmp108 = (yrecldp_nssopt == 0);
         {
           double ztp1_index_64;
           bool __tmp107;
-          bool __tmp108;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index_64, 1);
@@ -13537,24 +13936,12 @@ void __program_cloudsc_py_internal(
             __tmp107 = __out;
           }
           {
-            int __in1 = yrecldp_nssopt;
-            bool __out;
-
-            ///////////////////
-            // Tasklet code (_Eq_)
-            __out = (__in1 == 0);
-            ///////////////////
-
-            __tmp108 = __out;
-          }
-          {
             bool __in1 = __tmp107;
-            bool __in2 = __tmp108;
             bool __out;
 
             ///////////////////
             // Tasklet code (_Or_)
-            __out = (__in1 || __in2);
+            __out = (__in1 || __tmp108);
             ///////////////////
 
             __tmp109 = __out;
@@ -13568,7 +13955,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (assign_682_20)
-              __out = 1.0;
+              __out = float(1.0);
               ///////////////////
 
               zfac = __out;
@@ -13594,22 +13981,22 @@ void __program_cloudsc_py_internal(
           }
         }
         {
-          double zqsice_index_6;
+          float zqsice_index_6;
           double zrhc_times_zqsice_slice;
           double zrhc_zqsice_slice_times_zfac;
           bool __tmp110;
-          double zqsice_index_7;
-          double zqsice_slice_times_zfac;
+          float zqsice_index_7;
+          float zqsice_slice_times_zfac;
           bool __tmp111;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_6, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_7, 1);
           {
             double __in1 = zrhc;
-            double __in2 = zqsice_index_6;
+            float __in2 = zqsice_index_6;
             double __out;
 
             ///////////////////
@@ -13632,9 +14019,9 @@ void __program_cloudsc_py_internal(
             zrhc_zqsice_slice_times_zfac = __out;
           }
           {
-            double __in1 = zqsice_index_7;
+            float __in1 = zqsice_index_7;
             double __in2 = zfac;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -13657,7 +14044,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zqe;
-            double __in2 = zqsice_slice_times_zfac;
+            float __in2 = zqsice_slice_times_zfac;
             bool __out;
 
             ///////////////////
@@ -13682,56 +14069,56 @@ void __program_cloudsc_py_internal(
         }
         if (__tmp112) {
           {
-            double za_index_22;
+            float za_index_22;
             double __tmp113;
             double neg_1_0_za_slice;
             double expr_times_zfac;
-            double zdqs_index_5;
+            float zdqs_index_5;
             double expr_zfac_times_zdqs_slice;
-            double zqsice_index_8;
+            float zqsice_index_8;
             double zfac_times_zqsice_slice_1;
             double zfac_zqsice_slice_minus_zqe;
             double __tmp114;
             double max_2_0_zfac_zqsice_slice_zqe_zepsec;
-            double za_index_23;
+            float za_index_23;
             double __tmp115;
             double min_zacond_1_0_za_slice;
             double neg_zfac;
-            double zdqs_index_6;
+            float zdqs_index_6;
             double expr_times_zdqs_slice;
             double expr_zdqs_slice_times_0_5;
-            double zlcond2_slice;
-            double zqsice_index_9;
+            float zlcond2_slice;
+            float zqsice_index_9;
             double zfac_times_zqsice_slice_2;
             double zfac_zqsice_slice_minus_zqe_0;
             double __tmp116;
-            double za_index_24;
+            float za_index_24;
             double __tmp117;
             double max_zepsec_1_0_za_slice_1;
             double zzdl;
-            double zdqs_index_7;
+            float zdqs_index_7;
             double zfac_times_zdqs_slice;
             double neg_zzdl;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_24, 1);
             {
-              double __in2 = za_index_24;
+              float __in2 = za_index_24;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp117 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdqs + (jl - 1), &zdqs_index_7, 1);
             {
               double __in1 = zfac;
-              double __in2 = zdqs_index_7;
+              float __in2 = zdqs_index_7;
               double __out;
 
               ///////////////////
@@ -13742,11 +14129,11 @@ void __program_cloudsc_py_internal(
               zfac_times_zdqs_slice = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_9, 1);
             {
               double __in1 = zfac;
-              double __in2 = zqsice_index_9;
+              float __in2 = zqsice_index_9;
               double __out;
 
               ///////////////////
@@ -13827,18 +14214,18 @@ void __program_cloudsc_py_internal(
               __tmp118 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_22, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_23, 1);
             {
-              double __in2 = za_index_22;
+              float __in2 = za_index_22;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp113 = __out;
@@ -13855,12 +14242,12 @@ void __program_cloudsc_py_internal(
               neg_1_0_za_slice = __out;
             }
             {
-              double __in2 = za_index_23;
+              float __in2 = za_index_23;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp115 = __out;
@@ -13889,14 +14276,14 @@ void __program_cloudsc_py_internal(
               expr_times_zfac = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdqs + (jl - 1), &zdqs_index_5, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdqs + (jl - 1), &zdqs_index_6, 1);
             {
               double __in1 = expr_times_zfac;
-              double __in2 = zdqs_index_5;
+              float __in2 = zdqs_index_5;
               double __out;
 
               ///////////////////
@@ -13908,7 +14295,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = neg_zfac;
-              double __in2 = zdqs_index_6;
+              float __in2 = zdqs_index_6;
               double __out;
 
               ///////////////////
@@ -13924,17 +14311,17 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Mult_)
-              __out = (__in1 * 0.5);
+              __out = (__in1 * float(0.5));
               ///////////////////
 
               expr_zdqs_slice_times_0_5 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_8, 1);
             {
               double __in1 = zfac;
-              double __in2 = zqsice_index_8;
+              float __in2 = zqsice_index_8;
               double __out;
 
               ///////////////////
@@ -14017,7 +14404,7 @@ void __program_cloudsc_py_internal(
             {
               double __in1 = expr_zdqs_slice_times_0_5;
               double __in2 = zacond;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -14027,8 +14414,8 @@ void __program_cloudsc_py_internal(
               zlcond2_slice = __out;
             }
             {
-              double __inp = zlcond2_slice;
-              double __out;
+              float __inp = zlcond2_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_688_20)
@@ -14040,36 +14427,36 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp118) {
             {
-              double za_index_25;
-              double za_slice_minus_1_0;
-              double za_slice_1_0_times_zfac;
-              double zdqs_index_8;
-              double za_slice_1_0_zfac_times_zdqs_slice;
-              double zqsice_index_10;
+              float za_index_25;
+              float za_slice_minus_1_0;
+              float za_slice_1_0_times_zfac;
+              float zdqs_index_8;
+              float za_slice_1_0_zfac_times_zdqs_slice;
+              float zqsice_index_10;
               double zfac_times_zqsice_slice_3;
-              double za_slice_1_0_zfac_zdqs_slice_minus_zfac_zqsice_slice;
+              float za_slice_1_0_zfac_zdqs_slice_minus_zfac_zqsice_slice;
               double zqx_index_35;
               double zlcondlim;
-              double zlcond2_index;
+              float zlcond2_index;
               double min_zlcond2_slice_zlcondlim;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   za + ((jl + (klon * (jk - 1))) - 1), &za_index_25, 1);
               {
-                double __in1 = za_index_25;
-                double __out;
+                float __in1 = za_index_25;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - 1.0);
+                __out = (__in1 - float(1.0));
                 ///////////////////
 
                 za_slice_minus_1_0 = __out;
               }
               {
-                double __in1 = za_slice_minus_1_0;
+                float __in1 = za_slice_minus_1_0;
                 double __in2 = zfac;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -14079,12 +14466,12 @@ void __program_cloudsc_py_internal(
                 za_slice_1_0_times_zfac = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zdqs + (jl - 1), &zdqs_index_8, 1);
               {
-                double __in1 = za_slice_1_0_times_zfac;
-                double __in2 = zdqs_index_8;
-                double __out;
+                float __in1 = za_slice_1_0_times_zfac;
+                float __in2 = zdqs_index_8;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -14094,11 +14481,11 @@ void __program_cloudsc_py_internal(
                 za_slice_1_0_zfac_times_zdqs_slice = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_10, 1);
               {
                 double __in1 = zfac;
-                double __in2 = zqsice_index_10;
+                float __in2 = zqsice_index_10;
                 double __out;
 
                 ///////////////////
@@ -14109,9 +14496,9 @@ void __program_cloudsc_py_internal(
                 zfac_times_zqsice_slice_3 = __out;
               }
               {
-                double __in1 = za_slice_1_0_zfac_times_zdqs_slice;
+                float __in1 = za_slice_1_0_zfac_times_zdqs_slice;
                 double __in2 = zfac_times_zqsice_slice_3;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -14127,7 +14514,7 @@ void __program_cloudsc_py_internal(
                          1),
                   &zqx_index_35, 1);
               {
-                double __in1 =
+                float __in1 =
                     za_slice_1_0_zfac_zdqs_slice_minus_zfac_zqsice_slice;
                 double __in2 = zqx_index_35;
                 double __out;
@@ -14140,10 +14527,10 @@ void __program_cloudsc_py_internal(
                 zlcondlim = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index, 1);
               {
-                double __in_a = zlcond2_index;
+                float __in_a = zlcond2_index;
                 double __in_b = zlcondlim;
                 double __out;
 
@@ -14156,7 +14543,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __inp = min_zlcond2_slice_zlcondlim;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_692_24)
@@ -14168,18 +14555,18 @@ void __program_cloudsc_py_internal(
             }
           }
           {
-            double zlcond2_index_0;
+            float zlcond2_index_0;
             double max_zlcond2_slice_0_0;
-            double zlcond2_index_1;
+            float zlcond2_index_1;
             bool __tmp119;
-            double za_index_26;
+            float za_index_26;
             double __tmp120;
             bool __tmp121;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond2 + (jl - 1), &zlcond2_index_0, 1);
             {
-              double __in_a = zlcond2_index_0;
+              float __in_a = zlcond2_index_0;
               double __out;
 
               ///////////////////
@@ -14191,7 +14578,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __inp = max_zlcond2_slice_0_0;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_693_20)
@@ -14201,10 +14588,10 @@ void __program_cloudsc_py_internal(
               zlcond2[(jl - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond2 + (jl - 1), &zlcond2_index_1, 1);
             {
-              double __in1 = zlcond2_index_1;
+              float __in1 = zlcond2_index_1;
               double __in2 = yrecldp_rlmin;
               bool __out;
 
@@ -14216,15 +14603,15 @@ void __program_cloudsc_py_internal(
               __tmp119 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_26, 1);
             {
-              double __in2 = za_index_26;
+              float __in2 = za_index_26;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp120 = __out;
@@ -14258,11 +14645,11 @@ void __program_cloudsc_py_internal(
             {
 
               {
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_695_24)
-                __out = 0.0;
+                __out = float(0.0);
                 ///////////////////
 
                 zlcond2[(jl - 1)] = __out;
@@ -14272,7 +14659,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (assign_696_24)
-                __out = 0.0;
+                __out = float(0.0);
                 ///////////////////
 
                 zacond = __out;
@@ -14280,17 +14667,17 @@ void __program_cloudsc_py_internal(
             }
           }
           {
-            double zlcond2_index_2;
+            float zlcond2_index_2;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zlcond2 + (jl - 1), &zlcond2_index_2, 1);
             {
-              double __in1 = zlcond2_index_2;
+              float __in1 = zlcond2_index_2;
               bool __out;
 
               ///////////////////
               // Tasklet code (_Eq_)
-              __out = (__in1 == 0.0);
+              __out = (__in1 == float(0.0));
               ///////////////////
 
               __tmp123 = __out;
@@ -14304,7 +14691,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (assign_698_24)
-                __out = 0.0;
+                __out = float(0.0);
                 ///////////////////
 
                 zacond = __out;
@@ -14312,16 +14699,16 @@ void __program_cloudsc_py_internal(
             }
           }
           {
-            double zsolac_index_2;
-            double zsolac_slice_plus_zacond;
+            float zsolac_index_2;
+            float zsolac_slice_plus_zacond;
             double ztp1_index_65;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsolac + (jl - 1), &zsolac_index_2, 1);
             {
-              double __in1 = zsolac_index_2;
+              float __in1 = zsolac_index_2;
               double __in2 = zacond;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -14331,8 +14718,8 @@ void __program_cloudsc_py_internal(
               zsolac_slice_plus_zacond = __out;
             }
             {
-              double __inp = zsolac_slice_plus_zacond;
-              double __out;
+              float __inp = zsolac_slice_plus_zacond;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_699_20)
@@ -14360,13 +14747,13 @@ void __program_cloudsc_py_internal(
           if (__tmp124) {
             {
               double zsolqa_index_23;
-              double zlcond2_index_3;
+              float zlcond2_index_3;
               double zsolqa_slice_plus_zlcond2_slice;
               double zsolqa_index_24;
-              double zlcond2_index_4;
+              float zlcond2_index_4;
               double zsolqa_slice_minus_zlcond2_slice;
               double zqxfg_index_5;
-              double zlcond2_index_5;
+              float zlcond2_index_5;
               double zqxfg_slice_plus_zlcond2_slice;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -14375,14 +14762,14 @@ void __program_cloudsc_py_internal(
                             1),
                   &zsolqa_index_23, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index_3, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index_4, 1);
               {
                 double __in1 = zsolqa_index_23;
-                double __in2 = zlcond2_index_3;
+                float __in2 = zlcond2_index_3;
                 double __out;
 
                 ///////////////////
@@ -14413,7 +14800,7 @@ void __program_cloudsc_py_internal(
                   &zsolqa_index_24, 1);
               {
                 double __in1 = zsolqa_index_24;
-                double __in2 = zlcond2_index_4;
+                float __in2 = zlcond2_index_4;
                 double __out;
 
                 ///////////////////
@@ -14437,7 +14824,7 @@ void __program_cloudsc_py_internal(
                         1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index_5, 1);
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -14445,7 +14832,7 @@ void __program_cloudsc_py_internal(
                   1);
               {
                 double __in1 = zqxfg_index_5;
-                double __in2 = zlcond2_index_5;
+                float __in2 = zlcond2_index_5;
                 double __out;
 
                 ///////////////////
@@ -14470,13 +14857,13 @@ void __program_cloudsc_py_internal(
           } else {
             {
               double zsolqa_index_25;
-              double zlcond2_index_6;
+              float zlcond2_index_6;
               double zsolqa_slice_plus_zlcond2_slice_0;
               double zsolqa_index_26;
-              double zlcond2_index_7;
+              float zlcond2_index_7;
               double zsolqa_slice_minus_zlcond2_slice_0;
               double zqxfg_index_6;
-              double zlcond2_index_8;
+              float zlcond2_index_8;
               double zqxfg_slice_plus_zlcond2_slice_0;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -14485,14 +14872,14 @@ void __program_cloudsc_py_internal(
                             1),
                   &zsolqa_index_25, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index_6, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index_7, 1);
               {
                 double __in1 = zsolqa_index_25;
-                double __in2 = zlcond2_index_6;
+                float __in2 = zlcond2_index_6;
                 double __out;
 
                 ///////////////////
@@ -14523,7 +14910,7 @@ void __program_cloudsc_py_internal(
                   &zsolqa_index_26, 1);
               {
                 double __in1 = zsolqa_index_26;
-                double __in2 = zlcond2_index_7;
+                float __in2 = zlcond2_index_7;
                 double __out;
 
                 ///////////////////
@@ -14547,7 +14934,7 @@ void __program_cloudsc_py_internal(
                         1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zlcond2 + (jl - 1), &zlcond2_index_8, 1);
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -14555,7 +14942,7 @@ void __program_cloudsc_py_internal(
                   1);
               {
                 double __in1 = zqxfg_index_6;
-                double __in2 = zlcond2_index_8;
+                float __in2 = zlcond2_index_8;
                 double __out;
 
                 ///////////////////
@@ -14582,34 +14969,23 @@ void __program_cloudsc_py_internal(
       }
     }
     if ((idepice == 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_37 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_37 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_37); jl = (jl + 1)) {
         {
-          double za_index_27;
+          float za_index_27;
           bool __tmp125;
-          double za_index_28;
+          float za_index_28;
           bool __tmp126;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 2))) - 1), &za_index_27, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_28, 1);
           {
-            double __in1 = za_index_27;
+            float __in1 = za_index_27;
             double __in2 = yrecldp_rcldtopcf;
             bool __out;
 
@@ -14621,7 +14997,7 @@ void __program_cloudsc_py_internal(
             __tmp125 = __out;
           }
           {
-            double __in1 = za_index_28;
+            float __in1 = za_index_28;
             double __in2 = yrecldp_rcldtopcf;
             bool __out;
 
@@ -14649,11 +15025,11 @@ void __program_cloudsc_py_internal(
           {
 
             {
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_711_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zcldtopdist[(jl - 1)] = __out;
@@ -14661,25 +15037,25 @@ void __program_cloudsc_py_internal(
           }
         } else {
           {
-            double zcldtopdist_index;
+            float zcldtopdist_index;
             double zdp_index_2;
-            double zrho_index;
-            double zrho_slice_times_ydcst_rg;
+            float zrho_index;
+            float zrho_slice_times_ydcst_rg;
             double zdp_slice_div_zrho_slice_ydcst_rg;
-            double zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg;
+            float zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcldtopdist + (jl - 1), &zcldtopdist_index, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zdp + (jl - 1), &zdp_index_2, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zrho + (jl - 1), &zrho_index, 1);
             {
-              double __in1 = zrho_index;
+              float __in1 = zrho_index;
               double __in2 = ydcst_rg;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -14690,7 +15066,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zdp_index_2;
-              double __in2 = zrho_slice_times_ydcst_rg;
+              float __in2 = zrho_slice_times_ydcst_rg;
               double __out;
 
               ///////////////////
@@ -14701,9 +15077,9 @@ void __program_cloudsc_py_internal(
               zdp_slice_div_zrho_slice_ydcst_rg = __out;
             }
             {
-              double __in1 = zcldtopdist_index;
+              float __in1 = zcldtopdist_index;
               double __in2 = zdp_slice_div_zrho_slice_ydcst_rg;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -14713,9 +15089,9 @@ void __program_cloudsc_py_internal(
               zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg = __out;
             }
             {
-              double __inp =
+              float __inp =
                   zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_713_20)
@@ -14787,13 +15163,13 @@ void __program_cloudsc_py_internal(
                 exp_ydthf_r3ies_ztp1_slice_ydcst_rtt_ztp1_slice_ydthf_r4ies_4;
             double ydthf_r2es_times_expr_4;
             double ydthf_r2es_expr_times_ydcst_rv;
-            double zfokoop_index_0;
+            float zfokoop_index_0;
             double zvpliq_minus_zvpice;
             double __tmp131;
             double __tmp132;
             double __tmp133;
             double exp_12_96_zvpliq_zvpice_zvpliq_0_639;
-            double zicenuclei_slice;
+            float zicenuclei_slice;
             double ztp1_index_69;
             double ydcst_rv_times_ztp1_slice;
             double ydcst_rlstt_div_ydcst_rv_ztp1_slice;
@@ -14804,14 +15180,14 @@ void __program_cloudsc_py_internal(
             double zadd;
             double ztp1_index_71;
             double ydcst_rv_times_ztp1_slice_0;
-            double pap_index_11;
+            float pap_index_11;
             double ydcst_rv_ztp1_slice_times_pap_slice;
             double __tmp135;
             double zbdd;
-            double zicenuclei_index;
-            double zrho_index_0;
-            double zicenuclei_slice_div_zrho_slice;
-            double zicenuclei_slice_zrho_slice_pow_0_666;
+            float zicenuclei_index;
+            float zrho_index_0;
+            float zicenuclei_slice_div_zrho_slice;
+            float zicenuclei_slice_zrho_slice_pow_0_666;
             double __tmp136;
             double zvpliq_minus_zvpice_0;
             double __tmp137;
@@ -14819,26 +15195,26 @@ void __program_cloudsc_py_internal(
             double __tmp138;
             double __tmp139;
             double zcvds;
-            double zicecld_index_0;
-            double zicenuclei_index_0;
-            double zicenuclei_slice_times_yrecldp_riceinit;
-            double zrho_index_1;
-            double zicenuclei_slice_yrecldp_riceinit_div_zrho_slice;
+            float zicecld_index_0;
+            float zicenuclei_index_0;
+            float zicenuclei_slice_times_yrecldp_riceinit;
+            float zrho_index_1;
+            float zicenuclei_slice_yrecldp_riceinit_div_zrho_slice;
             double __tmp140;
             double __tmp141;
             double zice0_pow_0_666;
             double __tmp142;
             double zinew;
-            double za_index_29;
+            float za_index_29;
             double zinew_minus_zice0;
-            double za_slice_times_zinew_zice0;
+            float za_slice_times_zinew_zice0;
             double zqxfg_index_8;
             double min_zdepos_zqxfg_slice;
-            double zicenuclei_index_1;
-            double zicenuclei_slice_div_15000_0;
+            float zicenuclei_index_1;
+            float zicenuclei_slice_div_15000_0;
             double __tmp143;
-            double zcldtopdist_index_0;
-            double zcldtopdist_slice_div_yrecldp_rdepliqrefdepth;
+            float zcldtopdist_index_0;
+            float zcldtopdist_slice_div_yrecldp_rdepliqrefdepth;
             double
                 yrecldp_rdepliqrefrate_plus_zcldtopdist_slice_yrecldp_rdepliqrefdepth;
             double __tmp144;
@@ -15016,11 +15392,11 @@ void __program_cloudsc_py_internal(
               __tmp135 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zfokoop + (jl - 1), &zfokoop_index_0, 1);
             {
               double __in1 = zvpice;
-              double __in2 = zfokoop_index_0;
+              float __in2 = zfokoop_index_0;
               double __out;
 
               ///////////////////
@@ -15089,7 +15465,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in2 = exp_12_96_zvpliq_zvpice_zvpliq_0_639;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -15099,8 +15475,8 @@ void __program_cloudsc_py_internal(
               zicenuclei_slice = __out;
             }
             {
-              double __inp = zicenuclei_slice;
-              double __out;
+              float __inp = zicenuclei_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_717_20)
@@ -15110,17 +15486,17 @@ void __program_cloudsc_py_internal(
               zicenuclei[(jl - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zicenuclei + (jl - 1), &zicenuclei_index, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zicenuclei + (jl - 1), &zicenuclei_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zicenuclei + (jl - 1), &zicenuclei_index_1, 1);
             {
-              double __in1 = zicenuclei_index_1;
-              double __out;
+              float __in1 = zicenuclei_index_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -15130,7 +15506,7 @@ void __program_cloudsc_py_internal(
               zicenuclei_slice_div_15000_0 = __out;
             }
             {
-              double __in_a = zicenuclei_slice_div_15000_0;
+              float __in_a = zicenuclei_slice_div_15000_0;
               double __out;
 
               ///////////////////
@@ -15146,7 +15522,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp143 = __out;
@@ -15181,7 +15557,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (__in1 - 1.0);
+              __out = (__in1 - float(1.0));
               ///////////////////
 
               ydcst_rlstt_ydcst_rv_ztp1_slice_minus_1_0 = __out;
@@ -15212,11 +15588,11 @@ void __program_cloudsc_py_internal(
               zadd = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_11, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_11, 1);
             {
               double __in1 = ydcst_rv_times_ztp1_slice_0;
-              double __in2 = pap_index_11;
+              float __in2 = pap_index_11;
               double __out;
 
               ///////////////////
@@ -15274,15 +15650,15 @@ void __program_cloudsc_py_internal(
               __tmp139 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zrho + (jl - 1), &zrho_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zrho + (jl - 1), &zrho_index_1, 1);
             {
-              double __in1 = zicenuclei_index;
-              double __in2 = zrho_index_0;
-              double __out;
+              float __in1 = zicenuclei_index;
+              float __in2 = zrho_index_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -15292,8 +15668,8 @@ void __program_cloudsc_py_internal(
               zicenuclei_slice_div_zrho_slice = __out;
             }
             {
-              double __in1 = zicenuclei_slice_div_zrho_slice;
-              double __out;
+              float __in1 = zicenuclei_slice_div_zrho_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Pow_)
@@ -15303,7 +15679,7 @@ void __program_cloudsc_py_internal(
               zicenuclei_slice_zrho_slice_pow_0_666 = __out;
             }
             {
-              double __in2 = zicenuclei_slice_zrho_slice_pow_0_666;
+              float __in2 = zicenuclei_slice_zrho_slice_pow_0_666;
               double __out;
 
               ///////////////////
@@ -15349,12 +15725,12 @@ void __program_cloudsc_py_internal(
               __tmp140 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zicecld + (jl - 1), &zicecld_index_0, 1);
             {
-              double __in1 = zicenuclei_index_0;
+              float __in1 = zicenuclei_index_0;
               double __in2 = yrecldp_riceinit;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -15364,9 +15740,9 @@ void __program_cloudsc_py_internal(
               zicenuclei_slice_times_yrecldp_riceinit = __out;
             }
             {
-              double __in1 = zicenuclei_slice_times_yrecldp_riceinit;
-              double __in2 = zrho_index_1;
-              double __out;
+              float __in1 = zicenuclei_slice_times_yrecldp_riceinit;
+              float __in2 = zrho_index_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -15376,8 +15752,8 @@ void __program_cloudsc_py_internal(
               zicenuclei_slice_yrecldp_riceinit_div_zrho_slice = __out;
             }
             {
-              double __in_a = zicecld_index_0;
-              double __in_b = zicenuclei_slice_yrecldp_riceinit_div_zrho_slice;
+              float __in_a = zicecld_index_0;
+              float __in_b = zicenuclei_slice_yrecldp_riceinit_div_zrho_slice;
               double __out;
 
               ///////////////////
@@ -15446,12 +15822,12 @@ void __program_cloudsc_py_internal(
               zinew_minus_zice0 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_29, 1);
             {
-              double __in1 = za_index_29;
+              float __in1 = za_index_29;
               double __in2 = zinew_minus_zice0;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -15461,7 +15837,7 @@ void __program_cloudsc_py_internal(
               za_slice_times_zinew_zice0 = __out;
             }
             {
-              double __in_a = za_slice_times_zinew_zice0;
+              float __in_a = za_slice_times_zinew_zice0;
               double __out;
 
               ///////////////////
@@ -15501,12 +15877,12 @@ void __program_cloudsc_py_internal(
               zdepos = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcldtopdist + (jl - 1), &zcldtopdist_index_0, 1);
             {
-              double __in1 = zcldtopdist_index_0;
+              float __in1 = zcldtopdist_index_0;
               double __in2 = yrecldp_rdepliqrefdepth;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -15517,7 +15893,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = yrecldp_rdepliqrefrate;
-              double __in2 = zcldtopdist_slice_div_yrecldp_rdepliqrefdepth;
+              float __in2 = zcldtopdist_slice_div_yrecldp_rdepliqrefdepth;
               double __out;
 
               ///////////////////
@@ -15707,34 +16083,23 @@ void __program_cloudsc_py_internal(
       }
     } else {
       if ((idepice == 2)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_38 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_38 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_38); jl = (jl + 1)) {
           {
-            double za_index_30;
+            float za_index_30;
             bool __tmp145;
-            double za_index_31;
+            float za_index_31;
             bool __tmp146;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 2))) - 1), &za_index_30, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_31, 1);
             {
-              double __in1 = za_index_30;
+              float __in1 = za_index_30;
               double __in2 = yrecldp_rcldtopcf;
               bool __out;
 
@@ -15746,7 +16111,7 @@ void __program_cloudsc_py_internal(
               __tmp145 = __out;
             }
             {
-              double __in1 = za_index_31;
+              float __in1 = za_index_31;
               double __in2 = yrecldp_rcldtopcf;
               bool __out;
 
@@ -15774,11 +16139,11 @@ void __program_cloudsc_py_internal(
             {
 
               {
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_734_20)
-                __out = 0.0;
+                __out = float(0.0);
                 ///////////////////
 
                 zcldtopdist[(jl - 1)] = __out;
@@ -15786,25 +16151,25 @@ void __program_cloudsc_py_internal(
             }
           } else {
             {
-              double zcldtopdist_index_1;
+              float zcldtopdist_index_1;
               double zdp_index_3;
-              double zrho_index_2;
-              double zrho_slice_times_ydcst_rg_0;
+              float zrho_index_2;
+              float zrho_slice_times_ydcst_rg_0;
               double zdp_slice_div_zrho_slice_ydcst_rg_0;
-              double zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg_0;
+              float zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg_0;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcldtopdist + (jl - 1), &zcldtopdist_index_1, 1);
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zdp + (jl - 1), &zdp_index_3, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_2, 1);
               {
-                double __in1 = zrho_index_2;
+                float __in1 = zrho_index_2;
                 double __in2 = ydcst_rg;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -15815,7 +16180,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = zdp_index_3;
-                double __in2 = zrho_slice_times_ydcst_rg_0;
+                float __in2 = zrho_slice_times_ydcst_rg_0;
                 double __out;
 
                 ///////////////////
@@ -15826,9 +16191,9 @@ void __program_cloudsc_py_internal(
                 zdp_slice_div_zrho_slice_ydcst_rg_0 = __out;
               }
               {
-                double __in1 = zcldtopdist_index_1;
+                float __in1 = zcldtopdist_index_1;
                 double __in2 = zdp_slice_div_zrho_slice_ydcst_rg_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
@@ -15838,9 +16203,9 @@ void __program_cloudsc_py_internal(
                 zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg_0 = __out;
               }
               {
-                double __inp =
+                float __inp =
                     zcldtopdist_slice_plus_zdp_slice_zrho_slice_ydcst_rg_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_736_20)
@@ -15913,19 +16278,19 @@ void __program_cloudsc_py_internal(
               double ydthf_r2es_times_expr_5;
               double ydthf_r2es_expr_times_ydcst_rv_0;
               double zvpice_0;
-              double zfokoop_index_1;
+              float zfokoop_index_1;
               double zvpliq_0;
               double zvpliq_minus_zvpice_1;
               double __tmp151;
               double __tmp152;
               double __tmp153;
               double exp_12_96_zvpliq_zvpice_zvpliq_0_639_0;
-              double zicenuclei_slice_0;
-              double zicecld_index_1;
-              double zicenuclei_index_2;
-              double zicenuclei_slice_times_yrecldp_riceinit_0;
-              double zrho_index_3;
-              double zicenuclei_slice_yrecldp_riceinit_div_zrho_slice_0;
+              float zicenuclei_slice_0;
+              float zicecld_index_1;
+              float zicenuclei_index_2;
+              float zicenuclei_slice_times_yrecldp_riceinit_0;
+              float zrho_index_3;
+              float zicenuclei_slice_yrecldp_riceinit_div_zrho_slice_0;
               double zice0_0;
               double zfacx1i;
               double yrecldp_rcl_apb1_times_zvpice;
@@ -15934,12 +16299,12 @@ void __program_cloudsc_py_internal(
               double yrecldp_rcl_apb2_zvpice_times_ztp1_slice;
               double
                   yrecldp_rcl_apb1_zvpice_minus_yrecldp_rcl_apb2_zvpice_ztp1_slice;
-              double pap_index_12;
-              double pap_slice_times_yrecldp_rcl_apb3;
+              float pap_index_12;
+              float pap_slice_times_yrecldp_rcl_apb3;
               double ztp1_index_76;
               double ztp1_slice_pow_3_0;
-              double pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3_0;
-              double zrho_index_4;
+              float pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3_0;
+              float zrho_index_4;
               double __tmp154;
               double ztp1_index_77;
               double ztp1_slice_div_273_0;
@@ -15947,9 +16312,9 @@ void __program_cloudsc_py_internal(
               double ztp1_index_78;
               double ztp1_slice_plus_120_0;
               double __tmp155;
-              double zrho_index_5;
-              double zrho_slice_times_zice0;
-              double zrho_slice_zice0_times_yrecldp_rcl_const1i;
+              float zrho_index_5;
+              float zrho_slice_times_zice0;
+              float zrho_slice_zice0_times_yrecldp_rcl_const1i;
               double ztcg_times_zfacx1i;
               double zvpliq_minus_zvpice_2;
               double ztp1_index_79;
@@ -15962,16 +16327,16 @@ void __program_cloudsc_py_internal(
                   zvpliq_zvpice_ztp1_slice_2_0_zvpice_zcorrfac2_ztcg_times_yrecldp_rcl_const2i;
               double
                   zvpliq_zvpice_ztp1_slice_2_0_zvpice_zcorrfac2_ztcg_yrecldp_rcl_const2i_times_zfacx1i;
-              double zrho_index_6;
-              double zrho_slice_times_zaplusb;
-              double zrho_slice_zaplusb_times_zvpice;
+              float zrho_index_6;
+              float zrho_slice_times_zaplusb;
+              float zrho_slice_zaplusb_times_zvpice;
               double __tmp156;
               double zpr02_pow_yrecldp_rcl_const4i;
               double __tmp157;
               double zcorrfac_pow_0_5;
               double yrecldp_rcl_const3i_times_zcorrfac_0_5;
-              double zrho_index_7;
-              double zrho_slice_pow_0_5;
+              float zrho_index_7;
+              float zrho_slice_pow_0_5;
               double yrecldp_rcl_const3i_zcorrfac_0_5_times_zrho_slice_0_5;
               double zpr02_pow_yrecldp_rcl_const5i;
               double
@@ -15979,19 +16344,19 @@ void __program_cloudsc_py_internal(
               double zcorrfac2_pow_0_5;
               double
                   yrecldp_rcl_const3i_zcorrfac_0_5_zrho_slice_0_5_zpr02_yrecldp_rcl_const5i_div_zcorrfac2_0_5;
-              double za_index_32;
-              double za_slice_times_zterm1;
-              double za_slice_zterm1_times_zterm2;
-              double za_slice_zterm1_zterm2_times_ptsphy;
+              float za_index_32;
+              float za_slice_times_zterm1;
+              float za_slice_zterm1_times_zterm2;
+              float za_slice_zterm1_zterm2_times_ptsphy;
               double zdepos_0;
               double zqxfg_index_12;
               double min_zdepos_zqxfg_slice_0;
-              double zicenuclei_index_3;
-              double zicenuclei_slice_div_15000_0_0;
+              float zicenuclei_index_3;
+              float zicenuclei_slice_div_15000_0_0;
               double zinfactor_0;
               double __tmp158;
-              double zcldtopdist_index_2;
-              double zcldtopdist_slice_div_yrecldp_rdepliqrefdepth_0;
+              float zcldtopdist_index_2;
+              float zcldtopdist_slice_div_yrecldp_rdepliqrefdepth_0;
               double
                   yrecldp_rdepliqrefrate_plus_zcldtopdist_slice_yrecldp_rdepliqrefdepth_0;
               double __tmp159;
@@ -16113,7 +16478,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Pow_)
-                __out = (dace::math::ipow(__in1, 2));
+                __out = (__in1 * __in1);
                 ///////////////////
 
                 ztp1_slice_pow_2_0 = __out;
@@ -16229,11 +16594,11 @@ void __program_cloudsc_py_internal(
                 zvpice = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zfokoop + (jl - 1), &zfokoop_index_1, 1);
               {
                 double __in1 = zvpice;
-                double __in2 = zfokoop_index_1;
+                float __in2 = zfokoop_index_1;
                 double __out;
 
                 ///////////////////
@@ -16313,7 +16678,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in2 = exp_12_96_zvpliq_zvpice_zvpliq_0_639_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16323,8 +16688,8 @@ void __program_cloudsc_py_internal(
                 zicenuclei_slice_0 = __out;
               }
               {
-                double __inp = zicenuclei_slice_0;
-                double __out;
+                float __inp = zicenuclei_slice_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_740_20)
@@ -16334,14 +16699,14 @@ void __program_cloudsc_py_internal(
                 zicenuclei[(jl - 1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zicenuclei + (jl - 1), &zicenuclei_index_2, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zicenuclei + (jl - 1), &zicenuclei_index_3, 1);
               {
-                double __in1 = zicenuclei_index_3;
-                double __out;
+                float __in1 = zicenuclei_index_3;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
@@ -16351,7 +16716,7 @@ void __program_cloudsc_py_internal(
                 zicenuclei_slice_div_15000_0_0 = __out;
               }
               {
-                double __in_a = zicenuclei_slice_div_15000_0_0;
+                float __in_a = zicenuclei_slice_div_15000_0_0;
                 double __out;
 
                 ///////////////////
@@ -16378,7 +16743,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (1.0 - __in2);
+                __out = (float(1.0) - __in2);
                 ///////////////////
 
                 __tmp158 = __out;
@@ -16432,12 +16797,12 @@ void __program_cloudsc_py_internal(
                 zvpliq_zvpice_ztp1_slice_2_0_zvpice_times_zcorrfac2 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zicecld + (jl - 1), &zicecld_index_1, 1);
               {
-                double __in1 = zicenuclei_index_2;
+                float __in1 = zicenuclei_index_2;
                 double __in2 = yrecldp_riceinit;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16447,24 +16812,24 @@ void __program_cloudsc_py_internal(
                 zicenuclei_slice_times_yrecldp_riceinit_0 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_3, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_4, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_5, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_6, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_7, 1);
               {
-                double __in1 = zicenuclei_slice_times_yrecldp_riceinit_0;
-                double __in2 = zrho_index_3;
-                double __out;
+                float __in1 = zicenuclei_slice_times_yrecldp_riceinit_0;
+                float __in2 = zrho_index_3;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
@@ -16474,8 +16839,8 @@ void __program_cloudsc_py_internal(
                 zicenuclei_slice_yrecldp_riceinit_div_zrho_slice_0 = __out;
               }
               {
-                double __in_a = zicecld_index_1;
-                double __in_b =
+                float __in_a = zicecld_index_1;
+                float __in_b =
                     zicenuclei_slice_yrecldp_riceinit_div_zrho_slice_0;
                 double __out;
 
@@ -16498,12 +16863,12 @@ void __program_cloudsc_py_internal(
                 zice0 = __out;
               }
               {
-                double __in2 = zrho_index_4;
+                float __in2 = zrho_index_4;
                 double __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
-                __out = (1.0 / __in2);
+                __out = (float(1.0) / __in2);
                 ///////////////////
 
                 __tmp154 = __out;
@@ -16531,9 +16896,9 @@ void __program_cloudsc_py_internal(
                 zcorrfac_pow_0_5 = __out;
               }
               {
-                double __in1 = zrho_index_5;
+                float __in1 = zrho_index_5;
                 double __in2 = zice0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16543,8 +16908,8 @@ void __program_cloudsc_py_internal(
                 zrho_slice_times_zice0 = __out;
               }
               {
-                double __in1 = zrho_index_7;
-                double __out;
+                float __in1 = zrho_index_7;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Pow_)
@@ -16558,7 +16923,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (assign_742_20)
-                __out = 1.0;
+                __out = float(1.0);
                 ///////////////////
 
                 ztcg = __out;
@@ -16582,7 +16947,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (assign_743_20)
-                __out = 1.0;
+                __out = float(1.0);
                 ///////////////////
 
                 zfacx1i = __out;
@@ -16649,12 +17014,13 @@ void __program_cloudsc_py_internal(
                     __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_12, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_12,
+                  1);
               {
-                double __in1 = pap_index_12;
+                float __in1 = pap_index_12;
                 double __in2 = yrecldp_rcl_apb3;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16664,9 +17030,9 @@ void __program_cloudsc_py_internal(
                 pap_slice_times_yrecldp_rcl_apb3 = __out;
               }
               {
-                double __in1 = pap_slice_times_yrecldp_rcl_apb3;
+                float __in1 = pap_slice_times_yrecldp_rcl_apb3;
                 double __in2 = ztp1_slice_pow_3_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16678,7 +17044,7 @@ void __program_cloudsc_py_internal(
               {
                 double __in1 =
                     yrecldp_rcl_apb1_zvpice_minus_yrecldp_rcl_apb2_zvpice_ztp1_slice;
-                double __in2 = pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3_0;
+                float __in2 = pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3_0;
                 double __out;
 
                 ///////////////////
@@ -16689,9 +17055,9 @@ void __program_cloudsc_py_internal(
                 zaplusb = __out;
               }
               {
-                double __in1 = zrho_index_6;
+                float __in1 = zrho_index_6;
                 double __in2 = zaplusb;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16701,9 +17067,9 @@ void __program_cloudsc_py_internal(
                 zrho_slice_times_zaplusb = __out;
               }
               {
-                double __in1 = zrho_slice_times_zaplusb;
+                float __in1 = zrho_slice_times_zaplusb;
                 double __in2 = zvpice;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16713,9 +17079,9 @@ void __program_cloudsc_py_internal(
                 zrho_slice_zaplusb_times_zvpice = __out;
               }
               {
-                double __in1 = zrho_slice_times_zice0;
+                float __in1 = zrho_slice_times_zice0;
                 double __in2 = yrecldp_rcl_const1i;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16725,7 +17091,7 @@ void __program_cloudsc_py_internal(
                 zrho_slice_zice0_times_yrecldp_rcl_const1i = __out;
               }
               {
-                double __in1 = zrho_slice_zice0_times_yrecldp_rcl_const1i;
+                float __in1 = zrho_slice_zice0_times_yrecldp_rcl_const1i;
                 double __in2 = ztcg_times_zfacx1i;
                 double __out;
 
@@ -16767,7 +17133,7 @@ void __program_cloudsc_py_internal(
               {
                 double __in1 =
                     zvpliq_zvpice_ztp1_slice_2_0_zvpice_zcorrfac2_ztcg_yrecldp_rcl_const2i_times_zfacx1i;
-                double __in2 = zrho_slice_zaplusb_times_zvpice;
+                float __in2 = zrho_slice_zaplusb_times_zvpice;
                 double __out;
 
                 ///////////////////
@@ -16783,7 +17149,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Mult_)
-                __out = (0.65 * __in2);
+                __out = (float(0.65) * __in2);
                 ///////////////////
 
                 __tmp156 = __out;
@@ -16826,7 +17192,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rcl_const3i_times_zcorrfac_0_5;
-                double __in2 = zrho_slice_pow_0_5;
+                float __in2 = zrho_slice_pow_0_5;
                 double __out;
 
                 ///////////////////
@@ -16890,12 +17256,12 @@ void __program_cloudsc_py_internal(
                 zterm2 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   za + ((jl + (klon * (jk - 1))) - 1), &za_index_32, 1);
               {
-                double __in1 = za_index_32;
+                float __in1 = za_index_32;
                 double __in2 = zterm1;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16905,9 +17271,9 @@ void __program_cloudsc_py_internal(
                 za_slice_times_zterm1 = __out;
               }
               {
-                double __in1 = za_slice_times_zterm1;
+                float __in1 = za_slice_times_zterm1;
                 double __in2 = zterm2;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16917,9 +17283,9 @@ void __program_cloudsc_py_internal(
                 za_slice_zterm1_times_zterm2 = __out;
               }
               {
-                double __in1 = za_slice_zterm1_times_zterm2;
+                float __in1 = za_slice_zterm1_times_zterm2;
                 double __in2 = ptsphy;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -16929,7 +17295,7 @@ void __program_cloudsc_py_internal(
                 za_slice_zterm1_zterm2_times_ptsphy = __out;
               }
               {
-                double __in_a = za_slice_zterm1_zterm2_times_ptsphy;
+                float __in_a = za_slice_zterm1_zterm2_times_ptsphy;
                 double __out;
 
                 ///////////////////
@@ -16982,12 +17348,12 @@ void __program_cloudsc_py_internal(
                 zdepos = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcldtopdist + (jl - 1), &zcldtopdist_index_2, 1);
               {
-                double __in1 = zcldtopdist_index_2;
+                float __in1 = zcldtopdist_index_2;
                 double __in2 = yrecldp_rdepliqrefdepth;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
@@ -16998,7 +17364,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rdepliqrefrate;
-                double __in2 = zcldtopdist_slice_div_yrecldp_rdepliqrefdepth_0;
+                float __in2 = zcldtopdist_slice_div_yrecldp_rdepliqrefdepth_0;
                 double __out;
 
                 ///////////////////
@@ -17189,37 +17555,26 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_39 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_39 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_39); jl = (jl + 1)) {
       {
-        double za_index_33;
+        float za_index_33;
         double max_za_slice_zepsec_0;
         double ztmpa_0;
         double zqxfg_index_15;
-        double zliqcld_slice_0;
+        float zliqcld_slice_0;
         double zqxfg_index_16;
-        double zicecld_slice_0;
-        double zliqcld_index_0;
-        double zicecld_index_2;
-        double zlicld_slice_0;
+        float zicecld_slice_0;
+        float zliqcld_index_0;
+        float zicecld_index_2;
+        float zlicld_slice_0;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_33, 1);
         {
-          double __in_a = za_index_33;
+          float __in_a = za_index_33;
           double __in_b = zepsec;
           double __out;
 
@@ -17236,7 +17591,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Div_)
-          __out = (1.0 / __in2);
+          __out = (float(1.0) / __in2);
           ///////////////////
 
           ztmpa_0 = __out;
@@ -17261,7 +17616,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = zqxfg_index_15;
           double __in2 = ztmpa;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -17271,8 +17626,8 @@ void __program_cloudsc_py_internal(
           zliqcld_slice_0 = __out;
         }
         {
-          double __inp = zliqcld_slice_0;
-          double __out;
+          float __inp = zliqcld_slice_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_760_12)
@@ -17282,12 +17637,12 @@ void __program_cloudsc_py_internal(
           zliqcld[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zliqcld + (jl - 1), &zliqcld_index_0, 1);
         {
           double __in1 = zqxfg_index_16;
           double __in2 = ztmpa;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -17297,8 +17652,8 @@ void __program_cloudsc_py_internal(
           zicecld_slice_0 = __out;
         }
         {
-          double __inp = zicecld_slice_0;
-          double __out;
+          float __inp = zicecld_slice_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_761_12)
@@ -17308,12 +17663,12 @@ void __program_cloudsc_py_internal(
           zicecld[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zicecld + (jl - 1), &zicecld_index_2, 1);
         {
-          double __in1 = zliqcld_index_0;
-          double __in2 = zicecld_index_2;
-          double __out;
+          float __in1 = zliqcld_index_0;
+          float __in2 = zicecld_index_2;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -17323,8 +17678,8 @@ void __program_cloudsc_py_internal(
           zlicld_slice_0 = __out;
         }
         {
-          double __inp = zlicld_slice_0;
-          double __out;
+          float __inp = zlicld_slice_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_762_12)
@@ -17336,66 +17691,53 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
-        int llfall_index_1;
 
-        dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-            llfall + (jm - 1), &llfall_index_1, 1);
+      llfall_index_1 = llfall[(jm - 1)];
+      {
+
         {
-          int __in1 = llfall_index_1;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Or_)
-          __out = (__in1 || (jm == ncldqi));
+          __out = (llfall_index_1 || (jm == ncldqi));
           ///////////////////
 
           __tmp160 = __out;
         }
       }
       if (__tmp160) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_40 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_40 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_40); jl = (jl + 1)) {
           if ((jk > yrecldp_ncldtop)) {
             {
-              double zpfplsx_index;
-              double zdtgdp_index_3;
-              double zfallsrce_slice;
+              float zpfplsx_index;
+              float zdtgdp_index_3;
+              float zfallsrce_slice;
               double zsolqa_index_31;
-              double zfallsrce_index;
+              float zfallsrce_index;
               double zsolqa_slice_plus_zfallsrce_slice;
               double zqxfg_index_17;
-              double zfallsrce_index_0;
+              float zfallsrce_index_0;
               double zqxfg_slice_plus_zfallsrce_slice;
-              double zqpretot_index;
+              float zqpretot_index;
               double zqxfg_index_18;
-              double zqpretot_slice_plus_zqxfg_slice;
+              float zqpretot_slice_plus_zqxfg_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zpfplsx + (((jl + (klon * (jk - 1))) +
                               ((klon * (jm - 1)) * (klev + 1))) -
                              1),
                   &zpfplsx_index, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zdtgdp + (jl - 1), &zdtgdp_index_3, 1);
               {
-                double __in1 = zpfplsx_index;
-                double __in2 = zdtgdp_index_3;
-                double __out;
+                float __in1 = zpfplsx_index;
+                float __in2 = zdtgdp_index_3;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -17405,8 +17747,8 @@ void __program_cloudsc_py_internal(
                 zfallsrce_slice = __out;
               }
               {
-                double __inp = zfallsrce_slice;
-                double __out;
+                float __inp = zfallsrce_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_767_24)
@@ -17416,11 +17758,11 @@ void __program_cloudsc_py_internal(
                 zfallsrce[((jl + (klon * (jm - 1))) - 1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zfallsrce + ((jl + (klon * (jm - 1))) - 1), &zfallsrce_index,
                   1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zfallsrce + ((jl + (klon * (jm - 1))) - 1),
                   &zfallsrce_index_0, 1);
 
@@ -17431,7 +17773,7 @@ void __program_cloudsc_py_internal(
                   &zsolqa_index_31, 1);
               {
                 double __in1 = zsolqa_index_31;
-                double __in2 = zfallsrce_index;
+                float __in2 = zfallsrce_index;
                 double __out;
 
                 ///////////////////
@@ -17459,7 +17801,7 @@ void __program_cloudsc_py_internal(
                   zqxfg + ((jl + (klon * (jm - 1))) - 1), &zqxfg_index_17, 1);
               {
                 double __in1 = zqxfg_index_17;
-                double __in2 = zfallsrce_index_0;
+                float __in2 = zfallsrce_index_0;
                 double __out;
 
                 ///////////////////
@@ -17484,12 +17826,12 @@ void __program_cloudsc_py_internal(
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zqxfg + ((jl + (klon * (jm - 1))) - 1), &zqxfg_index_18, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqpretot + (jl - 1), &zqpretot_index, 1);
               {
-                double __in1 = zqpretot_index;
+                float __in1 = zqpretot_index;
                 double __in2 = zqxfg_index_18;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
@@ -17499,8 +17841,8 @@ void __program_cloudsc_py_internal(
                 zqpretot_slice_plus_zqxfg_slice = __out;
               }
               {
-                double __inp = zqpretot_slice_plus_zqxfg_slice;
-                double __out;
+                float __inp = zqpretot_slice_plus_zqxfg_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_770_24)
@@ -17518,7 +17860,8 @@ void __program_cloudsc_py_internal(
               double zvqx_slice;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pre_ice + ((jl + (klon * (jk - 1))) - 1), &zre_ice, 1);
+                  pre_ice_lowered + ((jl + (klon * (jk - 1))) - 1), &zre_ice,
+                  1);
               {
                 double __in1 = zre_ice;
                 double __out;
@@ -17556,19 +17899,19 @@ void __program_cloudsc_py_internal(
           }
           {
             double zvqx_index_0;
-            double zrho_index_8;
+            float zrho_index_8;
             double zfall;
-            double zdtgdp_index_4;
-            double zfallsink_slice;
+            float zdtgdp_index_4;
+            float zfallsink_slice;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zvqx + (jm - 1), &zvqx_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zrho + (jl - 1), &zrho_index_8, 1);
             {
               double __in1 = zvqx_index_0;
-              double __in2 = zrho_index_8;
+              float __in2 = zrho_index_8;
               double __out;
 
               ///////////////////
@@ -17579,12 +17922,12 @@ void __program_cloudsc_py_internal(
               zfall = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_4, 1);
             {
-              double __in1 = zdtgdp_index_4;
+              float __in1 = zdtgdp_index_4;
               double __in2 = zfall;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -17594,8 +17937,8 @@ void __program_cloudsc_py_internal(
               zfallsink_slice = __out;
             }
             {
-              double __inp = zfallsink_slice;
-              double __out;
+              float __inp = zfallsink_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_775_20)
@@ -17608,28 +17951,17 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_41 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_41 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_41); jl = (jl + 1)) {
       {
-        double zqpretot_index_0;
+        float zqpretot_index_0;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqpretot + (jl - 1), &zqpretot_index_0, 1);
         {
-          double __in1 = zqpretot_index_0;
+          float __in1 = zqpretot_index_0;
           double __in2 = zepsec;
           bool __out;
 
@@ -17643,62 +17975,62 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp161) {
         {
-          double zcovptot_index;
+          float zcovptot_index;
           double __tmp162;
-          double za_index_34;
-          double za_index_35;
+          float za_index_34;
+          float za_index_35;
           double max_za_slice_za_slice;
           double __tmp163;
           double __tmp164;
-          double za_index_36;
+          float za_index_36;
           double min_za_slice_1_0_1eneg06;
           double __tmp165;
           double __tmp166;
           double __tmp167;
-          double zcovptot_index_0;
+          float zcovptot_index_0;
           double max_zcovptot_slice_yrecldp_rcovpmin;
-          double zcovptot_index_1;
-          double za_index_37;
-          double zcovptot_slice_minus_za_slice;
-          double zcovpclr_slice;
+          float zcovptot_index_1;
+          float za_index_37;
+          float zcovptot_slice_minus_za_slice;
+          float zcovpclr_slice;
           double zqxfg_index_19;
-          double zcovptot_index_2;
-          double zraincld_slice;
+          float zcovptot_index_2;
+          float zraincld_slice;
           double zqxfg_index_20;
-          double zcovptot_index_3;
-          double zsnowcld_slice;
-          double zcovptot_index_4;
-          double zcovpmax_index;
+          float zcovptot_index_3;
+          float zsnowcld_slice;
+          float zcovptot_index_4;
+          float zcovpmax_index;
           double max_zcovptot_slice_zcovpmax_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovptot + (jl - 1), &zcovptot_index, 1);
           {
-            double __in2 = zcovptot_index;
+            float __in2 = zcovptot_index;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp162 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_34, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 2))) - 1), &za_index_35, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 2))) - 1), &za_index_36, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_37, 1);
           {
-            double __in_a = za_index_34;
-            double __in_b = za_index_35;
+            float __in_a = za_index_34;
+            float __in_b = za_index_35;
             double __out;
 
             ///////////////////
@@ -17714,7 +18046,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp163 = __out;
@@ -17732,7 +18064,7 @@ void __program_cloudsc_py_internal(
             __tmp164 = __out;
           }
           {
-            double __in_a = za_index_36;
+            float __in_a = za_index_36;
             double __out;
 
             ///////////////////
@@ -17748,7 +18080,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp165 = __out;
@@ -17771,14 +18103,14 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp167 = __out;
           }
           {
             double __inp = __tmp167;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_778_16)
@@ -17788,10 +18120,10 @@ void __program_cloudsc_py_internal(
             zcovptot[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovptot + (jl - 1), &zcovptot_index_0, 1);
           {
-            double __in_a = zcovptot_index_0;
+            float __in_a = zcovptot_index_0;
             double __in_b = yrecldp_rcovpmin;
             double __out;
 
@@ -17804,7 +18136,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __inp = max_zcovptot_slice_yrecldp_rcovpmin;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_779_16)
@@ -17814,21 +18146,21 @@ void __program_cloudsc_py_internal(
             zcovptot[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovptot + (jl - 1), &zcovptot_index_1, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovptot + (jl - 1), &zcovptot_index_2, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovptot + (jl - 1), &zcovptot_index_3, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovptot + (jl - 1), &zcovptot_index_4, 1);
           {
-            double __in1 = zcovptot_index_1;
-            double __in2 = za_index_37;
-            double __out;
+            float __in1 = zcovptot_index_1;
+            float __in2 = za_index_37;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -17838,8 +18170,8 @@ void __program_cloudsc_py_internal(
             zcovptot_slice_minus_za_slice = __out;
           }
           {
-            double __in_b = zcovptot_slice_minus_za_slice;
-            double __out;
+            float __in_b = zcovptot_slice_minus_za_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (__max2)
@@ -17849,8 +18181,8 @@ void __program_cloudsc_py_internal(
             zcovpclr_slice = __out;
           }
           {
-            double __inp = zcovpclr_slice;
-            double __out;
+            float __inp = zcovpclr_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_780_16)
@@ -17867,8 +18199,8 @@ void __program_cloudsc_py_internal(
               zqxfg + ((jl + (klon * (ncldqs - 1))) - 1), &zqxfg_index_20, 1);
           {
             double __in1 = zqxfg_index_19;
-            double __in2 = zcovptot_index_2;
-            double __out;
+            float __in2 = zcovptot_index_2;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Div_)
@@ -17878,8 +18210,8 @@ void __program_cloudsc_py_internal(
             zraincld_slice = __out;
           }
           {
-            double __inp = zraincld_slice;
-            double __out;
+            float __inp = zraincld_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_781_16)
@@ -17890,8 +18222,8 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zqxfg_index_20;
-            double __in2 = zcovptot_index_3;
-            double __out;
+            float __in2 = zcovptot_index_3;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Div_)
@@ -17901,8 +18233,8 @@ void __program_cloudsc_py_internal(
             zsnowcld_slice = __out;
           }
           {
-            double __inp = zsnowcld_slice;
-            double __out;
+            float __inp = zsnowcld_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_782_16)
@@ -17912,11 +18244,11 @@ void __program_cloudsc_py_internal(
             zsnowcld[(jl - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovpmax + (jl - 1), &zcovpmax_index, 1);
           {
-            double __in_a = zcovptot_index_4;
-            double __in_b = zcovpmax_index;
+            float __in_a = zcovptot_index_4;
+            float __in_b = zcovpmax_index;
             double __out;
 
             ///////////////////
@@ -17928,7 +18260,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __inp = max_zcovptot_slice_zcovpmax_slice;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_783_16)
@@ -17942,51 +18274,51 @@ void __program_cloudsc_py_internal(
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_785_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zraincld[(jl - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_786_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zsnowcld[(jl - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_787_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zcovptot[(jl - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_788_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zcovpclr[(jl - 1)] = __out;
           }
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_789_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zcovpmax[(jl - 1)] = __out;
@@ -17994,20 +18326,9 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_42 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_42 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_42); jl = (jl + 1)) {
       {
         double ztp1_index_80;
@@ -18029,12 +18350,12 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp168) {
         {
-          double zicecld_index_3;
+          float zicecld_index_3;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zicecld + (jl - 1), &zicecld_index_3, 1);
           {
-            double __in1 = zicecld_index_3;
+            float __in1 = zicecld_index_3;
             double __in2 = zepsec;
             bool __out;
 
@@ -18119,19 +18440,21 @@ void __program_cloudsc_py_internal(
           }
           if (yrecldp_laericeauto) {
             {
-              double pnice_index;
+              float pnice_index;
               double yrecldp_rnice_div_pnice_slice;
               double yrecldp_rnice_pnice_slice_pow_0_333;
               double zzco_times_yrecldp_rnice_pnice_slice_0_333;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  picrit_aer + ((jl + (klon * (jk - 1))) - 1), &zlcrit, 1);
+                  picrit_aer_lowered + ((jl + (klon * (jk - 1))) - 1), &zlcrit,
+                  1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pnice + ((jl + (klon * (jk - 1))) - 1), &pnice_index, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  pnice_lowered + ((jl + (klon * (jk - 1))) - 1), &pnice_index,
+                  1);
               {
                 double __in1 = yrecldp_rnice;
-                double __in2 = pnice_index;
+                float __in2 = pnice_index;
                 double __out;
 
                 ///////////////////
@@ -18193,23 +18516,23 @@ void __program_cloudsc_py_internal(
             }
           }
           {
-            double zicecld_index_4;
-            double zicecld_slice_div_zlcrit;
-            double zicecld_slice_zlcrit_pow_2;
+            float zicecld_index_4;
+            float zicecld_slice_div_zlcrit;
+            float zicecld_slice_zlcrit_pow_2;
             double neg_zicecld_slice_zlcrit_2;
             double exp_expr;
             double __tmp170;
-            double zsnowaut_slice;
-            double zsolqb_index_1;
-            double zsnowaut_index;
-            double zsolqb_slice_plus_zsnowaut_slice;
+            float zsnowaut_slice;
+            float zsolqb_index_1;
+            float zsnowaut_index;
+            float zsolqb_slice_plus_zsnowaut_slice;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zicecld + (jl - 1), &zicecld_index_4, 1);
             {
-              double __in1 = zicecld_index_4;
+              float __in1 = zicecld_index_4;
               double __in2 = zlcrit;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -18219,18 +18542,18 @@ void __program_cloudsc_py_internal(
               zicecld_slice_div_zlcrit = __out;
             }
             {
-              double __in1 = zicecld_slice_div_zlcrit;
-              double __out;
+              float __in1 = zicecld_slice_div_zlcrit;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Pow_)
-              __out = (dace::math::ipow(__in1, 2));
+              __out = (((__in1) * (__in1)));
               ///////////////////
 
               zicecld_slice_zlcrit_pow_2 = __out;
             }
             {
-              double __in = zicecld_slice_zlcrit_pow_2;
+              float __in = zicecld_slice_zlcrit_pow_2;
               double __out;
 
               ///////////////////
@@ -18257,7 +18580,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp170 = __out;
@@ -18265,7 +18588,7 @@ void __program_cloudsc_py_internal(
             {
               double __in1 = zzco;
               double __in2 = __tmp170;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -18275,8 +18598,8 @@ void __program_cloudsc_py_internal(
               zsnowaut_slice = __out;
             }
             {
-              double __inp = zsnowaut_slice;
-              double __out;
+              float __inp = zsnowaut_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_799_20)
@@ -18286,18 +18609,18 @@ void __program_cloudsc_py_internal(
               zsnowaut[(jl - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsnowaut + (jl - 1), &zsnowaut_index, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsolqb + (((jl + ((klon * nclv) * (ncldqi - 1))) +
                            (klon * (ncldqs - 1))) -
                           1),
                 &zsolqb_index_1, 1);
             {
-              double __in1 = zsolqb_index_1;
-              double __in2 = zsnowaut_index;
-              double __out;
+              float __in1 = zsolqb_index_1;
+              float __in2 = zsnowaut_index;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -18307,8 +18630,8 @@ void __program_cloudsc_py_internal(
               zsolqb_slice_plus_zsnowaut_slice = __out;
             }
             {
-              double __inp = zsolqb_slice_plus_zsnowaut_slice;
-              double __out;
+              float __inp = zsolqb_slice_plus_zsnowaut_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_800_20)
@@ -18323,12 +18646,12 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double zliqcld_index_1;
+        float zliqcld_index_1;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zliqcld + (jl - 1), &zliqcld_index_1, 1);
         {
-          double __in1 = zliqcld_index_1;
+          float __in1 = zliqcld_index_1;
           double __in2 = zepsec;
           bool __out;
 
@@ -18372,13 +18695,14 @@ void __program_cloudsc_py_internal(
           if (yrecldp_laerliqautolsp) {
             {
               double zlcrit_0;
-              double pccn_index;
+              float pccn_index;
               double yrecldp_rccn_div_pccn_slice;
               double yrecldp_rccn_pccn_slice_pow_0_333;
               double zzco_times_yrecldp_rccn_pccn_slice_0_333;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  plcrit_aer + ((jl + (klon * (jk - 1))) - 1), &zlcrit_0, 1);
+                  plcrit_aer_lowered + ((jl + (klon * (jk - 1))) - 1),
+                  &zlcrit_0, 1);
               {
                 double __inp = zlcrit_0;
                 double __out;
@@ -18391,11 +18715,12 @@ void __program_cloudsc_py_internal(
                 zlcrit = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pccn + ((jl + (klon * (jk - 1))) - 1), &pccn_index, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  pccn_lowered + ((jl + (klon * (jk - 1))) - 1), &pccn_index,
+                  1);
               {
                 double __in1 = yrecldp_rccn;
-                double __in2 = pccn_index;
+                float __in2 = pccn_index;
                 double __out;
 
                 ///////////////////
@@ -18442,17 +18767,17 @@ void __program_cloudsc_py_internal(
             }
           } else {
             {
-              double plsm_index;
+              float plsm_index;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  plsm + (jl - 1), &plsm_index, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  plsm_lowered + (jl - 1), &plsm_index, 1);
               {
-                double __in1 = plsm_index;
+                float __in1 = plsm_index;
                 bool __out;
 
                 ///////////////////
                 // Tasklet code (_Gt_)
-                __out = (__in1 > 0.5);
+                __out = (__in1 > float(0.5));
                 ///////////////////
 
                 __tmp172 = __out;
@@ -18491,31 +18816,31 @@ void __program_cloudsc_py_internal(
             }
           }
           {
-            double zpfplsx_index_0;
-            double zpfplsx_index_1;
-            double zpfplsx_slice_plus_zpfplsx_slice;
-            double zcovptot_index_5;
+            float zpfplsx_index_0;
+            float zpfplsx_index_1;
+            float zpfplsx_slice_plus_zpfplsx_slice;
+            float zcovptot_index_5;
             double max_zepsec_zcovptot_slice;
             double zprecip;
             double max_zprecip_0_0;
             double sqrt_expr;
             double yrecldp_rprc1_times_expr;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zpfplsx + (((jl + (klon * (jk - 1))) +
                             ((klon * (klev + 1)) * (ncldqs - 1))) -
                            1),
                 &zpfplsx_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zpfplsx + (((jl + (klon * (jk - 1))) +
                             ((klon * (klev + 1)) * (ncldqr - 1))) -
                            1),
                 &zpfplsx_index_1, 1);
             {
-              double __in1 = zpfplsx_index_0;
-              double __in2 = zpfplsx_index_1;
-              double __out;
+              float __in1 = zpfplsx_index_0;
+              float __in2 = zpfplsx_index_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -18525,11 +18850,11 @@ void __program_cloudsc_py_internal(
               zpfplsx_slice_plus_zpfplsx_slice = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_5, 1);
             {
               double __in_a = zepsec;
-              double __in_b = zcovptot_index_5;
+              float __in_b = zcovptot_index_5;
               double __out;
 
               ///////////////////
@@ -18540,7 +18865,7 @@ void __program_cloudsc_py_internal(
               max_zepsec_zcovptot_slice = __out;
             }
             {
-              double __in1 = zpfplsx_slice_plus_zpfplsx_slice;
+              float __in1 = zpfplsx_slice_plus_zpfplsx_slice;
               double __in2 = max_zepsec_zcovptot_slice;
               double __out;
 
@@ -18591,7 +18916,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Add_)
-              __out = (1.0 + __in2);
+              __out = (float(1.0) + __in2);
               ///////////////////
 
               zcfpr = __out;
@@ -18599,16 +18924,17 @@ void __program_cloudsc_py_internal(
           }
           if (yrecldp_laerliqcoll) {
             {
-              double pccn_index_0;
+              float pccn_index_0;
               double yrecldp_rccn_div_pccn_slice_0;
               double yrecldp_rccn_pccn_slice_pow_0_333_0;
               double zcfpr_times_yrecldp_rccn_pccn_slice_0_333;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pccn + ((jl + (klon * (jk - 1))) - 1), &pccn_index_0, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  pccn_lowered + ((jl + (klon * (jk - 1))) - 1), &pccn_index_0,
+                  1);
               {
                 double __in1 = yrecldp_rccn;
-                double __in2 = pccn_index_0;
+                float __in2 = pccn_index_0;
                 double __out;
 
                 ///////////////////
@@ -18658,8 +18984,8 @@ void __program_cloudsc_py_internal(
             double zzco_times_zcfpr;
             double max_zcfpr_zepsec;
             double zlcrit_div_expr;
-            double zliqcld_index_2;
-            double zliqcld_slice_div_zlcrit;
+            float zliqcld_index_2;
+            float zliqcld_slice_div_zlcrit;
 
             {
               double __in1 = zzco;
@@ -18720,12 +19046,12 @@ void __program_cloudsc_py_internal(
               zlcrit = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zliqcld + (jl - 1), &zliqcld_index_2, 1);
             {
-              double __in1 = zliqcld_index_2;
+              float __in1 = zliqcld_index_2;
               double __in2 = zlcrit;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -18735,7 +19061,7 @@ void __program_cloudsc_py_internal(
               zliqcld_slice_div_zlcrit = __out;
             }
             {
-              double __in1 = zliqcld_slice_div_zlcrit;
+              float __in1 = zliqcld_slice_div_zlcrit;
               bool __out;
 
               ///////////////////
@@ -18748,20 +19074,20 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp173) {
             {
-              double zliqcld_index_3;
-              double zliqcld_slice_div_zlcrit_0;
-              double zliqcld_slice_zlcrit_pow_2;
+              float zliqcld_index_3;
+              float zliqcld_slice_div_zlcrit_0;
+              float zliqcld_slice_zlcrit_pow_2;
               double neg_zliqcld_slice_zlcrit_2;
               double exp_expr_0;
               double __tmp174;
-              double zrainaut_slice;
+              float zrainaut_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zliqcld + (jl - 1), &zliqcld_index_3, 1);
               {
-                double __in1 = zliqcld_index_3;
+                float __in1 = zliqcld_index_3;
                 double __in2 = zlcrit;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
@@ -18771,18 +19097,18 @@ void __program_cloudsc_py_internal(
                 zliqcld_slice_div_zlcrit_0 = __out;
               }
               {
-                double __in1 = zliqcld_slice_div_zlcrit_0;
-                double __out;
+                float __in1 = zliqcld_slice_div_zlcrit_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Pow_)
-                __out = (dace::math::ipow(__in1, 2));
+                __out = (((__in1) * (__in1)));
                 ///////////////////
 
                 zliqcld_slice_zlcrit_pow_2 = __out;
               }
               {
-                double __in = zliqcld_slice_zlcrit_pow_2;
+                float __in = zliqcld_slice_zlcrit_pow_2;
                 double __out;
 
                 ///////////////////
@@ -18809,7 +19135,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (1.0 - __in2);
+                __out = (float(1.0) - __in2);
                 ///////////////////
 
                 __tmp174 = __out;
@@ -18817,7 +19143,7 @@ void __program_cloudsc_py_internal(
               {
                 double __in1 = zzco;
                 double __in2 = __tmp174;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -18827,8 +19153,8 @@ void __program_cloudsc_py_internal(
                 zrainaut_slice = __out;
               }
               {
-                double __inp = zrainaut_slice;
-                double __out;
+                float __inp = zrainaut_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_818_24)
@@ -18843,7 +19169,7 @@ void __program_cloudsc_py_internal(
 
               {
                 double __inp = zzco;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_820_24)
@@ -18874,22 +19200,22 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp175) {
             {
-              double zsolqb_index_2;
-              double zrainaut_index;
-              double zsolqb_slice_plus_zrainaut_slice;
+              float zsolqb_index_2;
+              float zrainaut_index;
+              float zsolqb_slice_plus_zrainaut_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsolqb + (((jl + ((klon * nclv) * (ncldql - 1))) +
                              (klon * (ncldqs - 1))) -
                             1),
                   &zsolqb_index_2, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrainaut + (jl - 1), &zrainaut_index, 1);
               {
-                double __in1 = zsolqb_index_2;
-                double __in2 = zrainaut_index;
-                double __out;
+                float __in1 = zsolqb_index_2;
+                float __in2 = zrainaut_index;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
@@ -18899,8 +19225,8 @@ void __program_cloudsc_py_internal(
                 zsolqb_slice_plus_zrainaut_slice = __out;
               }
               {
-                double __inp = zsolqb_slice_plus_zrainaut_slice;
-                double __out;
+                float __inp = zsolqb_slice_plus_zrainaut_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_822_24)
@@ -18914,22 +19240,22 @@ void __program_cloudsc_py_internal(
             }
           } else {
             {
-              double zsolqb_index_3;
-              double zrainaut_index_0;
-              double zsolqb_slice_plus_zrainaut_slice_0;
+              float zsolqb_index_3;
+              float zrainaut_index_0;
+              float zsolqb_slice_plus_zrainaut_slice_0;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsolqb + (((jl + ((klon * nclv) * (ncldql - 1))) +
                              (klon * (ncldqr - 1))) -
                             1),
                   &zsolqb_index_3, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrainaut + (jl - 1), &zrainaut_index_0, 1);
               {
-                double __in1 = zsolqb_index_3;
-                double __in2 = zrainaut_index_0;
-                double __out;
+                float __in1 = zsolqb_index_3;
+                float __in2 = zrainaut_index_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
@@ -18939,8 +19265,8 @@ void __program_cloudsc_py_internal(
                 zsolqb_slice_plus_zrainaut_slice_0 = __out;
               }
               {
-                double __inp = zsolqb_slice_plus_zrainaut_slice_0;
-                double __out;
+                float __inp = zsolqb_slice_plus_zrainaut_slice_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_824_24)
@@ -18956,17 +19282,17 @@ void __program_cloudsc_py_internal(
         } else {
           if ((iwarmrain == 2)) {
             {
-              double plsm_index_0;
+              float plsm_index_0;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  plsm + (jl - 1), &plsm_index_0, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  plsm_lowered + (jl - 1), &plsm_index_0, 1);
               {
-                double __in1 = plsm_index_0;
+                float __in1 = plsm_index_0;
                 bool __out;
 
                 ///////////////////
                 // Tasklet code (_Gt_)
-                __out = (__in1 > 0.5);
+                __out = (__in1 > float(0.5));
                 ///////////////////
 
                 __tmp176 = __out;
@@ -19026,12 +19352,12 @@ void __program_cloudsc_py_internal(
               }
             }
             {
-              double zliqcld_index_4;
+              float zliqcld_index_4;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zliqcld + (jl - 1), &zliqcld_index_4, 1);
               {
-                double __in1 = zliqcld_index_4;
+                float __in1 = zliqcld_index_4;
                 double __in2 = zlcrit;
                 bool __out;
 
@@ -19045,24 +19371,24 @@ void __program_cloudsc_py_internal(
             }
             if (__tmp178) {
               {
-                double za_index_38;
+                float za_index_38;
                 double __tmp179;
                 double __tmp180;
                 double __tmp181;
-                double zliqcld_index_5;
-                double zliqcld_slice_pow_yrecldp_rcl_kkbauq;
+                float zliqcld_index_5;
+                float zliqcld_slice_pow_yrecldp_rcl_kkbauq;
                 double __tmp182;
                 double zconst_pow_yrecldp_rcl_kkbaun;
-                double zrainaut_slice_0;
-                double zrainaut_index_1;
+                float zrainaut_slice_0;
+                float zrainaut_index_1;
                 double zqxfg_index_21;
                 double min_zrainaut_slice_zqxfg_slice;
-                double zrainaut_index_2;
+                float zrainaut_index_2;
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     za + ((jl + (klon * (jk - 1))) - 1), &za_index_38, 1);
                 {
-                  double __in2 = za_index_38;
+                  float __in2 = za_index_38;
                   double __out;
 
                   ///////////////////
@@ -19097,12 +19423,12 @@ void __program_cloudsc_py_internal(
                   __tmp181 = __out;
                 }
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zliqcld + (jl - 1), &zliqcld_index_5, 1);
                 {
-                  double __in1 = zliqcld_index_5;
+                  float __in1 = zliqcld_index_5;
                   double __in2 = yrecldp_rcl_kkbauq;
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (_Pow_)
@@ -19113,7 +19439,7 @@ void __program_cloudsc_py_internal(
                 }
                 {
                   double __in1 = __tmp181;
-                  double __in2 = zliqcld_slice_pow_yrecldp_rcl_kkbauq;
+                  float __in2 = zliqcld_slice_pow_yrecldp_rcl_kkbauq;
                   double __out;
 
                   ///////////////////
@@ -19138,7 +19464,7 @@ void __program_cloudsc_py_internal(
                 {
                   double __in1 = __tmp182;
                   double __in2 = zconst_pow_yrecldp_rcl_kkbaun;
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (_Mult_)
@@ -19148,8 +19474,8 @@ void __program_cloudsc_py_internal(
                   zrainaut_slice_0 = __out;
                 }
                 {
-                  double __inp = zrainaut_slice_0;
-                  double __out;
+                  float __inp = zrainaut_slice_0;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_833_24)
@@ -19159,14 +19485,14 @@ void __program_cloudsc_py_internal(
                   zrainaut[(jl - 1)] = __out;
                 }
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainaut + (jl - 1), &zrainaut_index_1, 1);
 
                 dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                     zqxfg + ((jl + (klon * (ncldql - 1))) - 1), &zqxfg_index_21,
                     1);
                 {
-                  double __in_a = zrainaut_index_1;
+                  float __in_a = zrainaut_index_1;
                   double __in_b = zqxfg_index_21;
                   double __out;
 
@@ -19179,7 +19505,7 @@ void __program_cloudsc_py_internal(
                 }
                 {
                   double __inp = min_zrainaut_slice_zqxfg_slice;
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_834_24)
@@ -19189,10 +19515,10 @@ void __program_cloudsc_py_internal(
                   zrainaut[(jl - 1)] = __out;
                 }
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainaut + (jl - 1), &zrainaut_index_2, 1);
                 {
-                  double __in1 = zrainaut_index_2;
+                  float __in1 = zrainaut_index_2;
                   double __in2 = zepsec;
                   bool __out;
 
@@ -19208,11 +19534,11 @@ void __program_cloudsc_py_internal(
                 {
 
                   {
-                    double __out;
+                    float __out;
 
                     ///////////////////
                     // Tasklet code (assign_836_28)
-                    __out = 0.0;
+                    __out = float(0.0);
                     ///////////////////
 
                     zrainaut[(jl - 1)] = __out;
@@ -19220,24 +19546,24 @@ void __program_cloudsc_py_internal(
                 }
               }
               {
-                double za_index_39;
+                float za_index_39;
                 double __tmp184;
                 double __tmp185;
                 double __tmp186;
-                double zliqcld_index_6;
-                double zraincld_index;
-                double zliqcld_slice_times_zraincld_slice;
-                double zliqcld_slice_zraincld_slice_pow_yrecldp_rcl_kkbac;
-                double zrainacc_slice;
-                double zrainacc_index;
+                float zliqcld_index_6;
+                float zraincld_index;
+                float zliqcld_slice_times_zraincld_slice;
+                float zliqcld_slice_zraincld_slice_pow_yrecldp_rcl_kkbac;
+                float zrainacc_slice;
+                float zrainacc_index;
                 double zqxfg_index_22;
                 double min_zrainacc_slice_zqxfg_slice;
-                double zrainacc_index_0;
+                float zrainacc_index_0;
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     za + ((jl + (klon * (jk - 1))) - 1), &za_index_39, 1);
                 {
-                  double __in2 = za_index_39;
+                  float __in2 = za_index_39;
                   double __out;
 
                   ///////////////////
@@ -19272,15 +19598,15 @@ void __program_cloudsc_py_internal(
                   __tmp186 = __out;
                 }
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zliqcld + (jl - 1), &zliqcld_index_6, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zraincld + (jl - 1), &zraincld_index, 1);
                 {
-                  double __in1 = zliqcld_index_6;
-                  double __in2 = zraincld_index;
-                  double __out;
+                  float __in1 = zliqcld_index_6;
+                  float __in2 = zraincld_index;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (_Mult_)
@@ -19290,9 +19616,9 @@ void __program_cloudsc_py_internal(
                   zliqcld_slice_times_zraincld_slice = __out;
                 }
                 {
-                  double __in1 = zliqcld_slice_times_zraincld_slice;
+                  float __in1 = zliqcld_slice_times_zraincld_slice;
                   double __in2 = yrecldp_rcl_kkbac;
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (_Pow_)
@@ -19303,9 +19629,9 @@ void __program_cloudsc_py_internal(
                 }
                 {
                   double __in1 = __tmp186;
-                  double __in2 =
+                  float __in2 =
                       zliqcld_slice_zraincld_slice_pow_yrecldp_rcl_kkbac;
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (_Mult_)
@@ -19315,8 +19641,8 @@ void __program_cloudsc_py_internal(
                   zrainacc_slice = __out;
                 }
                 {
-                  double __inp = zrainacc_slice;
-                  double __out;
+                  float __inp = zrainacc_slice;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_837_24)
@@ -19326,14 +19652,14 @@ void __program_cloudsc_py_internal(
                   zrainacc[(jl - 1)] = __out;
                 }
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainacc + (jl - 1), &zrainacc_index, 1);
 
                 dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                     zqxfg + ((jl + (klon * (ncldql - 1))) - 1), &zqxfg_index_22,
                     1);
                 {
-                  double __in_a = zrainacc_index;
+                  float __in_a = zrainacc_index;
                   double __in_b = zqxfg_index_22;
                   double __out;
 
@@ -19346,7 +19672,7 @@ void __program_cloudsc_py_internal(
                 }
                 {
                   double __inp = min_zrainacc_slice_zqxfg_slice;
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_838_24)
@@ -19356,10 +19682,10 @@ void __program_cloudsc_py_internal(
                   zrainacc[(jl - 1)] = __out;
                 }
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainacc + (jl - 1), &zrainacc_index_0, 1);
                 {
-                  double __in1 = zrainacc_index_0;
+                  float __in1 = zrainacc_index_0;
                   double __in2 = zepsec;
                   bool __out;
 
@@ -19375,11 +19701,11 @@ void __program_cloudsc_py_internal(
                 {
 
                   {
-                    double __out;
+                    float __out;
 
                     ///////////////////
                     // Tasklet code (assign_840_28)
-                    __out = 0.0;
+                    __out = float(0.0);
                     ///////////////////
 
                     zrainacc[(jl - 1)] = __out;
@@ -19390,21 +19716,21 @@ void __program_cloudsc_py_internal(
               {
 
                 {
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_842_24)
-                  __out = 0.0;
+                  __out = float(0.0);
                   ///////////////////
 
                   zrainaut[(jl - 1)] = __out;
                 }
                 {
-                  double __out;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_843_24)
-                  __out = 0.0;
+                  __out = float(0.0);
                   ///////////////////
 
                   zrainacc[(jl - 1)] = __out;
@@ -19432,16 +19758,16 @@ void __program_cloudsc_py_internal(
             if (__tmp188) {
               {
                 double zsolqa_index_32;
-                double zrainaut_index_3;
+                float zrainaut_index_3;
                 double zsolqa_slice_plus_zrainaut_slice;
                 double zsolqa_index_33;
-                double zrainacc_index_1;
+                float zrainacc_index_1;
                 double zsolqa_slice_plus_zrainacc_slice;
                 double zsolqa_index_34;
-                double zrainaut_index_4;
+                float zrainaut_index_4;
                 double zsolqa_slice_minus_zrainaut_slice;
                 double zsolqa_index_35;
-                double zrainacc_index_2;
+                float zrainacc_index_2;
                 double zsolqa_slice_minus_zrainacc_slice;
 
                 dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -19450,14 +19776,14 @@ void __program_cloudsc_py_internal(
                               1),
                     &zsolqa_index_32, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainaut + (jl - 1), &zrainaut_index_3, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainaut + (jl - 1), &zrainaut_index_4, 1);
                 {
                   double __in1 = zsolqa_index_32;
-                  double __in2 = zrainaut_index_3;
+                  float __in2 = zrainaut_index_3;
                   double __out;
 
                   ///////////////////
@@ -19487,14 +19813,14 @@ void __program_cloudsc_py_internal(
                               1),
                     &zsolqa_index_33, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainacc + (jl - 1), &zrainacc_index_1, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainacc + (jl - 1), &zrainacc_index_2, 1);
                 {
                   double __in1 = zsolqa_index_33;
-                  double __in2 = zrainacc_index_1;
+                  float __in2 = zrainacc_index_1;
                   double __out;
 
                   ///////////////////
@@ -19525,7 +19851,7 @@ void __program_cloudsc_py_internal(
                     &zsolqa_index_34, 1);
                 {
                   double __in1 = zsolqa_index_34;
-                  double __in2 = zrainaut_index_4;
+                  float __in2 = zrainaut_index_4;
                   double __out;
 
                   ///////////////////
@@ -19556,7 +19882,7 @@ void __program_cloudsc_py_internal(
                     &zsolqa_index_35, 1);
                 {
                   double __in1 = zsolqa_index_35;
-                  double __in2 = zrainacc_index_2;
+                  float __in2 = zrainacc_index_2;
                   double __out;
 
                   ///////////////////
@@ -19583,16 +19909,16 @@ void __program_cloudsc_py_internal(
             } else {
               {
                 double zsolqa_index_36;
-                double zrainaut_index_5;
+                float zrainaut_index_5;
                 double zsolqa_slice_plus_zrainaut_slice_0;
                 double zsolqa_index_37;
-                double zrainacc_index_3;
+                float zrainacc_index_3;
                 double zsolqa_slice_plus_zrainacc_slice_0;
                 double zsolqa_index_38;
-                double zrainaut_index_6;
+                float zrainaut_index_6;
                 double zsolqa_slice_minus_zrainaut_slice_0;
                 double zsolqa_index_39;
-                double zrainacc_index_4;
+                float zrainacc_index_4;
                 double zsolqa_slice_minus_zrainacc_slice_0;
 
                 dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -19601,14 +19927,14 @@ void __program_cloudsc_py_internal(
                               1),
                     &zsolqa_index_36, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainaut + (jl - 1), &zrainaut_index_5, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainaut + (jl - 1), &zrainaut_index_6, 1);
                 {
                   double __in1 = zsolqa_index_36;
-                  double __in2 = zrainaut_index_5;
+                  float __in2 = zrainaut_index_5;
                   double __out;
 
                   ///////////////////
@@ -19638,14 +19964,14 @@ void __program_cloudsc_py_internal(
                               1),
                     &zsolqa_index_37, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainacc + (jl - 1), &zrainacc_index_3, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zrainacc + (jl - 1), &zrainacc_index_4, 1);
                 {
                   double __in1 = zsolqa_index_37;
-                  double __in2 = zrainacc_index_3;
+                  float __in2 = zrainacc_index_3;
                   double __out;
 
                   ///////////////////
@@ -19676,7 +20002,7 @@ void __program_cloudsc_py_internal(
                     &zsolqa_index_38, 1);
                 {
                   double __in1 = zsolqa_index_38;
-                  double __in2 = zrainaut_index_6;
+                  float __in2 = zrainaut_index_6;
                   double __out;
 
                   ///////////////////
@@ -19707,7 +20033,7 @@ void __program_cloudsc_py_internal(
                     &zsolqa_index_39, 1);
                 {
                   double __in1 = zsolqa_index_39;
-                  double __in2 = zrainacc_index_4;
+                  float __in2 = zrainacc_index_4;
                   double __out;
 
                   ///////////////////
@@ -19737,25 +20063,14 @@ void __program_cloudsc_py_internal(
       }
     }
     if ((iwarmrain > 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_43 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_43 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_43); jl = (jl + 1)) {
         {
           double ztp1_index_84;
           bool __tmp189;
-          double zliqcld_index_7;
+          float zliqcld_index_7;
           bool __tmp190;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -19773,10 +20088,10 @@ void __program_cloudsc_py_internal(
             __tmp189 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zliqcld + (jl - 1), &zliqcld_index_7, 1);
           {
-            double __in1 = zliqcld_index_7;
+            float __in1 = zliqcld_index_7;
             double __in2 = zepsec;
             bool __out;
 
@@ -19802,18 +20117,18 @@ void __program_cloudsc_py_internal(
         }
         if (__tmp191) {
           {
-            double zrho_index_9;
+            float zrho_index_9;
             double yrecldp_rdensref_div_zrho_slice;
-            double zsnowcld_index;
+            float zsnowcld_index;
             bool __tmp192;
-            double zcovptot_index_6;
+            float zcovptot_index_6;
             bool __tmp193;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zrho + (jl - 1), &zrho_index_9, 1);
             {
               double __in1 = yrecldp_rdensref;
-              double __in2 = zrho_index_9;
+              float __in2 = zrho_index_9;
               double __out;
 
               ///////////////////
@@ -19835,10 +20150,10 @@ void __program_cloudsc_py_internal(
               zfallcorr = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsnowcld + (jl - 1), &zsnowcld_index, 1);
             {
-              double __in1 = zsnowcld_index;
+              float __in1 = zsnowcld_index;
               double __in2 = zepsec;
               bool __out;
 
@@ -19850,10 +20165,10 @@ void __program_cloudsc_py_internal(
               __tmp192 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_6, 1);
             {
-              double __in1 = zcovptot_index_6;
+              float __in1 = zcovptot_index_6;
               bool __out;
 
               ///////////////////
@@ -19878,30 +20193,30 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp194) {
             {
-              double *zsnowrime;
-              zsnowrime = new double DACE_ALIGN(64)[klon];
-              double zcovptot_index_7;
+              float *zsnowrime;
+              zsnowrime = new float DACE_ALIGN(64)[klon];
+              float zcovptot_index_7;
               double __tmp195;
               double __tmp196;
               double __tmp197;
               double __tmp198;
-              double zrho_index_10;
-              double zsnowcld_index_0;
-              double zrho_slice_times_zsnowcld_slice;
-              double zrho_slice_zsnowcld_slice_times_yrecldp_rcl_const1s;
-              double
+              float zrho_index_10;
+              float zsnowcld_index_0;
+              float zrho_slice_times_zsnowcld_slice;
+              float zrho_slice_zsnowcld_slice_times_yrecldp_rcl_const1s;
+              float
                   zrho_slice_zsnowcld_slice_yrecldp_rcl_const1s_pow_yrecldp_rcl_const8s;
-              double zsnowrime_slice;
-              double zsnowrime_index;
+              float zsnowrime_slice;
+              float zsnowrime_index;
               double min_zsnowrime_slice_1_0;
-              double zsolqb_index_4;
-              double zsnowrime_index_0;
-              double zsolqb_slice_plus_zsnowrime_slice;
+              float zsolqb_index_4;
+              float zsnowrime_index_0;
+              float zsolqb_slice_plus_zsnowrime_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_7, 1);
               {
-                double __in2 = zcovptot_index_7;
+                float __in2 = zcovptot_index_7;
                 double __out;
 
                 ///////////////////
@@ -19948,15 +20263,15 @@ void __program_cloudsc_py_internal(
                 __tmp198 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_10, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsnowcld + (jl - 1), &zsnowcld_index_0, 1);
               {
-                double __in1 = zrho_index_10;
-                double __in2 = zsnowcld_index_0;
-                double __out;
+                float __in1 = zrho_index_10;
+                float __in2 = zsnowcld_index_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -19966,9 +20281,9 @@ void __program_cloudsc_py_internal(
                 zrho_slice_times_zsnowcld_slice = __out;
               }
               {
-                double __in1 = zrho_slice_times_zsnowcld_slice;
+                float __in1 = zrho_slice_times_zsnowcld_slice;
                 double __in2 = yrecldp_rcl_const1s;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -19978,10 +20293,10 @@ void __program_cloudsc_py_internal(
                 zrho_slice_zsnowcld_slice_times_yrecldp_rcl_const1s = __out;
               }
               {
-                double __in1 =
+                float __in1 =
                     zrho_slice_zsnowcld_slice_times_yrecldp_rcl_const1s;
                 double __in2 = yrecldp_rcl_const8s;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Pow_)
@@ -19993,9 +20308,9 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = __tmp198;
-                double __in2 =
+                float __in2 =
                     zrho_slice_zsnowcld_slice_yrecldp_rcl_const1s_pow_yrecldp_rcl_const8s;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -20005,8 +20320,8 @@ void __program_cloudsc_py_internal(
                 zsnowrime_slice = __out;
               }
               {
-                double __inp = zsnowrime_slice;
-                double __out;
+                float __inp = zsnowrime_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_859_24)
@@ -20016,10 +20331,10 @@ void __program_cloudsc_py_internal(
                 zsnowrime[(jl - 1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsnowrime + (jl - 1), &zsnowrime_index, 1);
               {
-                double __in_a = zsnowrime_index;
+                float __in_a = zsnowrime_index;
                 double __out;
 
                 ///////////////////
@@ -20031,7 +20346,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __inp = min_zsnowrime_slice_1_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_860_24)
@@ -20041,18 +20356,18 @@ void __program_cloudsc_py_internal(
                 zsnowrime[(jl - 1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsnowrime + (jl - 1), &zsnowrime_index_0, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsolqb + (((jl + ((klon * nclv) * (ncldql - 1))) +
                              (klon * (ncldqs - 1))) -
                             1),
                   &zsolqb_index_4, 1);
               {
-                double __in1 = zsolqb_index_4;
-                double __in2 = zsnowrime_index_0;
-                double __out;
+                float __in1 = zsolqb_index_4;
+                float __in2 = zsnowrime_index_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
@@ -20062,8 +20377,8 @@ void __program_cloudsc_py_internal(
                 zsolqb_slice_plus_zsnowrime_slice = __out;
               }
               {
-                double __inp = zsolqb_slice_plus_zsnowrime_slice;
-                double __out;
+                float __inp = zsolqb_slice_plus_zsnowrime_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_861_24)
@@ -20080,36 +20395,25 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_44 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_44 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_44); jl = (jl + 1)) {
       {
         double zqxfg_index_23;
         double zqxfg_index_24;
-        double zicetot_slice;
-        double zicetot_index;
+        float zicetot_slice;
+        float zicetot_index;
         bool __tmp199;
         double ztp1_index_85;
         bool __tmp200;
 
         {
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_864_12)
-          __out = 0.0;
+          __out = float(0.0);
           ///////////////////
 
           zmeltmax[(jl - 1)] = __out;
@@ -20123,7 +20427,7 @@ void __program_cloudsc_py_internal(
         {
           double __in1 = zqxfg_index_23;
           double __in2 = zqxfg_index_24;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -20133,8 +20437,8 @@ void __program_cloudsc_py_internal(
           zicetot_slice = __out;
         }
         {
-          double __inp = zicetot_slice;
-          double __out;
+          float __inp = zicetot_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_863_12)
@@ -20144,10 +20448,10 @@ void __program_cloudsc_py_internal(
           zicetot[(jl - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zicetot + (jl - 1), &zicetot_index, 1);
         {
-          double __in1 = zicetot_index;
+          float __in1 = zicetot_index;
           double __in2 = zepsec;
           bool __out;
 
@@ -20188,13 +20492,13 @@ void __program_cloudsc_py_internal(
       }
       if (__tmp201) {
         {
-          double zqsice_index_11;
+          float zqsice_index_11;
           double zqx_index_36;
-          double zqsice_slice_minus_zqx_slice_0;
+          float zqsice_slice_minus_zqx_slice_0;
           double ztp1_index_86;
           double ztp1_slice_minus_ydcst_rtt_14;
-          double pap_index_13;
-          double pap_slice_minus_ztw3;
+          float pap_index_13;
+          float pap_slice_minus_ztw3;
           double ztw2_times_pap_slice_ztw3;
           double ztw1_plus_ztw2_pap_slice_ztw3;
           double ztp1_index_87;
@@ -20209,9 +20513,9 @@ void __program_cloudsc_py_internal(
           double ptsphy_1_0_0_5_ztdmtw0_div_yrecldp_rtaumel;
           double ztdmtw0_times_zcons1;
           double ztdmtw0_zcons1_times_zrldcp;
-          double zmeltmax_slice;
+          float zmeltmax_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_11, 1);
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -20220,9 +20524,9 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_36, 1);
           {
-            double __in1 = zqsice_index_11;
+            float __in1 = zqsice_index_11;
             double __in2 = zqx_index_36;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -20232,7 +20536,7 @@ void __program_cloudsc_py_internal(
             zqsice_slice_minus_zqx_slice_0 = __out;
           }
           {
-            double __in_a = zqsice_slice_minus_zqx_slice_0;
+            float __in_a = zqsice_slice_minus_zqx_slice_0;
             double __out;
 
             ///////////////////
@@ -20261,12 +20565,12 @@ void __program_cloudsc_py_internal(
             ztp1_slice_minus_ydcst_rtt_14 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_13, 1);
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_13, 1);
           {
-            double __in1 = pap_index_13;
+            float __in1 = pap_index_13;
             double __in2 = ztw3;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -20277,7 +20581,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = ztw2;
-            double __in2 = pap_slice_minus_ztw3;
+            float __in2 = pap_slice_minus_ztw3;
             double __out;
 
             ///////////////////
@@ -20366,7 +20670,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Mult_)
-            __out = (0.5 * __in2);
+            __out = (float(0.5) * __in2);
             ///////////////////
 
             __tmp202 = __out;
@@ -20377,7 +20681,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Add_)
-            __out = (1.0 + __in2);
+            __out = (float(1.0) + __in2);
             ///////////////////
 
             __tmp203 = __out;
@@ -20443,7 +20747,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in_a = ztdmtw0_zcons1_times_zrldcp;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (__max2)
@@ -20453,8 +20757,8 @@ void __program_cloudsc_py_internal(
             zmeltmax_slice = __out;
           }
           {
-            double __inp = zmeltmax_slice;
-            double __out;
+            float __inp = zmeltmax_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_869_16)
@@ -20467,49 +20771,36 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
-        int iphase_index_3;
 
-        dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-            iphase + (jm - 1), &iphase_index_3, 1);
+      iphase_index_3 = iphase[(jm - 1)];
+      {
+
         {
-          int __in1 = iphase_index_3;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Eq_)
-          __out = (__in1 == 2);
+          __out = (iphase_index_3 == 2);
           ///////////////////
 
           __tmp204 = __out;
         }
       }
       if (__tmp204) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_45 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_45 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_45); jl = (jl + 1)) {
           {
-            double zmeltmax_index;
+            float zmeltmax_index;
             bool __tmp205;
-            double zicetot_index_0;
+            float zicetot_index_0;
             bool __tmp206;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zmeltmax + (jl - 1), &zmeltmax_index, 1);
             {
-              double __in1 = zmeltmax_index;
+              float __in1 = zmeltmax_index;
               double __in2 = zepsec;
               bool __out;
 
@@ -20521,10 +20812,10 @@ void __program_cloudsc_py_internal(
               __tmp205 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zicetot + (jl - 1), &zicetot_index_0, 1);
             {
-              double __in1 = zicetot_index_0;
+              float __in1 = zicetot_index_0;
               double __in2 = zepsec;
               bool __out;
 
@@ -20549,16 +20840,17 @@ void __program_cloudsc_py_internal(
             }
           }
           if (__tmp207) {
+
+            imelt_index = imelt[(jm - 1)];
             {
               double zqxfg_index_25;
-              double zicetot_index_1;
+              float zicetot_index_1;
               double zalfa2;
               double zqxfg_index_26;
-              double zmeltmax_index_0;
+              float zmeltmax_index_0;
               double zalfa2_times_zmeltmax_slice;
               double zqxfg_index_27;
               double zqxfg_slice_minus_zmelt;
-              int imelt_index;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zqxfg + ((jl + (klon * (jm - 1))) - 1), &zqxfg_index_25, 1);
@@ -20569,11 +20861,11 @@ void __program_cloudsc_py_internal(
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zqxfg + ((jl + (klon * (jm - 1))) - 1), &zqxfg_index_27, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zicetot + (jl - 1), &zicetot_index_1, 1);
               {
                 double __in1 = zqxfg_index_25;
-                double __in2 = zicetot_index_1;
+                float __in2 = zicetot_index_1;
                 double __out;
 
                 ///////////////////
@@ -20584,11 +20876,11 @@ void __program_cloudsc_py_internal(
                 zalfa2 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zmeltmax + (jl - 1), &zmeltmax_index_0, 1);
               {
                 double __in1 = zalfa2;
-                double __in2 = zmeltmax_index_0;
+                float __in2 = zmeltmax_index_0;
                 double __out;
 
                 ///////////////////
@@ -20633,25 +20925,22 @@ void __program_cloudsc_py_internal(
 
                 zqxfg[((jl + (klon * (jm - 1))) - 1)] = __out;
               }
-
-              dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                  imelt + (jm - 1), &imelt_index, 1);
               {
-                int __in1 = imelt_index;
                 int __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - int(1));
+                __out = (imelt_index - int(1));
                 ///////////////////
 
                 imelt_slice_minus_1 = __out;
               }
             }
             __sym_imelt_slice_minus_1 = imelt_slice_minus_1;
+
+            imelt_index_0 = imelt[(jm - 1)];
             {
               double zqxfg_index_28;
-              int imelt_index_0;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zqxfg + (((__sym_imelt_slice_minus_1 * klon) + jl) - 1),
@@ -20668,24 +20957,21 @@ void __program_cloudsc_py_internal(
 
                 zqxfg_slice_plus_zmelt = __out;
               }
-
-              dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                  imelt + (jm - 1), &imelt_index_0, 1);
               {
-                int __in1 = imelt_index_0;
                 int __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - int(1));
+                __out = (imelt_index_0 - int(1));
                 ///////////////////
 
                 zqxfg_slice_0 = __out;
               }
             }
             __sym_imelt_slice_minus_1 = zqxfg_slice_0;
+
+            imelt_index_1 = imelt[(jm - 1)];
             {
-              int imelt_index_1;
 
               {
                 double __inp = zqxfg_slice_plus_zmelt;
@@ -20698,25 +20984,22 @@ void __program_cloudsc_py_internal(
 
                 zqxfg[(((__sym_imelt_slice_minus_1 * klon) + jl) - 1)] = __out;
               }
-
-              dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                  imelt + (jm - 1), &imelt_index_1, 1);
               {
-                int __in1 = imelt_index_1;
                 int __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - int(1));
+                __out = (imelt_index_1 - int(1));
                 ///////////////////
 
                 imelt_slice_minus_1_0 = __out;
               }
             }
             __sym_imelt_slice_minus_1 = imelt_slice_minus_1_0;
+
+            imelt_index_2 = imelt[(jm - 1)];
             {
               double zsolqa_index_40;
-              int imelt_index_2;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zsolqa + ((((__sym_imelt_slice_minus_1 * klon) + jl) +
@@ -20735,24 +21018,21 @@ void __program_cloudsc_py_internal(
 
                 zsolqa_slice_plus_zmelt = __out;
               }
-
-              dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                  imelt + (jm - 1), &imelt_index_2, 1);
               {
-                int __in1 = imelt_index_2;
                 int __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - int(1));
+                __out = (imelt_index_2 - int(1));
                 ///////////////////
 
                 zsolqa_slice_3 = __out;
               }
             }
             __sym_imelt_slice_minus_1 = zsolqa_slice_3;
+
+            imelt_index_3 = imelt[(jm - 1)];
             {
-              int imelt_index_3;
 
               {
                 double __inp = zsolqa_slice_plus_zmelt;
@@ -20767,25 +21047,22 @@ void __program_cloudsc_py_internal(
                          ((klon * nclv) * (jm - 1))) -
                         1)] = __out;
               }
-
-              dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                  imelt + (jm - 1), &imelt_index_3, 1);
               {
-                int __in1 = imelt_index_3;
                 int __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - int(1));
+                __out = (imelt_index_3 - int(1));
                 ///////////////////
 
                 imelt_slice_minus_1_1 = __out;
               }
             }
             __sym_imelt_slice_minus_1 = imelt_slice_minus_1_1;
+
+            imelt_index_4 = imelt[(jm - 1)];
             {
               double zsolqa_index_41;
-              int imelt_index_4;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   zsolqa +
@@ -20805,16 +21082,12 @@ void __program_cloudsc_py_internal(
 
                 zsolqa_slice_minus_zmelt = __out;
               }
-
-              dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-                  imelt + (jm - 1), &imelt_index_4, 1);
               {
-                int __in1 = imelt_index_4;
                 int __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - int(1));
+                __out = (imelt_index_4 - int(1));
                 ///////////////////
 
                 zsolqa_slice_4 = __out;
@@ -20841,20 +21114,9 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_46 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_46 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_46); jl = (jl + 1)) {
       {
         double zqx_index_37;
@@ -20930,10 +21192,10 @@ void __program_cloudsc_py_internal(
             double zqx_index_38;
             double zqx_index_39;
             double zqx_slice_plus_zqx_slice_3;
-            double zqpretot_slice;
+            float zqpretot_slice;
             double zqx_index_40;
-            double zqpretot_index_1;
-            double prainfrac_toprfz_slice;
+            float zqpretot_index_1;
+            float prainfrac_toprfz_slice;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqx + (((jl + ((klev * klon) * (ncldqs - 1))) +
@@ -20967,7 +21229,7 @@ void __program_cloudsc_py_internal(
             {
               double __in_a = zqx_slice_plus_zqx_slice_3;
               double __in_b = zepsec;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (__max2)
@@ -20977,8 +21239,8 @@ void __program_cloudsc_py_internal(
               zqpretot_slice = __out;
             }
             {
-              double __inp = zqpretot_slice;
-              double __out;
+              float __inp = zqpretot_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_883_20)
@@ -20988,12 +21250,12 @@ void __program_cloudsc_py_internal(
               zqpretot[(jl - 1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqpretot + (jl - 1), &zqpretot_index_1, 1);
             {
               double __in1 = zqx_index_40;
-              double __in2 = zqpretot_index_1;
-              double __out;
+              float __in2 = zqpretot_index_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -21003,15 +21265,15 @@ void __program_cloudsc_py_internal(
               prainfrac_toprfz_slice = __out;
             }
             {
-              double __inp = prainfrac_toprfz_slice;
-              double __out;
+              float __inp = prainfrac_toprfz_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_884_20)
               __out = __inp;
               ///////////////////
 
-              prainfrac_toprfz[(jl - 1)] = __out;
+              prainfrac_toprfz_lowered[(jl - 1)] = __out;
             }
           }
         }
@@ -21035,12 +21297,13 @@ void __program_cloudsc_py_internal(
         }
         if (__tmp213) {
           {
-            double prainfrac_toprfz_index_0;
+            float prainfrac_toprfz_index_0;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                prainfrac_toprfz + (jl - 1), &prainfrac_toprfz_index_0, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                prainfrac_toprfz_lowered + (jl - 1), &prainfrac_toprfz_index_0,
+                1);
             {
-              double __in1 = prainfrac_toprfz_index_0;
+              float __in1 = prainfrac_toprfz_index_0;
               bool __out;
 
               ///////////////////
@@ -21053,26 +21316,26 @@ void __program_cloudsc_py_internal(
           }
           if (__tmp214) {
             {
-              double zrho_index_11;
+              float zrho_index_11;
               double zqx_index_41;
-              double zrho_slice_times_zqx_slice;
+              float zrho_slice_times_zqx_slice;
               double yrecldp_rcl_fac1_div_zrho_slice_zqx_slice;
               double ztp1_index_91;
               double ztp1_slice_minus_ydcst_rtt_15;
               double ztemp;
-              double zrho_index_12;
+              float zrho_index_12;
               double yrecldp_rcl_const5r_div_zrho_slice;
               double ptsphy_times_yrecldp_rcl_const5r_zrho_slice;
               double exp_ztemp;
               double expr_minus_1_0;
               double ptsphy_yrecldp_rcl_const5r_zrho_slice_times_expr_1_0;
               double zlambda_pow_yrecldp_rcl_const6r;
-              double zfrzmax_slice;
+              float zfrzmax_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_11, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_12, 1);
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -21081,9 +21344,9 @@ void __program_cloudsc_py_internal(
                          1),
                   &zqx_index_41, 1);
               {
-                double __in1 = zrho_index_11;
+                float __in1 = zrho_index_11;
                 double __in2 = zqx_index_41;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -21094,7 +21357,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rcl_fac1;
-                double __in2 = zrho_slice_times_zqx_slice;
+                float __in2 = zrho_slice_times_zqx_slice;
                 double __out;
 
                 ///////////////////
@@ -21160,14 +21423,14 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Sub_)
-                __out = (__in1 - 1.0);
+                __out = (__in1 - float(1.0));
                 ///////////////////
 
                 expr_minus_1_0 = __out;
               }
               {
                 double __in1 = yrecldp_rcl_const5r;
-                double __in2 = zrho_index_12;
+                float __in2 = zrho_index_12;
                 double __out;
 
                 ///////////////////
@@ -21228,7 +21491,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in_a = zfrz;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (__max2)
@@ -21238,8 +21501,8 @@ void __program_cloudsc_py_internal(
                 zfrzmax_slice = __out;
               }
               {
-                double __inp = zfrzmax_slice;
-                double __out;
+                float __inp = zfrzmax_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_894_24)
@@ -21262,7 +21525,7 @@ void __program_cloudsc_py_internal(
               double ydcst_rtt_minus_ztp1_slice_0;
               double ydcst_rtt_ztp1_slice_times_zcons1;
               double ydcst_rtt_ztp1_slice_zcons1_times_zrldcp;
-              double zfrzmax_slice_0;
+              float zfrzmax_slice_0;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                   ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index_92, 1);
@@ -21287,7 +21550,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Mult_)
-                __out = (0.5 * __in2);
+                __out = (float(0.5) * __in2);
                 ///////////////////
 
                 __tmp215 = __out;
@@ -21298,7 +21561,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Add_)
-                __out = (1.0 + __in2);
+                __out = (float(1.0) + __in2);
                 ///////////////////
 
                 __tmp216 = __out;
@@ -21388,7 +21651,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in_a = ydcst_rtt_ztp1_slice_zcons1_times_zrldcp;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (__max2)
@@ -21398,8 +21661,8 @@ void __program_cloudsc_py_internal(
                 zfrzmax_slice_0 = __out;
               }
               {
-                double __inp = zfrzmax_slice_0;
-                double __out;
+                float __inp = zfrzmax_slice_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_897_24)
@@ -21411,12 +21674,12 @@ void __program_cloudsc_py_internal(
             }
           }
           {
-            double zfrzmax_index;
+            float zfrzmax_index;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zfrzmax + (jl - 1), &zfrzmax_index, 1);
             {
-              double __in1 = zfrzmax_index;
+              float __in1 = zfrzmax_index;
               double __in2 = zepsec;
               bool __out;
 
@@ -21431,7 +21694,7 @@ void __program_cloudsc_py_internal(
           if (__tmp217) {
             {
               double zqx_index_42;
-              double zfrzmax_index_0;
+              float zfrzmax_index_0;
               double zfrz_0;
               double zsolqa_index_42;
               double zsolqa_slice_plus_zfrz;
@@ -21444,11 +21707,11 @@ void __program_cloudsc_py_internal(
                          1),
                   &zqx_index_42, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zfrzmax + (jl - 1), &zfrzmax_index_0, 1);
               {
                 double __in_a = zqx_index_42;
-                double __in_b = zfrzmax_index_0;
+                float __in_b = zfrzmax_index_0;
                 double __out;
 
                 ///////////////////
@@ -21536,26 +21799,15 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_47 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_47 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_47); jl = (jl + 1)) {
       {
         double ztp1_index_94;
         double yrecldp_rthomo_minus_ztp1_slice;
         double yrecldp_rthomo_ztp1_slice_times_zrldcp;
-        double zfrzmax_slice_1;
+        float zfrzmax_slice_1;
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             ztp1 + ((jl + (klon * (jk - 1))) - 1), &ztp1_index_94, 1);
@@ -21585,7 +21837,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in_a = yrecldp_rthomo_ztp1_slice_times_zrldcp;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (__max2)
@@ -21595,8 +21847,8 @@ void __program_cloudsc_py_internal(
           zfrzmax_slice_1 = __out;
         }
         {
-          double __inp = zfrzmax_slice_1;
-          double __out;
+          float __inp = zfrzmax_slice_1;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_903_12)
@@ -21607,31 +21859,20 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_48 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_48 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_48); jl = (jl + 1)) {
       {
-        double zfrzmax_index_1;
+        float zfrzmax_index_1;
         bool __tmp218;
         double zqxfg_index_29;
         bool __tmp219;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zfrzmax + (jl - 1), &zfrzmax_index_1, 1);
         {
-          double __in1 = zfrzmax_index_1;
+          float __in1 = zfrzmax_index_1;
           double __in2 = zepsec;
           bool __out;
 
@@ -21671,20 +21912,21 @@ void __program_cloudsc_py_internal(
         }
       }
       if (__tmp220) {
+
+        imelt_index_5 = imelt[(ncldql - 1)];
         {
           double zqxfg_index_30;
-          double zfrzmax_index_2;
+          float zfrzmax_index_2;
           double zfrz_1;
-          int imelt_index_5;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqxfg + ((jl + (klon * (ncldql - 1))) - 1), &zqxfg_index_30, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zfrzmax + (jl - 1), &zfrzmax_index_2, 1);
           {
             double __in_a = zqxfg_index_30;
-            double __in_b = zfrzmax_index_2;
+            float __in_b = zfrzmax_index_2;
             double __out;
 
             ///////////////////
@@ -21705,25 +21947,22 @@ void __program_cloudsc_py_internal(
 
             zfrz = __out;
           }
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              imelt + (ncldql - 1), &imelt_index_5, 1);
           {
-            int __in1 = imelt_index_5;
             int __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (__in1 - int(1));
+            __out = (imelt_index_5 - int(1));
             ///////////////////
 
             imelt_slice_minus_1_2 = __out;
           }
         }
         __sym_imelt_slice_minus_1_2 = imelt_slice_minus_1_2;
+
+        imelt_index_6 = imelt[(ncldql - 1)];
         {
           double zsolqa_index_44;
-          int imelt_index_6;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zsolqa + ((((__sym_imelt_slice_minus_1_2 * klon) + jl) +
@@ -21742,24 +21981,21 @@ void __program_cloudsc_py_internal(
 
             zsolqa_slice_plus_zfrz_0 = __out;
           }
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              imelt + (ncldql - 1), &imelt_index_6, 1);
           {
-            int __in1 = imelt_index_6;
             int __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (__in1 - int(1));
+            __out = (imelt_index_6 - int(1));
             ///////////////////
 
             zsolqa_slice_5 = __out;
           }
         }
         __sym_imelt_slice_minus_1_2 = zsolqa_slice_5;
+
+        imelt_index_7 = imelt[(ncldql - 1)];
         {
-          int imelt_index_7;
 
           {
             double __inp = zsolqa_slice_plus_zfrz_0;
@@ -21774,25 +22010,22 @@ void __program_cloudsc_py_internal(
                      ((klon * nclv) * (ncldql - 1))) -
                     1)] = __out;
           }
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              imelt + (ncldql - 1), &imelt_index_7, 1);
           {
-            int __in1 = imelt_index_7;
             int __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (__in1 - int(1));
+            __out = (imelt_index_7 - int(1));
             ///////////////////
 
             imelt_slice_minus_1_3 = __out;
           }
         }
         __sym_imelt_slice_minus_1_2 = imelt_slice_minus_1_3;
+
+        imelt_index_8 = imelt[(ncldql - 1)];
         {
           double zsolqa_index_45;
-          int imelt_index_8;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zsolqa + (((((__sym_imelt_slice_minus_1_2 * klon) * nclv) + jl) +
@@ -21811,16 +22044,12 @@ void __program_cloudsc_py_internal(
 
             zsolqa_slice_minus_zfrz_0 = __out;
           }
-
-          dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-              imelt + (ncldql - 1), &imelt_index_8, 1);
           {
-            int __in1 = imelt_index_8;
             int __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (__in1 - int(1));
+            __out = (imelt_index_8 - int(1));
             ///////////////////
 
             zsolqa_slice_6 = __out;
@@ -21846,48 +22075,37 @@ void __program_cloudsc_py_internal(
       }
     }
     if ((ievaprain == 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_49 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_49 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_49); jl = (jl + 1)) {
         {
           double __tmp221;
-          double zcovpmax_index_0;
+          float zcovpmax_index_0;
           double __tmp222;
-          double za_index_40;
+          float za_index_40;
           double __tmp223;
           double max_zepsec_1_0_za_slice_2;
           double __tmp224;
           double max_zzrh_yrecldp_rprecrhmax;
           double min_expr_1_0;
           double zqx_index_43;
-          double za_index_41;
-          double zqsliq_index_3;
-          double za_slice_times_zqsliq_slice;
+          float za_index_41;
+          float zqsliq_index_3;
+          float za_slice_times_zqsliq_slice;
           double zqx_slice_minus_za_slice_zqsliq_slice;
-          double za_index_42;
+          float za_index_42;
           double __tmp225;
           double max_zepsec_1_0_za_slice_3;
           double zqe_3;
-          double zqsliq_index_4;
+          float zqsliq_index_4;
           double min_zqe_zqsliq_slice;
           double max_0_0_expr_0;
-          double zcovpclr_index;
+          float zcovpclr_index;
           bool __tmp226;
           double zqxfg_index_31;
           bool __tmp227;
-          double zqsliq_index_5;
+          float zqsliq_index_5;
           double zzrh_times_zqsliq_slice;
           bool __tmp228;
           bool llo1_0;
@@ -21898,17 +22116,17 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp221 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovpmax + (jl - 1), &zcovpmax_index_0, 1);
           {
             double __in1 = __tmp221;
-            double __in2 = zcovpmax_index_0;
+            float __in2 = zcovpmax_index_0;
             double __out;
 
             ///////////////////
@@ -21919,32 +22137,32 @@ void __program_cloudsc_py_internal(
             __tmp222 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_40, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_41, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_42, 1);
           {
-            double __in2 = za_index_40;
+            float __in2 = za_index_40;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp223 = __out;
           }
           {
-            double __in2 = za_index_42;
+            float __in2 = za_index_42;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp225 = __out;
@@ -22038,18 +22256,18 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_43, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_3, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_4, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_5, 1);
           {
-            double __in1 = za_index_41;
-            double __in2 = zqsliq_index_3;
-            double __out;
+            float __in1 = za_index_41;
+            float __in2 = zqsliq_index_3;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -22060,7 +22278,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zqx_index_43;
-            double __in2 = za_slice_times_zqsliq_slice;
+            float __in2 = za_slice_times_zqsliq_slice;
             double __out;
 
             ///////////////////
@@ -22095,7 +22313,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in_a = zqe;
-            double __in_b = zqsliq_index_4;
+            float __in_b = zqsliq_index_4;
             double __out;
 
             ///////////////////
@@ -22129,7 +22347,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zzrh;
-            double __in2 = zqsliq_index_5;
+            float __in2 = zqsliq_index_5;
             double __out;
 
             ///////////////////
@@ -22152,10 +22370,10 @@ void __program_cloudsc_py_internal(
             __tmp228 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovpclr + (jl - 1), &zcovpclr_index, 1);
           {
-            double __in1 = zcovpclr_index;
+            float __in1 = zcovpclr_index;
             double __in2 = zepsec;
             bool __out;
 
@@ -22220,56 +22438,56 @@ void __program_cloudsc_py_internal(
         if (llo1) {
           {
             double zqxfg_index_32;
-            double zcovpclr_index_0;
+            float zcovpclr_index_0;
             double zqxfg_slice_times_zcovpclr_slice;
-            double zcovptot_index_8;
-            double zdtgdp_index_5;
-            double zcovptot_slice_times_zdtgdp_slice;
+            float zcovptot_index_8;
+            float zdtgdp_index_5;
+            float zcovptot_slice_times_zdtgdp_slice;
             double abs_zcovptot_slice_zdtgdp_slice;
             double max_expr_zepsilon;
-            double zcovptot_index_9;
-            double zdtgdp_index_6;
-            double zcovptot_slice_times_zdtgdp_slice_0;
+            float zcovptot_index_9;
+            float zdtgdp_index_6;
+            float zcovptot_slice_times_zdtgdp_slice_0;
             double sign_zcovptot_slice_zdtgdp_slice;
             double expr_times_expr_2;
-            double pap_index_14;
-            double paph_index_4;
-            double pap_slice_div_paph_slice;
+            float pap_index_14;
+            float paph_index_4;
+            float pap_slice_div_paph_slice;
             double sqrt_pap_slice_paph_slice;
             double expr_div_yrecldp_rvrfactor;
             double expr_yrecldp_rvrfactor_times_zpreclr;
-            double zcovpclr_index_1;
+            float zcovpclr_index_1;
             double max_zcovpclr_slice_zepsec;
             double ydcst_rg_times_yrecldp_rpecons;
             double ydcst_rg_yrecldp_rpecons_times_0_5;
             double zbeta1_pow_0_5777;
             double zbeta_times_ptsphy;
-            double zcorqsliq_index_0;
+            float zcorqsliq_index_0;
             double zbeta_ptsphy_times_zcorqsliq_slice;
-            double zcovpclr_index_2;
-            double zcovpclr_slice_times_zbeta;
-            double zqsliq_index_6;
-            double zqsliq_slice_minus_zqe;
-            double zcovpclr_slice_zbeta_times_zqsliq_slice_zqe;
-            double zcovpclr_slice_zbeta_zqsliq_slice_zqe_div_zdenom;
+            float zcovpclr_index_2;
+            float zcovpclr_slice_times_zbeta;
+            float zqsliq_index_6;
+            float zqsliq_slice_minus_zqe;
+            float zcovpclr_slice_zbeta_times_zqsliq_slice_zqe;
+            float zcovpclr_slice_zbeta_zqsliq_slice_zqe_div_zdenom;
             double zdp_index_4;
-            double zcovpclr_slice_zbeta_zqsliq_slice_zqe_zdenom_times_zdp_slice;
-            double zdtgdp_index_7;
+            float zcovpclr_slice_zbeta_zqsliq_slice_zqe_zdenom_times_zdp_slice;
+            float zdtgdp_index_7;
             double zqxfg_index_33;
             double zevap_0;
             double zsolqa_index_46;
             double zsolqa_slice_plus_zevap_0;
             double zsolqa_index_47;
             double zsolqa_slice_minus_zevap_0;
-            double zcovptot_index_10;
-            double zcovptot_index_11;
-            double za_index_43;
-            double zcovptot_slice_minus_za_slice_0;
-            double zcovptot_slice_za_slice_times_zevap;
+            float zcovptot_index_10;
+            float zcovptot_index_11;
+            float za_index_43;
+            float zcovptot_slice_minus_za_slice_0;
+            float zcovptot_slice_za_slice_times_zevap;
             double zqxfg_index_34;
-            double zcovptot_slice_za_slice_zevap_div_zqxfg_slice;
+            float zcovptot_slice_za_slice_zevap_div_zqxfg_slice;
             double max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice;
-            double zcovptot_slice_minus_expr;
+            float zcovptot_slice_minus_expr;
             double max_yrecldp_rcovpmin_zcovptot_slice_expr;
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -22281,17 +22499,17 @@ void __program_cloudsc_py_internal(
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldqr - 1))) - 1), &zqxfg_index_34, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_1, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_2, 1);
             {
               double __in1 = zqxfg_index_32;
-              double __in2 = zcovpclr_index_0;
+              float __in2 = zcovpclr_index_0;
               double __out;
 
               ///////////////////
@@ -22302,30 +22520,30 @@ void __program_cloudsc_py_internal(
               zqxfg_slice_times_zcovpclr_slice = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_8, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_9, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_10, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_11, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_5, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_6, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_7, 1);
             {
-              double __in1 = zcovptot_index_8;
-              double __in2 = zdtgdp_index_5;
-              double __out;
+              float __in1 = zcovptot_index_8;
+              float __in2 = zdtgdp_index_5;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -22335,7 +22553,7 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_times_zdtgdp_slice = __out;
             }
             {
-              double __inp = zcovptot_slice_times_zdtgdp_slice;
+              float __inp = zcovptot_slice_times_zdtgdp_slice;
               double __out;
 
               ///////////////////
@@ -22346,9 +22564,9 @@ void __program_cloudsc_py_internal(
               abs_zcovptot_slice_zdtgdp_slice = __out;
             }
             {
-              double __in1 = zcovptot_index_9;
-              double __in2 = zdtgdp_index_6;
-              double __out;
+              float __in1 = zcovptot_index_9;
+              float __in2 = zdtgdp_index_6;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -22358,7 +22576,7 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_times_zdtgdp_slice_0 = __out;
             }
             {
-              double __in1 = zcovptot_slice_times_zdtgdp_slice_0;
+              float __in1 = zcovptot_slice_times_zdtgdp_slice_0;
               double __out;
 
               ///////////////////
@@ -22405,15 +22623,15 @@ void __program_cloudsc_py_internal(
               zpreclr = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_14, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_14, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                paph + ((jl + (klev * klon)) - 1), &paph_index_4, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                paph_lowered + ((jl + (klev * klon)) - 1), &paph_index_4, 1);
             {
-              double __in1 = pap_index_14;
-              double __in2 = paph_index_4;
-              double __out;
+              float __in1 = pap_index_14;
+              float __in2 = paph_index_4;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -22423,7 +22641,7 @@ void __program_cloudsc_py_internal(
               pap_slice_div_paph_slice = __out;
             }
             {
-              double __in1 = pap_slice_div_paph_slice;
+              float __in1 = pap_slice_div_paph_slice;
               double __out;
 
               ///////////////////
@@ -22458,7 +22676,7 @@ void __program_cloudsc_py_internal(
               expr_yrecldp_rvrfactor_times_zpreclr = __out;
             }
             {
-              double __in_a = zcovpclr_index_1;
+              float __in_a = zcovpclr_index_1;
               double __in_b = zepsec;
               double __out;
 
@@ -22510,7 +22728,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Mult_)
-              __out = (__in1 * 0.5);
+              __out = (__in1 * float(0.5));
               ///////////////////
 
               ydcst_rg_yrecldp_rpecons_times_0_5 = __out;
@@ -22528,9 +22746,9 @@ void __program_cloudsc_py_internal(
               zbeta = __out;
             }
             {
-              double __in1 = zcovpclr_index_2;
+              float __in1 = zcovpclr_index_2;
               double __in2 = zbeta;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -22552,11 +22770,11 @@ void __program_cloudsc_py_internal(
               zbeta_times_ptsphy = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcorqsliq + (jl - 1), &zcorqsliq_index_0, 1);
             {
               double __in1 = zbeta_times_ptsphy;
-              double __in2 = zcorqsliq_index_0;
+              float __in2 = zcorqsliq_index_0;
               double __out;
 
               ///////////////////
@@ -22572,18 +22790,18 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Add_)
-              __out = (1.0 + __in2);
+              __out = (float(1.0) + __in2);
               ///////////////////
 
               zdenom = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_6, 1);
             {
-              double __in1 = zqsliq_index_6;
+              float __in1 = zqsliq_index_6;
               double __in2 = zqe;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -22593,9 +22811,9 @@ void __program_cloudsc_py_internal(
               zqsliq_slice_minus_zqe = __out;
             }
             {
-              double __in1 = zcovpclr_slice_times_zbeta;
-              double __in2 = zqsliq_slice_minus_zqe;
-              double __out;
+              float __in1 = zcovpclr_slice_times_zbeta;
+              float __in2 = zqsliq_slice_minus_zqe;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -22605,9 +22823,9 @@ void __program_cloudsc_py_internal(
               zcovpclr_slice_zbeta_times_zqsliq_slice_zqe = __out;
             }
             {
-              double __in1 = zcovpclr_slice_zbeta_times_zqsliq_slice_zqe;
+              float __in1 = zcovpclr_slice_zbeta_times_zqsliq_slice_zqe;
               double __in2 = zdenom;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -22620,9 +22838,9 @@ void __program_cloudsc_py_internal(
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zdp + (jl - 1), &zdp_index_4, 1);
             {
-              double __in1 = zcovpclr_slice_zbeta_zqsliq_slice_zqe_div_zdenom;
+              float __in1 = zcovpclr_slice_zbeta_zqsliq_slice_zqe_div_zdenom;
               double __in2 = zdp_index_4;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -22633,7 +22851,7 @@ void __program_cloudsc_py_internal(
                   __out;
             }
             {
-              double __in1 =
+              float __in1 =
                   zcovpclr_slice_zbeta_zqsliq_slice_zqe_zdenom_times_zdp_slice;
               double __in2 = zrg_r;
               double __out;
@@ -22647,7 +22865,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zdpr;
-              double __in2 = zdtgdp_index_7;
+              float __in2 = zdtgdp_index_7;
               double __out;
 
               ///////////////////
@@ -22743,12 +22961,12 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_43, 1);
             {
-              double __in1 = zcovptot_index_11;
-              double __in2 = za_index_43;
-              double __out;
+              float __in1 = zcovptot_index_11;
+              float __in2 = za_index_43;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -22758,9 +22976,9 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_minus_za_slice_0 = __out;
             }
             {
-              double __in1 = zcovptot_slice_minus_za_slice_0;
+              float __in1 = zcovptot_slice_minus_za_slice_0;
               double __in2 = zevap;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -22770,9 +22988,9 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_za_slice_times_zevap = __out;
             }
             {
-              double __in1 = zcovptot_slice_za_slice_times_zevap;
+              float __in1 = zcovptot_slice_za_slice_times_zevap;
               double __in2 = zqxfg_index_34;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -22782,7 +23000,7 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_za_slice_zevap_div_zqxfg_slice = __out;
             }
             {
-              double __in_b = zcovptot_slice_za_slice_zevap_div_zqxfg_slice;
+              float __in_b = zcovptot_slice_za_slice_zevap_div_zqxfg_slice;
               double __out;
 
               ///////////////////
@@ -22793,9 +23011,9 @@ void __program_cloudsc_py_internal(
               max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice = __out;
             }
             {
-              double __in1 = zcovptot_index_10;
+              float __in1 = zcovptot_index_10;
               double __in2 = max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -22806,7 +23024,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in_a = yrecldp_rcovpmin;
-              double __in_b = zcovptot_slice_minus_expr;
+              float __in_b = zcovptot_slice_minus_expr;
               double __out;
 
               ///////////////////
@@ -22818,7 +23036,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __inp = max_yrecldp_rcovpmin_zcovptot_slice_expr;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_927_20)
@@ -22862,26 +23080,15 @@ void __program_cloudsc_py_internal(
       }
     } else {
       if ((ievaprain == 2)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_50 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_50 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_50); jl = (jl + 1)) {
           {
             double __tmp229;
-            double zcovpmax_index_1;
+            float zcovpmax_index_1;
             double __tmp230;
-            double za_index_44;
+            float za_index_44;
             double __tmp231;
             double max_zepsec_1_0_za_slice_4;
             double __tmp232;
@@ -22890,15 +23097,15 @@ void __program_cloudsc_py_internal(
             double min_expr_1_0_0;
             double min_0_8_zzrh;
             double zqx_index_44;
-            double zqsliq_index_7;
+            float zqsliq_index_7;
             double min_zqx_slice_zqsliq_slice;
             double zqe_4;
-            double zcovpclr_index_3;
+            float zcovpclr_index_3;
             bool __tmp233;
             double zqxfg_index_36;
             bool __tmp234;
             bool llo1_1;
-            double zqsliq_index_8;
+            float zqsliq_index_8;
             double zzrh_times_zqsliq_slice_0;
             bool __tmp235;
             bool llo1_2;
@@ -22909,17 +23116,17 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp229 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpmax + (jl - 1), &zcovpmax_index_1, 1);
             {
               double __in1 = __tmp229;
-              double __in2 = zcovpmax_index_1;
+              float __in2 = zcovpmax_index_1;
               double __out;
 
               ///////////////////
@@ -22930,15 +23137,15 @@ void __program_cloudsc_py_internal(
               __tmp230 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_44, 1);
             {
-              double __in2 = za_index_44;
+              float __in2 = za_index_44;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp231 = __out;
@@ -23053,14 +23260,14 @@ void __program_cloudsc_py_internal(
                        1),
                 &zqx_index_44, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_7, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_8, 1);
             {
               double __in_a = zqx_index_44;
-              double __in_b = zqsliq_index_7;
+              float __in_b = zqsliq_index_7;
               double __out;
 
               ///////////////////
@@ -23094,7 +23301,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zzrh;
-              double __in2 = zqsliq_index_8;
+              float __in2 = zqsliq_index_8;
               double __out;
 
               ///////////////////
@@ -23117,10 +23324,10 @@ void __program_cloudsc_py_internal(
               __tmp235 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_3, 1);
             {
-              double __in1 = zcovpclr_index_3;
+              float __in1 = zcovpclr_index_3;
               double __in2 = zepsec;
               bool __out;
 
@@ -23185,9 +23392,9 @@ void __program_cloudsc_py_internal(
           if (llo1) {
             {
               double zqxfg_index_37;
-              double zcovptot_index_12;
+              float zcovptot_index_12;
               double zpreclr_0;
-              double zrho_index_13;
+              float zrho_index_13;
               double yrecldp_rdensref_div_zrho_slice_0;
               double zfallcorr_0;
               double ydcst_rv_div_ydcst_rd;
@@ -23202,8 +23409,8 @@ void __program_cloudsc_py_internal(
                   exp_ydthf_r3les_ztp1_slice_ydcst_rtt_ztp1_slice_ydthf_r4les_5;
               double ydthf_r2es_times_expr_6;
               double zesatliq;
-              double zrho_index_14;
-              double zrho_slice_times_zpreclr;
+              float zrho_index_14;
+              float zrho_slice_times_zpreclr;
               double yrecldp_rcl_fac1_div_zrho_slice_zpreclr;
               double zlambda_0;
               double yrecldp_rcl_cdenom1_times_zesatliq;
@@ -23215,7 +23422,7 @@ void __program_cloudsc_py_internal(
               double ztp1_index_98;
               double ztp1_slice_pow_3_0_0;
               double yrecldp_rcl_cdenom3_times_ztp1_slice_3_0;
-              double pap_index_15;
+              float pap_index_15;
               double yrecldp_rcl_cdenom3_ztp1_slice_3_0_times_pap_slice;
               double zevap_denom;
               double ztp1_index_99;
@@ -23225,11 +23432,11 @@ void __program_cloudsc_py_internal(
               double ztp1_index_100;
               double ztp1_slice_plus_120_0_0;
               double zcorr2;
-              double zqsliq_index_9;
+              float zqsliq_index_9;
               double zzrh_times_zqsliq_slice_1;
               double zzrh_zqsliq_slice_minus_zqe;
               double zsubsat_0;
-              double zqsliq_index_10;
+              float zqsliq_index_10;
               double __tmp236;
               double ztp1_index_101;
               double ztp1_slice_pow_2_0_0;
@@ -23240,9 +23447,9 @@ void __program_cloudsc_py_internal(
               double __tmp240;
               double zlambda_pow_yrecldp_rcl_const4r;
               double __tmp241;
-              double zrho_index_15;
-              double zrho_slice_times_zfallcorr;
-              double zrho_slice_zfallcorr_pow_0_5;
+              float zrho_index_15;
+              float zrho_slice_times_zfallcorr;
+              float zrho_slice_zfallcorr_pow_0_5;
               double yrecldp_rcl_const2r_times_zrho_slice_zfallcorr_0_5;
               double zcorr2_pow_0_5;
               double zlambda_pow_yrecldp_rcl_const3r;
@@ -23253,10 +23460,10 @@ void __program_cloudsc_py_internal(
               double zbeta_0;
               double zbeta_times_ptsphy_0;
               double zdenom_0;
-              double zcovpclr_index_4;
-              double zcovpclr_slice_times_zbeta_0;
-              double zcovpclr_slice_zbeta_times_ptsphy;
-              double zcovpclr_slice_zbeta_ptsphy_times_zsubsat;
+              float zcovpclr_index_4;
+              float zcovpclr_slice_times_zbeta_0;
+              float zcovpclr_slice_zbeta_times_ptsphy;
+              float zcovpclr_slice_zbeta_ptsphy_times_zsubsat;
               double zdpevap_0;
               double zqxfg_index_38;
               double zevap_1;
@@ -23264,13 +23471,13 @@ void __program_cloudsc_py_internal(
               double zsolqa_slice_plus_zevap_1;
               double zsolqa_index_49;
               double zsolqa_slice_minus_zevap_1;
-              double zcovptot_index_13;
-              double zcovptot_index_14;
-              double za_index_45;
-              double zcovptot_slice_minus_za_slice_1;
-              double zcovptot_slice_za_slice_times_zevap_0;
+              float zcovptot_index_13;
+              float zcovptot_index_14;
+              float za_index_45;
+              float zcovptot_slice_minus_za_slice_1;
+              float zcovptot_slice_za_slice_times_zevap_0;
               double zqxfg_index_39;
-              double zcovptot_slice_za_slice_zevap_div_zqxfg_slice_0;
+              float zcovptot_slice_za_slice_zevap_div_zqxfg_slice_0;
               double max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice_0;
 
               dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -23285,17 +23492,17 @@ void __program_cloudsc_py_internal(
                   zqxfg + ((jl + (klon * (ncldqr - 1))) - 1), &zqxfg_index_39,
                   1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_12, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_13, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_14, 1);
               {
                 double __in1 = zqxfg_index_37;
-                double __in2 = zcovptot_index_12;
+                float __in2 = zcovptot_index_12;
                 double __out;
 
                 ///////////////////
@@ -23317,18 +23524,18 @@ void __program_cloudsc_py_internal(
                 zpreclr = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_13, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_14, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_15, 1);
               {
-                double __in1 = zrho_index_14;
+                float __in1 = zrho_index_14;
                 double __in2 = zpreclr;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -23339,7 +23546,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rdensref;
-                double __in2 = zrho_index_13;
+                float __in2 = zrho_index_13;
                 double __out;
 
                 ///////////////////
@@ -23372,9 +23579,9 @@ void __program_cloudsc_py_internal(
                 zfallcorr = __out;
               }
               {
-                double __in1 = zrho_index_15;
+                float __in1 = zrho_index_15;
                 double __in2 = zfallcorr;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -23384,8 +23591,8 @@ void __program_cloudsc_py_internal(
                 zrho_slice_times_zfallcorr = __out;
               }
               {
-                double __in1 = zrho_slice_times_zfallcorr;
-                double __out;
+                float __in1 = zrho_slice_times_zfallcorr;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Pow_)
@@ -23511,7 +23718,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Pow_)
-                __out = (dace::math::ipow(__in1, 2));
+                __out = (__in1 * __in1);
                 ///////////////////
 
                 ztp1_slice_pow_2_0_0 = __out;
@@ -23605,7 +23812,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rcl_fac1;
-                double __in2 = zrho_slice_times_zpreclr;
+                float __in2 = zrho_slice_times_zpreclr;
                 double __out;
 
                 ///////////////////
@@ -23700,11 +23907,12 @@ void __program_cloudsc_py_internal(
                 yrecldp_rcl_cdenom3_times_ztp1_slice_3_0 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_15, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_15,
+                  1);
               {
                 double __in1 = yrecldp_rcl_cdenom3_times_ztp1_slice_3_0;
-                double __in2 = pap_index_15;
+                float __in2 = pap_index_15;
                 double __out;
 
                 ///////////////////
@@ -23741,18 +23949,18 @@ void __program_cloudsc_py_internal(
                 zcorr2_div_zevap_denom = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_9, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqsliq + ((jl + (klon * (jk - 1))) - 1), &zqsliq_index_10, 1);
               {
-                double __in2 = zqsliq_index_10;
+                float __in2 = zqsliq_index_10;
                 double __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
-                __out = (0.5 / __in2);
+                __out = (float(0.5) / __in2);
                 ///////////////////
 
                 __tmp236 = __out;
@@ -23783,7 +23991,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = zzrh;
-                double __in2 = zqsliq_index_9;
+                float __in2 = zqsliq_index_9;
                 double __out;
 
                 ///////////////////
@@ -23876,7 +24084,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rcl_const2r;
-                double __in2 = zrho_slice_zfallcorr_pow_0_5;
+                float __in2 = zrho_slice_zfallcorr_pow_0_5;
                 double __out;
 
                 ///////////////////
@@ -23978,7 +24186,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Add_)
-                __out = (1.0 + __in2);
+                __out = (float(1.0) + __in2);
                 ///////////////////
 
                 zdenom_0 = __out;
@@ -23995,12 +24203,12 @@ void __program_cloudsc_py_internal(
                 zdenom = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovpclr + (jl - 1), &zcovpclr_index_4, 1);
               {
-                double __in1 = zcovpclr_index_4;
+                float __in1 = zcovpclr_index_4;
                 double __in2 = zbeta;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -24010,9 +24218,9 @@ void __program_cloudsc_py_internal(
                 zcovpclr_slice_times_zbeta_0 = __out;
               }
               {
-                double __in1 = zcovpclr_slice_times_zbeta_0;
+                float __in1 = zcovpclr_slice_times_zbeta_0;
                 double __in2 = ptsphy;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -24022,9 +24230,9 @@ void __program_cloudsc_py_internal(
                 zcovpclr_slice_zbeta_times_ptsphy = __out;
               }
               {
-                double __in1 = zcovpclr_slice_zbeta_times_ptsphy;
+                float __in1 = zcovpclr_slice_zbeta_times_ptsphy;
                 double __in2 = zsubsat;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -24034,7 +24242,7 @@ void __program_cloudsc_py_internal(
                 zcovpclr_slice_zbeta_ptsphy_times_zsubsat = __out;
               }
               {
-                double __in1 = zcovpclr_slice_zbeta_ptsphy_times_zsubsat;
+                float __in1 = zcovpclr_slice_zbeta_ptsphy_times_zsubsat;
                 double __in2 = zdenom;
                 double __out;
 
@@ -24142,12 +24350,12 @@ void __program_cloudsc_py_internal(
                         1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   za + ((jl + (klon * (jk - 1))) - 1), &za_index_45, 1);
               {
-                double __in1 = zcovptot_index_14;
-                double __in2 = za_index_45;
-                double __out;
+                float __in1 = zcovptot_index_14;
+                float __in2 = za_index_45;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -24157,9 +24365,9 @@ void __program_cloudsc_py_internal(
                 zcovptot_slice_minus_za_slice_1 = __out;
               }
               {
-                double __in1 = zcovptot_slice_minus_za_slice_1;
+                float __in1 = zcovptot_slice_minus_za_slice_1;
                 double __in2 = zevap;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -24169,9 +24377,9 @@ void __program_cloudsc_py_internal(
                 zcovptot_slice_za_slice_times_zevap_0 = __out;
               }
               {
-                double __in1 = zcovptot_slice_za_slice_times_zevap_0;
+                float __in1 = zcovptot_slice_za_slice_times_zevap_0;
                 double __in2 = zqxfg_index_39;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
@@ -24181,7 +24389,7 @@ void __program_cloudsc_py_internal(
                 zcovptot_slice_za_slice_zevap_div_zqxfg_slice_0 = __out;
               }
               {
-                double __in_b = zcovptot_slice_za_slice_zevap_div_zqxfg_slice_0;
+                float __in_b = zcovptot_slice_za_slice_zevap_div_zqxfg_slice_0;
                 double __out;
 
                 ///////////////////
@@ -24192,10 +24400,10 @@ void __program_cloudsc_py_internal(
                 max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice_0 = __out;
               }
               {
-                double __in1 = zcovptot_index_13;
+                float __in1 = zcovptot_index_13;
                 double __in2 =
                     max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -24212,7 +24420,7 @@ void __program_cloudsc_py_internal(
 
               {
                 double __in_a = yrecldp_rcovpmin;
-                double __in_b = zcovptot_slice_minus_expr_0;
+                float __in_b = zcovptot_slice_minus_expr_0;
                 double __out;
 
                 ///////////////////
@@ -24224,7 +24432,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __inp = max_yrecldp_rcovpmin_zcovptot_slice_expr_0;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_951_20)
@@ -24266,26 +24474,15 @@ void __program_cloudsc_py_internal(
       }
     }
     if ((ievapsnow == 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_51 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_51 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_51); jl = (jl + 1)) {
         {
           double __tmp243;
-          double zcovpmax_index_2;
+          float zcovpmax_index_2;
           double __tmp244;
-          double za_index_46;
+          float za_index_46;
           double __tmp245;
           double max_zepsec_1_0_za_slice_5;
           double __tmp246;
@@ -24293,23 +24490,23 @@ void __program_cloudsc_py_internal(
           double max_zzrh_yrecldp_rprecrhmax_1;
           double min_expr_1_0_1;
           double zqx_index_45;
-          double za_index_47;
-          double zqsice_index_12;
-          double za_slice_times_zqsice_slice_2;
+          float za_index_47;
+          float zqsice_index_12;
+          float za_slice_times_zqsice_slice_2;
           double zqx_slice_minus_za_slice_zqsice_slice_2;
-          double za_index_48;
+          float za_index_48;
           double __tmp247;
           double max_zepsec_1_0_za_slice_6;
           double zqe_5;
-          double zqsice_index_13;
+          float zqsice_index_13;
           double min_zqe_zqsice_slice;
           double max_0_0_expr_1;
-          double zcovpclr_index_5;
+          float zcovpclr_index_5;
           bool __tmp248;
           double zqxfg_index_41;
           bool __tmp249;
           bool llo1_3;
-          double zqsice_index_14;
+          float zqsice_index_14;
           double zzrh_times_zqsice_slice;
           bool __tmp250;
           bool llo1_4;
@@ -24320,17 +24517,17 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp243 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovpmax + (jl - 1), &zcovpmax_index_2, 1);
           {
             double __in1 = __tmp243;
-            double __in2 = zcovpmax_index_2;
+            float __in2 = zcovpmax_index_2;
             double __out;
 
             ///////////////////
@@ -24341,32 +24538,32 @@ void __program_cloudsc_py_internal(
             __tmp244 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_46, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_47, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               za + ((jl + (klon * (jk - 1))) - 1), &za_index_48, 1);
           {
-            double __in2 = za_index_46;
+            float __in2 = za_index_46;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp245 = __out;
           }
           {
-            double __in2 = za_index_48;
+            float __in2 = za_index_48;
             double __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
-            __out = (1.0 - __in2);
+            __out = (float(1.0) - __in2);
             ///////////////////
 
             __tmp247 = __out;
@@ -24471,18 +24668,18 @@ void __program_cloudsc_py_internal(
                    1),
               &zqx_index_45, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_12, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_13, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_14, 1);
           {
-            double __in1 = za_index_47;
-            double __in2 = zqsice_index_12;
-            double __out;
+            float __in1 = za_index_47;
+            float __in2 = zqsice_index_12;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -24493,7 +24690,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zqx_index_45;
-            double __in2 = za_slice_times_zqsice_slice_2;
+            float __in2 = za_slice_times_zqsice_slice_2;
             double __out;
 
             ///////////////////
@@ -24528,7 +24725,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in_a = zqe;
-            double __in_b = zqsice_index_13;
+            float __in_b = zqsice_index_13;
             double __out;
 
             ///////////////////
@@ -24562,7 +24759,7 @@ void __program_cloudsc_py_internal(
           }
           {
             double __in1 = zzrh;
-            double __in2 = zqsice_index_14;
+            float __in2 = zqsice_index_14;
             double __out;
 
             ///////////////////
@@ -24585,10 +24782,10 @@ void __program_cloudsc_py_internal(
             __tmp250 = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zcovpclr + (jl - 1), &zcovpclr_index_5, 1);
           {
-            double __in1 = zcovpclr_index_5;
+            float __in1 = zcovpclr_index_5;
             double __in2 = zepsec;
             bool __out;
 
@@ -24653,45 +24850,45 @@ void __program_cloudsc_py_internal(
         if (llo1) {
           {
             double zqxfg_index_42;
-            double zcovpclr_index_6;
+            float zcovpclr_index_6;
             double zqxfg_slice_times_zcovpclr_slice_0;
-            double zcovptot_index_15;
-            double zdtgdp_index_8;
-            double zcovptot_slice_times_zdtgdp_slice_1;
+            float zcovptot_index_15;
+            float zdtgdp_index_8;
+            float zcovptot_slice_times_zdtgdp_slice_1;
             double abs_zcovptot_slice_zdtgdp_slice_0;
             double max_expr_zepsilon_0;
-            double zcovptot_index_16;
-            double zdtgdp_index_9;
-            double zcovptot_slice_times_zdtgdp_slice_2;
+            float zcovptot_index_16;
+            float zdtgdp_index_9;
+            float zcovptot_slice_times_zdtgdp_slice_2;
             double sign_zcovptot_slice_zdtgdp_slice_0;
             double expr_times_expr_3;
             double zpreclr_1;
-            double pap_index_16;
-            double paph_index_5;
-            double pap_slice_div_paph_slice_0;
+            float pap_index_16;
+            float paph_index_5;
+            float pap_slice_div_paph_slice_0;
             double sqrt_pap_slice_paph_slice_0;
             double expr_div_yrecldp_rvrfactor_0;
             double expr_yrecldp_rvrfactor_times_zpreclr_0;
-            double zcovpclr_index_7;
+            float zcovpclr_index_7;
             double max_zcovpclr_slice_zepsec_0;
             double zbeta1_0;
             double ydcst_rg_times_yrecldp_rpecons_0;
             double zbeta1_pow_0_5777_0;
             double zbeta_1;
             double zbeta_times_ptsphy_1;
-            double zcorqsice_index_2;
+            float zcorqsice_index_2;
             double zbeta_ptsphy_times_zcorqsice_slice;
             double zdenom_1;
-            double zcovpclr_index_8;
-            double zcovpclr_slice_times_zbeta_1;
-            double zqsice_index_15;
-            double zqsice_slice_minus_zqe;
-            double zcovpclr_slice_zbeta_times_zqsice_slice_zqe;
-            double zcovpclr_slice_zbeta_zqsice_slice_zqe_div_zdenom;
+            float zcovpclr_index_8;
+            float zcovpclr_slice_times_zbeta_1;
+            float zqsice_index_15;
+            float zqsice_slice_minus_zqe;
+            float zcovpclr_slice_zbeta_times_zqsice_slice_zqe;
+            float zcovpclr_slice_zbeta_zqsice_slice_zqe_div_zdenom;
             double zdp_index_5;
-            double zcovpclr_slice_zbeta_zqsice_slice_zqe_zdenom_times_zdp_slice;
+            float zcovpclr_slice_zbeta_zqsice_slice_zqe_zdenom_times_zdp_slice;
             double zdpr_0;
-            double zdtgdp_index_10;
+            float zdtgdp_index_10;
             double zdpevap_1;
             double zqxfg_index_43;
             double zevap_2;
@@ -24699,15 +24896,15 @@ void __program_cloudsc_py_internal(
             double zsolqa_slice_plus_zevap_2;
             double zsolqa_index_51;
             double zsolqa_slice_minus_zevap_2;
-            double zcovptot_index_17;
-            double zcovptot_index_18;
-            double za_index_49;
-            double zcovptot_slice_minus_za_slice_2;
-            double zcovptot_slice_za_slice_times_zevap_1;
+            float zcovptot_index_17;
+            float zcovptot_index_18;
+            float za_index_49;
+            float zcovptot_slice_minus_za_slice_2;
+            float zcovptot_slice_za_slice_times_zevap_1;
             double zqxfg_index_44;
-            double zcovptot_slice_za_slice_zevap_div_zqxfg_slice_1;
+            float zcovptot_slice_za_slice_zevap_div_zqxfg_slice_1;
             double max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice_1;
-            double zcovptot_slice_minus_expr_1;
+            float zcovptot_slice_minus_expr_1;
             double max_yrecldp_rcovpmin_zcovptot_slice_expr_1;
             double zqxfg_index_45;
 
@@ -24723,17 +24920,17 @@ void __program_cloudsc_py_internal(
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxfg + ((jl + (klon * (ncldqs - 1))) - 1), &zqxfg_index_45, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_6, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_7, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_8, 1);
             {
               double __in1 = zqxfg_index_42;
-              double __in2 = zcovpclr_index_6;
+              float __in2 = zcovpclr_index_6;
               double __out;
 
               ///////////////////
@@ -24744,30 +24941,30 @@ void __program_cloudsc_py_internal(
               zqxfg_slice_times_zcovpclr_slice_0 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_15, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_16, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_17, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovptot + (jl - 1), &zcovptot_index_18, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_8, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_9, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zdtgdp + (jl - 1), &zdtgdp_index_10, 1);
             {
-              double __in1 = zcovptot_index_15;
-              double __in2 = zdtgdp_index_8;
-              double __out;
+              float __in1 = zcovptot_index_15;
+              float __in2 = zdtgdp_index_8;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -24777,7 +24974,7 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_times_zdtgdp_slice_1 = __out;
             }
             {
-              double __inp = zcovptot_slice_times_zdtgdp_slice_1;
+              float __inp = zcovptot_slice_times_zdtgdp_slice_1;
               double __out;
 
               ///////////////////
@@ -24788,9 +24985,9 @@ void __program_cloudsc_py_internal(
               abs_zcovptot_slice_zdtgdp_slice_0 = __out;
             }
             {
-              double __in1 = zcovptot_index_16;
-              double __in2 = zdtgdp_index_9;
-              double __out;
+              float __in1 = zcovptot_index_16;
+              float __in2 = zdtgdp_index_9;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -24800,7 +24997,7 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_times_zdtgdp_slice_2 = __out;
             }
             {
-              double __in1 = zcovptot_slice_times_zdtgdp_slice_2;
+              float __in1 = zcovptot_slice_times_zdtgdp_slice_2;
               double __out;
 
               ///////////////////
@@ -24858,15 +25055,15 @@ void __program_cloudsc_py_internal(
               zpreclr = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_16, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_16, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                paph + ((jl + (klev * klon)) - 1), &paph_index_5, 1);
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                paph_lowered + ((jl + (klev * klon)) - 1), &paph_index_5, 1);
             {
-              double __in1 = pap_index_16;
-              double __in2 = paph_index_5;
-              double __out;
+              float __in1 = pap_index_16;
+              float __in2 = paph_index_5;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -24876,7 +25073,7 @@ void __program_cloudsc_py_internal(
               pap_slice_div_paph_slice_0 = __out;
             }
             {
-              double __in1 = pap_slice_div_paph_slice_0;
+              float __in1 = pap_slice_div_paph_slice_0;
               double __out;
 
               ///////////////////
@@ -24911,7 +25108,7 @@ void __program_cloudsc_py_internal(
               expr_yrecldp_rvrfactor_times_zpreclr_0 = __out;
             }
             {
-              double __in_a = zcovpclr_index_7;
+              float __in_a = zcovpclr_index_7;
               double __in_b = zepsec;
               double __out;
 
@@ -24992,9 +25189,9 @@ void __program_cloudsc_py_internal(
               zbeta = __out;
             }
             {
-              double __in1 = zcovpclr_index_8;
+              float __in1 = zcovpclr_index_8;
               double __in2 = zbeta;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -25016,11 +25213,11 @@ void __program_cloudsc_py_internal(
               zbeta_times_ptsphy_1 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcorqsice + (jl - 1), &zcorqsice_index_2, 1);
             {
               double __in1 = zbeta_times_ptsphy_1;
-              double __in2 = zcorqsice_index_2;
+              float __in2 = zcorqsice_index_2;
               double __out;
 
               ///////////////////
@@ -25036,7 +25233,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Add_)
-              __out = (1.0 + __in2);
+              __out = (float(1.0) + __in2);
               ///////////////////
 
               zdenom_1 = __out;
@@ -25053,12 +25250,12 @@ void __program_cloudsc_py_internal(
               zdenom = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_15, 1);
             {
-              double __in1 = zqsice_index_15;
+              float __in1 = zqsice_index_15;
               double __in2 = zqe;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -25068,9 +25265,9 @@ void __program_cloudsc_py_internal(
               zqsice_slice_minus_zqe = __out;
             }
             {
-              double __in1 = zcovpclr_slice_times_zbeta_1;
-              double __in2 = zqsice_slice_minus_zqe;
-              double __out;
+              float __in1 = zcovpclr_slice_times_zbeta_1;
+              float __in2 = zqsice_slice_minus_zqe;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -25080,9 +25277,9 @@ void __program_cloudsc_py_internal(
               zcovpclr_slice_zbeta_times_zqsice_slice_zqe = __out;
             }
             {
-              double __in1 = zcovpclr_slice_zbeta_times_zqsice_slice_zqe;
+              float __in1 = zcovpclr_slice_zbeta_times_zqsice_slice_zqe;
               double __in2 = zdenom;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -25095,9 +25292,9 @@ void __program_cloudsc_py_internal(
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
                 zdp + (jl - 1), &zdp_index_5, 1);
             {
-              double __in1 = zcovpclr_slice_zbeta_zqsice_slice_zqe_div_zdenom;
+              float __in1 = zcovpclr_slice_zbeta_zqsice_slice_zqe_div_zdenom;
               double __in2 = zdp_index_5;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -25108,7 +25305,7 @@ void __program_cloudsc_py_internal(
                   __out;
             }
             {
-              double __in1 =
+              float __in1 =
                   zcovpclr_slice_zbeta_zqsice_slice_zqe_zdenom_times_zdp_slice;
               double __in2 = zrg_r;
               double __out;
@@ -25133,7 +25330,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zdpr;
-              double __in2 = zdtgdp_index_10;
+              float __in2 = zdtgdp_index_10;
               double __out;
 
               ///////////////////
@@ -25252,12 +25449,12 @@ void __program_cloudsc_py_internal(
                       1)] = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_49, 1);
             {
-              double __in1 = zcovptot_index_18;
-              double __in2 = za_index_49;
-              double __out;
+              float __in1 = zcovptot_index_18;
+              float __in2 = za_index_49;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -25267,9 +25464,9 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_minus_za_slice_2 = __out;
             }
             {
-              double __in1 = zcovptot_slice_minus_za_slice_2;
+              float __in1 = zcovptot_slice_minus_za_slice_2;
               double __in2 = zevap;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -25279,9 +25476,9 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_za_slice_times_zevap_1 = __out;
             }
             {
-              double __in1 = zcovptot_slice_za_slice_times_zevap_1;
+              float __in1 = zcovptot_slice_za_slice_times_zevap_1;
               double __in2 = zqxfg_index_44;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -25291,7 +25488,7 @@ void __program_cloudsc_py_internal(
               zcovptot_slice_za_slice_zevap_div_zqxfg_slice_1 = __out;
             }
             {
-              double __in_b = zcovptot_slice_za_slice_zevap_div_zqxfg_slice_1;
+              float __in_b = zcovptot_slice_za_slice_zevap_div_zqxfg_slice_1;
               double __out;
 
               ///////////////////
@@ -25302,10 +25499,10 @@ void __program_cloudsc_py_internal(
               max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice_1 = __out;
             }
             {
-              double __in1 = zcovptot_index_17;
+              float __in1 = zcovptot_index_17;
               double __in2 =
                   max_0_0_zcovptot_slice_za_slice_zevap_zqxfg_slice_1;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -25316,7 +25513,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in_a = yrecldp_rcovpmin;
-              double __in_b = zcovptot_slice_minus_expr_1;
+              float __in_b = zcovptot_slice_minus_expr_1;
               double __out;
 
               ///////////////////
@@ -25328,7 +25525,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __inp = max_yrecldp_rcovpmin_zcovptot_slice_expr_1;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_970_20)
@@ -25356,26 +25553,15 @@ void __program_cloudsc_py_internal(
       }
     } else {
       if ((ievapsnow == 2)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_52 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_52 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_52); jl = (jl + 1)) {
           {
             double __tmp251;
-            double zcovpmax_index_3;
+            float zcovpmax_index_3;
             double __tmp252;
-            double za_index_50;
+            float za_index_50;
             double __tmp253;
             double max_zepsec_1_0_za_slice_7;
             double __tmp254;
@@ -25383,23 +25569,23 @@ void __program_cloudsc_py_internal(
             double max_zzrh_yrecldp_rprecrhmax_2;
             double min_expr_1_0_2;
             double zqx_index_46;
-            double za_index_51;
-            double zqsice_index_16;
-            double za_slice_times_zqsice_slice_3;
+            float za_index_51;
+            float zqsice_index_16;
+            float za_slice_times_zqsice_slice_3;
             double zqx_slice_minus_za_slice_zqsice_slice_3;
-            double za_index_52;
+            float za_index_52;
             double __tmp255;
             double max_zepsec_1_0_za_slice_8;
             double zqe_6;
-            double zqsice_index_17;
+            float zqsice_index_17;
             double min_zqe_zqsice_slice_0;
             double max_0_0_expr_2;
-            double zcovpclr_index_9;
+            float zcovpclr_index_9;
             bool __tmp256;
             double zqx_index_47;
             bool __tmp257;
             bool llo1_5;
-            double zqsice_index_18;
+            float zqsice_index_18;
             double zzrh_times_zqsice_slice_0;
             bool __tmp258;
             bool llo1_6;
@@ -25410,17 +25596,17 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp251 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpmax + (jl - 1), &zcovpmax_index_3, 1);
             {
               double __in1 = __tmp251;
-              double __in2 = zcovpmax_index_3;
+              float __in2 = zcovpmax_index_3;
               double __out;
 
               ///////////////////
@@ -25431,32 +25617,32 @@ void __program_cloudsc_py_internal(
               __tmp252 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_50, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_51, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 za + ((jl + (klon * (jk - 1))) - 1), &za_index_52, 1);
             {
-              double __in2 = za_index_50;
+              float __in2 = za_index_50;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp253 = __out;
             }
             {
-              double __in2 = za_index_52;
+              float __in2 = za_index_52;
               double __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
-              __out = (1.0 - __in2);
+              __out = (float(1.0) - __in2);
               ///////////////////
 
               __tmp255 = __out;
@@ -25579,18 +25765,18 @@ void __program_cloudsc_py_internal(
               __tmp257 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_16, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_17, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_18, 1);
             {
-              double __in1 = za_index_51;
-              double __in2 = zqsice_index_16;
-              double __out;
+              float __in1 = za_index_51;
+              float __in2 = zqsice_index_16;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -25601,7 +25787,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zqx_index_46;
-              double __in2 = za_slice_times_zqsice_slice_3;
+              float __in2 = za_slice_times_zqsice_slice_3;
               double __out;
 
               ///////////////////
@@ -25636,7 +25822,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in_a = zqe;
-              double __in_b = zqsice_index_17;
+              float __in_b = zqsice_index_17;
               double __out;
 
               ///////////////////
@@ -25670,7 +25856,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = zzrh;
-              double __in2 = zqsice_index_18;
+              float __in2 = zqsice_index_18;
               double __out;
 
               ///////////////////
@@ -25693,10 +25879,10 @@ void __program_cloudsc_py_internal(
               __tmp258 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zcovpclr + (jl - 1), &zcovpclr_index_9, 1);
             {
-              double __in1 = zcovpclr_index_9;
+              float __in1 = zcovpclr_index_9;
               double __in2 = zepsec;
               bool __out;
 
@@ -25746,7 +25932,7 @@ void __program_cloudsc_py_internal(
           if (llo1) {
             {
               double zqx_index_48;
-              double zcovptot_index_19;
+              float zcovptot_index_19;
               double zpreclr_2;
               double ztp1_index_102;
               double ztp1_slice_minus_ydcst_rtt_17;
@@ -25767,13 +25953,13 @@ void __program_cloudsc_py_internal(
               double yrecldp_rcl_apb2_zvpice_times_ztp1_slice_0;
               double
                   yrecldp_rcl_apb1_zvpice_minus_yrecldp_rcl_apb2_zvpice_ztp1_slice_0;
-              double pap_index_17;
-              double pap_slice_times_yrecldp_rcl_apb3_0;
+              float pap_index_17;
+              float pap_slice_times_yrecldp_rcl_apb3_0;
               double ztp1_index_105;
               double ztp1_slice_pow_3;
-              double pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3;
+              float pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3;
               double zaplusb_0;
-              double zrho_index_16;
+              float zrho_index_16;
               double __tmp259;
               double zcorrfac_0;
               double ztp1_index_106;
@@ -25783,35 +25969,35 @@ void __program_cloudsc_py_internal(
               double ztp1_slice_plus_120_0_1;
               double __tmp260;
               double zcorrfac2_0;
-              double zrho_index_17;
-              double zrho_slice_times_zpreclr_0;
-              double zrho_slice_zpreclr_times_yrecldp_rcl_const1s;
+              float zrho_index_17;
+              float zrho_slice_times_zpreclr_0;
+              float zrho_slice_zpreclr_times_yrecldp_rcl_const1s;
               double ztcg_times_zfacx1s;
               double zpr02_0;
-              double zqsice_index_19;
-              double zqsice_slice_minus_zqe_0;
+              float zqsice_index_19;
+              float zqsice_slice_minus_zqe_0;
               double ztp1_index_108;
               double ztp1_slice_pow_2;
-              double zqsice_slice_zqe_times_ztp1_slice_2;
-              double zqsice_slice_zqe_ztp1_slice_2_times_zvpice;
-              double zqsice_slice_zqe_ztp1_slice_2_zvpice_times_zcorrfac2;
-              double zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_times_ztcg;
-              double
+              float zqsice_slice_zqe_times_ztp1_slice_2;
+              float zqsice_slice_zqe_ztp1_slice_2_times_zvpice;
+              float zqsice_slice_zqe_ztp1_slice_2_zvpice_times_zcorrfac2;
+              float zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_times_ztcg;
+              float
                   zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_ztcg_times_yrecldp_rcl_const2s;
-              double
+              float
                   zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_ztcg_yrecldp_rcl_const2s_times_zfacx1s;
-              double zrho_index_18;
-              double zrho_slice_times_zaplusb_0;
-              double zqsice_index_20;
-              double zrho_slice_zaplusb_times_zqsice_slice;
+              float zrho_index_18;
+              float zrho_slice_times_zaplusb_0;
+              float zqsice_index_20;
+              float zrho_slice_zaplusb_times_zqsice_slice;
               double zterm1_0;
               double __tmp261;
               double zpr02_pow_yrecldp_rcl_const4s;
               double __tmp262;
               double zcorrfac_pow_0_5_0;
               double yrecldp_rcl_const3s_times_zcorrfac_0_5;
-              double zrho_index_19;
-              double zrho_slice_pow_0_5_0;
+              float zrho_index_19;
+              float zrho_slice_pow_0_5_0;
               double yrecldp_rcl_const3s_zcorrfac_0_5_times_zrho_slice_0_5;
               double zpr02_pow_yrecldp_rcl_const5s;
               double
@@ -25820,12 +26006,12 @@ void __program_cloudsc_py_internal(
               double
                   yrecldp_rcl_const3s_zcorrfac_0_5_zrho_slice_0_5_zpr02_yrecldp_rcl_const5s_div_zcorrfac2_0_5;
               double zterm2_0;
-              double zcovpclr_index_10;
-              double zcovpclr_slice_times_zterm1;
-              double zcovpclr_slice_zterm1_times_zterm2;
-              double zcovpclr_slice_zterm1_zterm2_times_ptsphy;
+              float zcovpclr_index_10;
+              float zcovpclr_slice_times_zterm1;
+              float zcovpclr_slice_zterm1_times_zterm2;
+              float zcovpclr_slice_zterm1_zterm2_times_ptsphy;
               double zdpevap_2;
-              double zevaplimice_index;
+              float zevaplimice_index;
               double zevap_3;
               double zqx_index_49;
               double min_zevap_zqx_slice;
@@ -25843,11 +26029,11 @@ void __program_cloudsc_py_internal(
                          1),
                   &zqx_index_49, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_19, 1);
               {
                 double __in1 = zqx_index_48;
-                double __in2 = zcovptot_index_19;
+                float __in2 = zcovptot_index_19;
                 double __out;
 
                 ///////////////////
@@ -25984,7 +26170,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Pow_)
-                __out = (dace::math::ipow(__in1, 2));
+                __out = (((__in1) * (__in1)));
                 ///////////////////
 
                 ztp1_slice_pow_2 = __out;
@@ -26104,7 +26290,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (assign_982_20)
-                __out = 1.0;
+                __out = float(1.0);
                 ///////////////////
 
                 ztcg = __out;
@@ -26114,7 +26300,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (assign_983_20)
-                __out = 1.0;
+                __out = float(1.0);
                 ///////////////////
 
                 zfacx1s = __out;
@@ -26181,12 +26367,13 @@ void __program_cloudsc_py_internal(
                     __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                  pap + ((jl + (klon * (jk - 1))) - 1), &pap_index_17, 1);
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                  pap_lowered + ((jl + (klon * (jk - 1))) - 1), &pap_index_17,
+                  1);
               {
-                double __in1 = pap_index_17;
+                float __in1 = pap_index_17;
                 double __in2 = yrecldp_rcl_apb3;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26196,9 +26383,9 @@ void __program_cloudsc_py_internal(
                 pap_slice_times_yrecldp_rcl_apb3_0 = __out;
               }
               {
-                double __in1 = pap_slice_times_yrecldp_rcl_apb3_0;
+                float __in1 = pap_slice_times_yrecldp_rcl_apb3_0;
                 double __in2 = ztp1_slice_pow_3;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26210,7 +26397,7 @@ void __program_cloudsc_py_internal(
               {
                 double __in1 =
                     yrecldp_rcl_apb1_zvpice_minus_yrecldp_rcl_apb2_zvpice_ztp1_slice_0;
-                double __in2 = pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3;
+                float __in2 = pap_slice_yrecldp_rcl_apb3_times_ztp1_slice_3;
                 double __out;
 
                 ///////////////////
@@ -26232,24 +26419,24 @@ void __program_cloudsc_py_internal(
                 zaplusb = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_16, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_17, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_18, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zrho + (jl - 1), &zrho_index_19, 1);
               {
-                double __in2 = zrho_index_16;
+                float __in2 = zrho_index_16;
                 double __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
-                __out = (1.0 / __in2);
+                __out = (float(1.0) / __in2);
                 ///////////////////
 
                 __tmp259 = __out;
@@ -26288,9 +26475,9 @@ void __program_cloudsc_py_internal(
                 zcorrfac_pow_0_5_0 = __out;
               }
               {
-                double __in1 = zrho_index_17;
+                float __in1 = zrho_index_17;
                 double __in2 = zpreclr;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26300,9 +26487,9 @@ void __program_cloudsc_py_internal(
                 zrho_slice_times_zpreclr_0 = __out;
               }
               {
-                double __in1 = zrho_index_18;
+                float __in1 = zrho_index_18;
                 double __in2 = zaplusb;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26312,8 +26499,8 @@ void __program_cloudsc_py_internal(
                 zrho_slice_times_zaplusb_0 = __out;
               }
               {
-                double __in1 = zrho_index_19;
-                double __out;
+                float __in1 = zrho_index_19;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Pow_)
@@ -26323,9 +26510,9 @@ void __program_cloudsc_py_internal(
                 zrho_slice_pow_0_5_0 = __out;
               }
               {
-                double __in1 = zrho_slice_times_zpreclr_0;
+                float __in1 = zrho_slice_times_zpreclr_0;
                 double __in2 = yrecldp_rcl_const1s;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26335,7 +26522,7 @@ void __program_cloudsc_py_internal(
                 zrho_slice_zpreclr_times_yrecldp_rcl_const1s = __out;
               }
               {
-                double __in1 = zrho_slice_zpreclr_times_yrecldp_rcl_const1s;
+                float __in1 = zrho_slice_zpreclr_times_yrecldp_rcl_const1s;
                 double __in2 = ztcg_times_zfacx1s;
                 double __out;
 
@@ -26358,15 +26545,15 @@ void __program_cloudsc_py_internal(
                 zpr02 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_19, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqsice + ((jl + (klon * (jk - 1))) - 1), &zqsice_index_20, 1);
               {
-                double __in1 = zrho_slice_times_zaplusb_0;
-                double __in2 = zqsice_index_20;
-                double __out;
+                float __in1 = zrho_slice_times_zaplusb_0;
+                float __in2 = zqsice_index_20;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26376,9 +26563,9 @@ void __program_cloudsc_py_internal(
                 zrho_slice_zaplusb_times_zqsice_slice = __out;
               }
               {
-                double __in1 = zqsice_index_19;
+                float __in1 = zqsice_index_19;
                 double __in2 = zqe;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -26388,9 +26575,9 @@ void __program_cloudsc_py_internal(
                 zqsice_slice_minus_zqe_0 = __out;
               }
               {
-                double __in1 = zqsice_slice_minus_zqe_0;
+                float __in1 = zqsice_slice_minus_zqe_0;
                 double __in2 = ztp1_slice_pow_2;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26400,9 +26587,9 @@ void __program_cloudsc_py_internal(
                 zqsice_slice_zqe_times_ztp1_slice_2 = __out;
               }
               {
-                double __in1 = zqsice_slice_zqe_times_ztp1_slice_2;
+                float __in1 = zqsice_slice_zqe_times_ztp1_slice_2;
                 double __in2 = zvpice;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26412,9 +26599,9 @@ void __program_cloudsc_py_internal(
                 zqsice_slice_zqe_ztp1_slice_2_times_zvpice = __out;
               }
               {
-                double __in1 = zqsice_slice_zqe_ztp1_slice_2_times_zvpice;
+                float __in1 = zqsice_slice_zqe_ztp1_slice_2_times_zvpice;
                 double __in2 = zcorrfac2;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26424,10 +26611,10 @@ void __program_cloudsc_py_internal(
                 zqsice_slice_zqe_ztp1_slice_2_zvpice_times_zcorrfac2 = __out;
               }
               {
-                double __in1 =
+                float __in1 =
                     zqsice_slice_zqe_ztp1_slice_2_zvpice_times_zcorrfac2;
                 double __in2 = ztcg;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26438,10 +26625,10 @@ void __program_cloudsc_py_internal(
                     __out;
               }
               {
-                double __in1 =
+                float __in1 =
                     zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_times_ztcg;
                 double __in2 = yrecldp_rcl_const2s;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26452,10 +26639,10 @@ void __program_cloudsc_py_internal(
                     __out;
               }
               {
-                double __in1 =
+                float __in1 =
                     zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_ztcg_times_yrecldp_rcl_const2s;
                 double __in2 = zfacx1s;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26466,9 +26653,9 @@ void __program_cloudsc_py_internal(
                     __out;
               }
               {
-                double __in1 =
+                float __in1 =
                     zqsice_slice_zqe_ztp1_slice_2_zvpice_zcorrfac2_ztcg_yrecldp_rcl_const2s_times_zfacx1s;
-                double __in2 = zrho_slice_zaplusb_times_zqsice_slice;
+                float __in2 = zrho_slice_zaplusb_times_zqsice_slice;
                 double __out;
 
                 ///////////////////
@@ -26495,7 +26682,7 @@ void __program_cloudsc_py_internal(
 
                 ///////////////////
                 // Tasklet code (_Mult_)
-                __out = (0.65 * __in2);
+                __out = (float(0.65) * __in2);
                 ///////////////////
 
                 __tmp261 = __out;
@@ -26538,7 +26725,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in1 = yrecldp_rcl_const3s_times_zcorrfac_0_5;
-                double __in2 = zrho_slice_pow_0_5_0;
+                float __in2 = zrho_slice_pow_0_5_0;
                 double __out;
 
                 ///////////////////
@@ -26613,12 +26800,12 @@ void __program_cloudsc_py_internal(
                 zterm2 = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovpclr + (jl - 1), &zcovpclr_index_10, 1);
               {
-                double __in1 = zcovpclr_index_10;
+                float __in1 = zcovpclr_index_10;
                 double __in2 = zterm1;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26628,9 +26815,9 @@ void __program_cloudsc_py_internal(
                 zcovpclr_slice_times_zterm1 = __out;
               }
               {
-                double __in1 = zcovpclr_slice_times_zterm1;
+                float __in1 = zcovpclr_slice_times_zterm1;
                 double __in2 = zterm2;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26640,9 +26827,9 @@ void __program_cloudsc_py_internal(
                 zcovpclr_slice_zterm1_times_zterm2 = __out;
               }
               {
-                double __in1 = zcovpclr_slice_zterm1_times_zterm2;
+                float __in1 = zcovpclr_slice_zterm1_times_zterm2;
                 double __in2 = ptsphy;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26652,7 +26839,7 @@ void __program_cloudsc_py_internal(
                 zcovpclr_slice_zterm1_zterm2_times_ptsphy = __out;
               }
               {
-                double __in_a = zcovpclr_slice_zterm1_zterm2_times_ptsphy;
+                float __in_a = zcovpclr_slice_zterm1_zterm2_times_ptsphy;
                 double __out;
 
                 ///////////////////
@@ -26674,11 +26861,11 @@ void __program_cloudsc_py_internal(
                 zdpevap = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zevaplimice + (jl - 1), &zevaplimice_index, 1);
               {
                 double __in_a = zdpevap;
-                double __in_b = zevaplimice_index;
+                float __in_b = zevaplimice_index;
                 double __out;
 
                 ///////////////////
@@ -26744,15 +26931,15 @@ void __program_cloudsc_py_internal(
             {
               double zsolqa_index_53;
               double zsolqa_slice_minus_zevap_3;
-              double zcovptot_index_20;
-              double zcovptot_index_21;
-              double za_index_53;
-              double zcovptot_slice_minus_za_slice_3;
-              double zcovptot_slice_za_slice_times_zevap_2;
+              float zcovptot_index_20;
+              float zcovptot_index_21;
+              float za_index_53;
+              float zcovptot_slice_minus_za_slice_3;
+              float zcovptot_slice_za_slice_times_zevap_2;
               double zqx_index_50;
-              double zcovptot_slice_za_slice_zevap_div_zqx_slice;
+              float zcovptot_slice_za_slice_zevap_div_zqx_slice;
               double max_0_0_zcovptot_slice_za_slice_zevap_zqx_slice;
-              double zcovptot_slice_minus_expr_2;
+              float zcovptot_slice_minus_expr_2;
               double max_yrecldp_rcovpmin_zcovptot_slice_expr_2;
               double zqxfg_index_46;
               double zqxfg_slice_minus_zevap_2;
@@ -26802,18 +26989,18 @@ void __program_cloudsc_py_internal(
                         1)] = __out;
               }
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_20, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zcovptot + (jl - 1), &zcovptot_index_21, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   za + ((jl + (klon * (jk - 1))) - 1), &za_index_53, 1);
               {
-                double __in1 = zcovptot_index_21;
-                double __in2 = za_index_53;
-                double __out;
+                float __in1 = zcovptot_index_21;
+                float __in2 = za_index_53;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -26823,9 +27010,9 @@ void __program_cloudsc_py_internal(
                 zcovptot_slice_minus_za_slice_3 = __out;
               }
               {
-                double __in1 = zcovptot_slice_minus_za_slice_3;
+                float __in1 = zcovptot_slice_minus_za_slice_3;
                 double __in2 = zevap;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -26841,9 +27028,9 @@ void __program_cloudsc_py_internal(
                          1),
                   &zqx_index_50, 1);
               {
-                double __in1 = zcovptot_slice_za_slice_times_zevap_2;
+                float __in1 = zcovptot_slice_za_slice_times_zevap_2;
                 double __in2 = zqx_index_50;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Div_)
@@ -26853,7 +27040,7 @@ void __program_cloudsc_py_internal(
                 zcovptot_slice_za_slice_zevap_div_zqx_slice = __out;
               }
               {
-                double __in_b = zcovptot_slice_za_slice_zevap_div_zqx_slice;
+                float __in_b = zcovptot_slice_za_slice_zevap_div_zqx_slice;
                 double __out;
 
                 ///////////////////
@@ -26864,9 +27051,9 @@ void __program_cloudsc_py_internal(
                 max_0_0_zcovptot_slice_za_slice_zevap_zqx_slice = __out;
               }
               {
-                double __in1 = zcovptot_index_20;
+                float __in1 = zcovptot_index_20;
                 double __in2 = max_0_0_zcovptot_slice_za_slice_zevap_zqx_slice;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -26877,7 +27064,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __in_a = yrecldp_rcovpmin;
-                double __in_b = zcovptot_slice_minus_expr_2;
+                float __in_b = zcovptot_slice_minus_expr_2;
                 double __out;
 
                 ///////////////////
@@ -26889,7 +27076,7 @@ void __program_cloudsc_py_internal(
               }
               {
                 double __inp = max_yrecldp_rcovpmin_zcovptot_slice_expr_2;
-                double __out;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_995_20)
@@ -26931,26 +27118,13 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-            llfall + (jm - 1), &llfall_index_2, 1);
-      }
+      llfall_index_2 = llfall[(jm - 1)];
+
       if (llfall_index_2) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_53 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_53 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_53); jl = (jl + 1)) {
           {
             double zqxfg_index_47;
@@ -27051,38 +27225,27 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_54 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_54 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_54); jl = (jl + 1)) {
       {
-        double za_index_54;
-        double zsolac_index_3;
-        double za_slice_plus_zsolac_slice;
-        double zsolab_index_0;
+        float za_index_54;
+        float zsolac_index_3;
+        float za_slice_plus_zsolac_slice;
+        float zsolab_index_0;
         double __tmp264;
         double min_zanew_1_0;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             za + ((jl + (klon * (jk - 1))) - 1), &za_index_54, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zsolac + (jl - 1), &zsolac_index_3, 1);
         {
-          double __in1 = za_index_54;
-          double __in2 = zsolac_index_3;
-          double __out;
+          float __in1 = za_index_54;
+          float __in2 = zsolac_index_3;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -27092,21 +27255,21 @@ void __program_cloudsc_py_internal(
           za_slice_plus_zsolac_slice = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zsolab + (jl - 1), &zsolab_index_0, 1);
         {
-          double __in2 = zsolab_index_0;
+          float __in2 = zsolab_index_0;
           double __out;
 
           ///////////////////
           // Tasklet code (_Add_)
-          __out = (1.0 + __in2);
+          __out = (float(1.0) + __in2);
           ///////////////////
 
           __tmp264 = __out;
         }
         {
-          double __in1 = za_slice_plus_zsolac_slice;
+          float __in1 = za_slice_plus_zsolac_slice;
           double __in2 = __tmp264;
           double __out;
 
@@ -27148,7 +27311,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_1007_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zanew = __out;
@@ -27156,15 +27319,15 @@ void __program_cloudsc_py_internal(
         }
       }
       {
-        double zaorig_index;
-        double zda_slice;
+        float zaorig_index;
+        float zda_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zaorig + ((jl + (klon * (jk - 1))) - 1), &zaorig_index, 1);
         {
           double __in1 = zanew;
-          double __in2 = zaorig_index;
-          double __out;
+          float __in2 = zaorig_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -27174,8 +27337,8 @@ void __program_cloudsc_py_internal(
           zda_slice = __out;
         }
         {
-          double __inp = zda_slice;
-          double __out;
+          float __inp = zda_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1008_12)
@@ -27186,7 +27349,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __inp = zanew;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1009_12)
@@ -27198,29 +27361,18 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_56 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_56 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_56); jl = (jl + 1)) {
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1015_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zsinksum[((jl + (klon * (jm - 1))) - 1)] = __out;
@@ -27230,27 +27382,16 @@ void __program_cloudsc_py_internal(
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
       for (jn = 1; (jn < (nclv + 1)); jn = (jn + 1)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_57 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_57 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_57); jl = (jl + 1)) {
           {
-            double zsinksum_index;
+            float zsinksum_index;
             double zsolqa_index_56;
-            double zsinksum_slice_minus_zsolqa_slice;
+            float zsinksum_slice_minus_zsolqa_slice;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zsinksum + ((jl + (klon * (jm - 1))) - 1), &zsinksum_index, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -27259,9 +27400,9 @@ void __program_cloudsc_py_internal(
                      1),
                 &zsolqa_index_56, 1);
             {
-              double __in1 = zsinksum_index;
+              float __in1 = zsinksum_index;
               double __in2 = zsolqa_index_56;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -27271,8 +27412,8 @@ void __program_cloudsc_py_internal(
               zsinksum_slice_minus_zsolqa_slice = __out;
             }
             {
-              double __inp = zsinksum_slice_minus_zsolqa_slice;
-              double __out;
+              float __inp = zsinksum_slice_minus_zsolqa_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1019_20)
@@ -27286,27 +27427,16 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_58 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_58 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_58); jl = (jl + 1)) {
         {
           double zqx_index_51;
           double zmax;
-          double zsinksum_index_0;
+          float zsinksum_index_0;
           double zrat;
-          double zratio_slice;
+          float zratio_slice;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqx +
@@ -27325,10 +27455,10 @@ void __program_cloudsc_py_internal(
             zmax = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsinksum + ((jl + (klon * (jm - 1))) - 1), &zsinksum_index_0, 1);
           {
-            double __in_a = zsinksum_index_0;
+            float __in_a = zsinksum_index_0;
             double __in_b = zmax;
             double __out;
 
@@ -27342,7 +27472,7 @@ void __program_cloudsc_py_internal(
           {
             double __in1 = zmax;
             double __in2 = zrat;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Div_)
@@ -27352,8 +27482,8 @@ void __program_cloudsc_py_internal(
             zratio_slice = __out;
           }
           {
-            double __inp = zratio_slice;
-            double __out;
+            float __inp = zratio_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1024_16)
@@ -27366,29 +27496,18 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_59 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_59 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_59); jl = (jl + 1)) {
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1027_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zsinksum[((jl + (klon * (jm - 1))) - 1)] = __out;
@@ -27407,7 +27526,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (assign_1029_12)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               psum_solqa[__i0] = __out;
@@ -27416,20 +27535,9 @@ void __program_cloudsc_py_internal(
         }
       }
       for (jn = 1; (jn < (nclv + 1)); jn = (jn + 1)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_60 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_60 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_60); jl = (jl + 1)) {
           {
             double psum_solqa_index;
@@ -27470,35 +27578,24 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_61 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_61 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_61); jl = (jl + 1)) {
         {
-          double zsinksum_index_1;
+          float zsinksum_index_1;
           double psum_solqa_index_0;
-          double zsinksum_slice_minus_psum_solqa_slice;
+          float zsinksum_slice_minus_psum_solqa_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsinksum + ((jl + (klon * (jm - 1))) - 1), &zsinksum_index_1, 1);
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               psum_solqa + (jl - 1), &psum_solqa_index_0, 1);
           {
-            double __in1 = zsinksum_index_1;
+            float __in1 = zsinksum_index_1;
             double __in2 = psum_solqa_index_0;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -27508,8 +27605,8 @@ void __program_cloudsc_py_internal(
             zsinksum_slice_minus_psum_solqa_slice = __out;
           }
           {
-            double __inp = zsinksum_slice_minus_psum_solqa_slice;
-            double __out;
+            float __inp = zsinksum_slice_minus_psum_solqa_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1034_16)
@@ -27520,27 +27617,16 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_62 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_62 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_62); jl = (jl + 1)) {
         {
           double zqx_index_52;
           double zmm;
-          double zsinksum_index_2;
+          float zsinksum_index_2;
           double zrr;
-          double zratio_slice_0;
+          float zratio_slice_0;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqx +
@@ -27559,10 +27645,10 @@ void __program_cloudsc_py_internal(
             zmm = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zsinksum + ((jl + (klon * (jm - 1))) - 1), &zsinksum_index_2, 1);
           {
-            double __in_a = zsinksum_index_2;
+            float __in_a = zsinksum_index_2;
             double __in_b = zmm;
             double __out;
 
@@ -27576,7 +27662,7 @@ void __program_cloudsc_py_internal(
           {
             double __in1 = zmm;
             double __in2 = zrr;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Div_)
@@ -27586,8 +27672,8 @@ void __program_cloudsc_py_internal(
             zratio_slice_0 = __out;
           }
           {
-            double __inp = zratio_slice_0;
-            double __out;
+            float __inp = zratio_slice_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1038_16)
@@ -27598,20 +27684,9 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_63 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_63 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_63); jl = (jl + 1)) {
         {
 
@@ -27633,7 +27708,7 @@ void __program_cloudsc_py_internal(
 
               ///////////////////
               // Tasklet code (_Lt_)
-              __out = (__in1 < 0.0);
+              __out = (__in1 < float(0.0));
               ///////////////////
 
               __tmp265 = __out;
@@ -27715,42 +27790,31 @@ void __program_cloudsc_py_internal(
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
       for (jn = 1; (jn < (nclv + 1)); jn = (jn + 1)) {
         if ((jn == jm)) {
-          {
 
-            {
-              int __in1 = kfdia;
-              int __out;
+          kfdia_plus_1_64 = (kfdia + 1);
 
-              ///////////////////
-              // Tasklet code (_Add_)
-              __out = (__in1 + int(1));
-              ///////////////////
-
-              kfdia_plus_1_64 = __out;
-            }
-          }
           for (jl = kidia; (jl < kfdia_plus_1_64); jl = (jl + 1)) {
             {
-              double zfallsink_index;
-              double zqlhs_slice;
+              float zfallsink_index;
+              float zqlhs_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zfallsink + ((jl + (klon * (jm - 1))) - 1), &zfallsink_index,
                   1);
               {
-                double __in2 = zfallsink_index;
-                double __out;
+                float __in2 = zfallsink_index;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Add_)
-                __out = (1.0 + __in2);
+                __out = (float(1.0) + __in2);
                 ///////////////////
 
                 zqlhs_slice = __out;
               }
               {
-                double __inp = zqlhs_slice;
-                double __out;
+                float __inp = zqlhs_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_1049_24)
@@ -27763,25 +27827,25 @@ void __program_cloudsc_py_internal(
             }
             for (jo = 1; (jo < (nclv + 1)); jo = (jo + 1)) {
               {
-                double zqlhs_index;
-                double zsolqb_index_5;
-                double zqlhs_slice_plus_zsolqb_slice;
+                float zqlhs_index;
+                float zsolqb_index_5;
+                float zqlhs_slice_plus_zsolqb_slice;
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zqlhs + (((jl + ((klon * nclv) * (jm - 1))) +
                               (klon * (jn - 1))) -
                              1),
                     &zqlhs_index, 1);
 
-                dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+                dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                     zsolqb + (((jl + ((klon * nclv) * (jn - 1))) +
                                (klon * (jo - 1))) -
                               1),
                     &zsolqb_index_5, 1);
                 {
-                  double __in1 = zqlhs_index;
-                  double __in2 = zsolqb_index_5;
-                  double __out;
+                  float __in1 = zqlhs_index;
+                  float __in2 = zsolqb_index_5;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (_Add_)
@@ -27791,8 +27855,8 @@ void __program_cloudsc_py_internal(
                   zqlhs_slice_plus_zsolqb_slice = __out;
                 }
                 {
-                  double __inp = zqlhs_slice_plus_zsolqb_slice;
-                  double __out;
+                  float __inp = zqlhs_slice_plus_zsolqb_slice;
+                  float __out;
 
                   ///////////////////
                   // Tasklet code (assign_1051_28)
@@ -27807,33 +27871,22 @@ void __program_cloudsc_py_internal(
             }
           }
         } else {
-          {
 
-            {
-              int __in1 = kfdia;
-              int __out;
+          kfdia_plus_1_65 = (kfdia + 1);
 
-              ///////////////////
-              // Tasklet code (_Add_)
-              __out = (__in1 + int(1));
-              ///////////////////
-
-              kfdia_plus_1_65 = __out;
-            }
-          }
           for (jl = kidia; (jl < kfdia_plus_1_65); jl = (jl + 1)) {
             {
-              double zsolqb_index_6;
-              double zqlhs_slice_0;
+              float zsolqb_index_6;
+              float zqlhs_slice_0;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zsolqb +
                       (((jl + ((klon * nclv) * (jm - 1))) + (klon * (jn - 1))) -
                        1),
                   &zsolqb_index_6, 1);
               {
-                double __in = zsolqb_index_6;
-                double __out;
+                float __in = zsolqb_index_6;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_USub_)
@@ -27843,8 +27896,8 @@ void __program_cloudsc_py_internal(
                 zqlhs_slice_0 = __out;
               }
               {
-                double __inp = zqlhs_slice_0;
-                double __out;
+                float __inp = zqlhs_slice_0;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_1054_24)
@@ -27860,20 +27913,9 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_66 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_66 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_66); jl = (jl + 1)) {
         {
 
@@ -27882,7 +27924,7 @@ void __program_cloudsc_py_internal(
 
             ///////////////////
             // Tasklet code (assign_1057_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zexplicit = __out;
@@ -27925,7 +27967,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double zqx_index_53;
-          double zqxn_slice;
+          float zqxn_slice;
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zqx +
@@ -27934,7 +27976,7 @@ void __program_cloudsc_py_internal(
           {
             double __in1 = zqx_index_53;
             double __in2 = zexplicit;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -27944,8 +27986,8 @@ void __program_cloudsc_py_internal(
             zqxn_slice = __out;
           }
           {
-            double __inp = zqxn_slice;
-            double __out;
+            float __inp = zqxn_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1060_16)
@@ -27959,41 +28001,30 @@ void __program_cloudsc_py_internal(
     }
     for (jn = 1; (jn < nclv); jn = (jn + 1)) {
       for (jm = (jn + 1); (jm < (nclv + 1)); jm = (jm + 1)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_67 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_67 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_67); jl = (jl + 1)) {
           {
-            double zqlhs_index_0;
-            double zqlhs_index_1;
-            double zqlhs_slice_div_zqlhs_slice;
+            float zqlhs_index_0;
+            float zqlhs_index_1;
+            float zqlhs_slice_div_zqlhs_slice;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqlhs +
                     (((jl + ((klon * nclv) * (jn - 1))) + (klon * (jm - 1))) -
                      1),
                 &zqlhs_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqlhs +
                     (((jl + ((klon * nclv) * (jn - 1))) + (klon * (jn - 1))) -
                      1),
                 &zqlhs_index_1, 1);
             {
-              double __in1 = zqlhs_index_0;
-              double __in2 = zqlhs_index_1;
-              double __out;
+              float __in1 = zqlhs_index_0;
+              float __in2 = zqlhs_index_1;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Div_)
@@ -28003,8 +28034,8 @@ void __program_cloudsc_py_internal(
               zqlhs_slice_div_zqlhs_slice = __out;
             }
             {
-              double __inp = zqlhs_slice_div_zqlhs_slice;
-              double __out;
+              float __inp = zqlhs_slice_div_zqlhs_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1064_20)
@@ -28017,49 +28048,38 @@ void __program_cloudsc_py_internal(
           }
         }
         for (ik = (jn + 1); (ik < (nclv + 1)); ik = (ik + 1)) {
-          {
 
-            {
-              int __in1 = kfdia;
-              int __out;
+          kfdia_plus_1_68 = (kfdia + 1);
 
-              ///////////////////
-              // Tasklet code (_Add_)
-              __out = (__in1 + int(1));
-              ///////////////////
-
-              kfdia_plus_1_68 = __out;
-            }
-          }
           for (jl = kidia; (jl < kfdia_plus_1_68); jl = (jl + 1)) {
             {
-              double zqlhs_index_2;
-              double zqlhs_index_3;
-              double zqlhs_index_4;
-              double zqlhs_slice_times_zqlhs_slice;
-              double zqlhs_slice_minus_zqlhs_slice_zqlhs_slice;
+              float zqlhs_index_2;
+              float zqlhs_index_3;
+              float zqlhs_index_4;
+              float zqlhs_slice_times_zqlhs_slice;
+              float zqlhs_slice_minus_zqlhs_slice_zqlhs_slice;
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqlhs +
                       (((jl + ((klon * nclv) * (ik - 1))) + (klon * (jm - 1))) -
                        1),
                   &zqlhs_index_2, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqlhs +
                       (((jl + ((klon * nclv) * (jn - 1))) + (klon * (jm - 1))) -
                        1),
                   &zqlhs_index_3, 1);
 
-              dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+              dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                   zqlhs +
                       (((jl + ((klon * nclv) * (ik - 1))) + (klon * (jn - 1))) -
                        1),
                   &zqlhs_index_4, 1);
               {
-                double __in1 = zqlhs_index_3;
-                double __in2 = zqlhs_index_4;
-                double __out;
+                float __in1 = zqlhs_index_3;
+                float __in2 = zqlhs_index_4;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Mult_)
@@ -28069,9 +28089,9 @@ void __program_cloudsc_py_internal(
                 zqlhs_slice_times_zqlhs_slice = __out;
               }
               {
-                double __in1 = zqlhs_index_2;
-                double __in2 = zqlhs_slice_times_zqlhs_slice;
-                double __out;
+                float __in1 = zqlhs_index_2;
+                float __in2 = zqlhs_slice_times_zqlhs_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (_Sub_)
@@ -28081,8 +28101,8 @@ void __program_cloudsc_py_internal(
                 zqlhs_slice_minus_zqlhs_slice_zqlhs_slice = __out;
               }
               {
-                double __inp = zqlhs_slice_minus_zqlhs_slice_zqlhs_slice;
-                double __out;
+                float __inp = zqlhs_slice_minus_zqlhs_slice_zqlhs_slice;
+                float __out;
 
                 ///////////////////
                 // Tasklet code (assign_1067_24)
@@ -28099,43 +28119,32 @@ void __program_cloudsc_py_internal(
     }
     for (jn = 2; (jn < (nclv + 1)); jn = (jn + 1)) {
       for (jm = 1; (jm < jn); jm = (jm + 1)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_69 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_69 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_69); jl = (jl + 1)) {
           {
-            double zqxn_index;
-            double zqlhs_index_5;
-            double zqxn_index_0;
-            double zqlhs_slice_times_zqxn_slice;
-            double zqxn_slice_minus_zqlhs_slice_zqxn_slice;
+            float zqxn_index;
+            float zqlhs_index_5;
+            float zqxn_index_0;
+            float zqlhs_slice_times_zqxn_slice;
+            float zqxn_slice_minus_zqlhs_slice_zqxn_slice;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jn - 1))) - 1), &zqxn_index, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_0, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqlhs +
                     (((jl + ((klon * nclv) * (jm - 1))) + (klon * (jn - 1))) -
                      1),
                 &zqlhs_index_5, 1);
             {
-              double __in1 = zqlhs_index_5;
-              double __in2 = zqxn_index_0;
-              double __out;
+              float __in1 = zqlhs_index_5;
+              float __in2 = zqxn_index_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -28145,9 +28154,9 @@ void __program_cloudsc_py_internal(
               zqlhs_slice_times_zqxn_slice = __out;
             }
             {
-              double __in1 = zqxn_index;
-              double __in2 = zqlhs_slice_times_zqxn_slice;
-              double __out;
+              float __in1 = zqxn_index;
+              float __in2 = zqlhs_slice_times_zqxn_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -28157,8 +28166,8 @@ void __program_cloudsc_py_internal(
               zqxn_slice_minus_zqlhs_slice_zqxn_slice = __out;
             }
             {
-              double __inp = zqxn_slice_minus_zqlhs_slice_zqxn_slice;
-              double __out;
+              float __inp = zqxn_slice_minus_zqlhs_slice_zqxn_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1071_20)
@@ -28171,38 +28180,27 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_70 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_70 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_70); jl = (jl + 1)) {
       {
-        double zqxn_index_1;
-        double zqlhs_index_6;
-        double zqxn_slice_div_zqlhs_slice;
+        float zqxn_index_1;
+        float zqlhs_index_6;
+        float zqxn_slice_div_zqlhs_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqxn + ((jl + (klon * (nclv - 1))) - 1), &zqxn_index_1, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqlhs +
                 (((jl + ((klon * nclv) * (nclv - 1))) + (klon * (nclv - 1))) -
                  1),
             &zqlhs_index_6, 1);
         {
-          double __in1 = zqxn_index_1;
-          double __in2 = zqlhs_index_6;
-          double __out;
+          float __in1 = zqxn_index_1;
+          float __in2 = zqlhs_index_6;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Div_)
@@ -28212,8 +28210,8 @@ void __program_cloudsc_py_internal(
           zqxn_slice_div_zqlhs_slice = __out;
         }
         {
-          double __inp = zqxn_slice_div_zqlhs_slice;
-          double __out;
+          float __inp = zqxn_slice_div_zqlhs_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1073_12)
@@ -28226,43 +28224,32 @@ void __program_cloudsc_py_internal(
     }
     for (jn = (nclv - 1); (jn > 0); jn = (jn + -1)) {
       for (jm = (jn + 1); (jm < (nclv + 1)); jm = (jm + 1)) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_71 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_71 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_71); jl = (jl + 1)) {
           {
-            double zqxn_index_2;
-            double zqlhs_index_7;
-            double zqxn_index_3;
-            double zqlhs_slice_times_zqxn_slice_0;
-            double zqxn_slice_minus_zqlhs_slice_zqxn_slice_0;
+            float zqxn_index_2;
+            float zqlhs_index_7;
+            float zqxn_index_3;
+            float zqlhs_slice_times_zqxn_slice_0;
+            float zqxn_slice_minus_zqlhs_slice_zqxn_slice_0;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jn - 1))) - 1), &zqxn_index_2, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_3, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqlhs +
                     (((jl + ((klon * nclv) * (jm - 1))) + (klon * (jn - 1))) -
                      1),
                 &zqlhs_index_7, 1);
             {
-              double __in1 = zqlhs_index_7;
-              double __in2 = zqxn_index_3;
-              double __out;
+              float __in1 = zqlhs_index_7;
+              float __in2 = zqxn_index_3;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Mult_)
@@ -28272,9 +28259,9 @@ void __program_cloudsc_py_internal(
               zqlhs_slice_times_zqxn_slice_0 = __out;
             }
             {
-              double __in1 = zqxn_index_2;
-              double __in2 = zqlhs_slice_times_zqxn_slice_0;
-              double __out;
+              float __in1 = zqxn_index_2;
+              float __in2 = zqlhs_slice_times_zqxn_slice_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -28284,8 +28271,8 @@ void __program_cloudsc_py_internal(
               zqxn_slice_minus_zqlhs_slice_zqxn_slice_0 = __out;
             }
             {
-              double __inp = zqxn_slice_minus_zqlhs_slice_zqxn_slice_0;
-              double __out;
+              float __inp = zqxn_slice_minus_zqlhs_slice_zqxn_slice_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1077_20)
@@ -28297,37 +28284,26 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_72 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_72 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_72); jl = (jl + 1)) {
         {
-          double zqxn_index_4;
-          double zqlhs_index_8;
-          double zqxn_slice_div_zqlhs_slice_0;
+          float zqxn_index_4;
+          float zqlhs_index_8;
+          float zqxn_slice_div_zqlhs_slice_0;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jn - 1))) - 1), &zqxn_index_4, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqlhs +
                   (((jl + ((klon * nclv) * (jn - 1))) + (klon * (jn - 1))) - 1),
               &zqlhs_index_8, 1);
           {
-            double __in1 = zqxn_index_4;
-            double __in2 = zqlhs_index_8;
-            double __out;
+            float __in1 = zqxn_index_4;
+            float __in2 = zqlhs_index_8;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Div_)
@@ -28337,8 +28313,8 @@ void __program_cloudsc_py_internal(
             zqxn_slice_div_zqlhs_slice_0 = __out;
           }
           {
-            double __inp = zqxn_slice_div_zqlhs_slice_0;
-            double __out;
+            float __inp = zqxn_slice_div_zqlhs_slice_0;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1079_16)
@@ -28351,28 +28327,17 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jn = 1; (jn < nclv); jn = (jn + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_73 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_73 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_73); jl = (jl + 1)) {
         {
-          double zqxn_index_5;
+          float zqxn_index_5;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jn - 1))) - 1), &zqxn_index_5, 1);
           {
-            double __in1 = zqxn_index_5;
+            float __in1 = zqxn_index_5;
             double __in2 = zepsec;
             bool __out;
 
@@ -28386,19 +28351,19 @@ void __program_cloudsc_py_internal(
         }
         if (__tmp266) {
           {
-            double zqxn_index_6;
-            double zqxn_index_7;
-            double zqxn_slice_plus_zqxn_slice;
+            float zqxn_index_6;
+            float zqxn_index_7;
+            float zqxn_slice_plus_zqxn_slice;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (ncldqv - 1))) - 1), &zqxn_index_6, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jn - 1))) - 1), &zqxn_index_7, 1);
             {
-              double __in1 = zqxn_index_6;
-              double __in2 = zqxn_index_7;
-              double __out;
+              float __in1 = zqxn_index_6;
+              float __in2 = zqxn_index_7;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -28408,8 +28373,8 @@ void __program_cloudsc_py_internal(
               zqxn_slice_plus_zqxn_slice = __out;
             }
             {
-              double __inp = zqxn_slice_plus_zqxn_slice;
-              double __out;
+              float __inp = zqxn_slice_plus_zqxn_slice;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1083_20)
@@ -28422,11 +28387,11 @@ void __program_cloudsc_py_internal(
           {
 
             {
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1084_20)
-              __out = 0.0;
+              __out = float(0.0);
               ///////////////////
 
               zqxn[((jl + (klon * (jn - 1))) - 1)] = __out;
@@ -28436,30 +28401,19 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_74 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_74 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_74); jl = (jl + 1)) {
         {
-          double zqxnm1_slice;
-          double zqxn2d_slice;
+          float zqxnm1_slice;
+          float zqxn2d_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxnm1_slice, 1);
           {
-            double __inp = zqxnm1_slice;
-            double __out;
+            float __inp = zqxnm1_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1087_16)
@@ -28469,11 +28423,11 @@ void __program_cloudsc_py_internal(
             zqxnm1[((jl + (klon * (jm - 1))) - 1)] = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn2d_slice, 1);
           {
-            double __inp = zqxn2d_slice;
-            double __out;
+            float __inp = zqxn2d_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1088_16)
@@ -28487,38 +28441,27 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < (nclv + 1)); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_75 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_75 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_75); jl = (jl + 1)) {
         {
-          double zfallsink_index_0;
-          double zqxn_index_8;
-          double zfallsink_slice_times_zqxn_slice;
-          double zrdtgdp_index;
-          double zpfplsx_slice;
+          float zfallsink_index_0;
+          float zqxn_index_8;
+          float zfallsink_slice_times_zqxn_slice;
+          float zrdtgdp_index;
+          float zpfplsx_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zfallsink + ((jl + (klon * (jm - 1))) - 1), &zfallsink_index_0,
               1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_8, 1);
           {
-            double __in1 = zfallsink_index_0;
-            double __in2 = zqxn_index_8;
-            double __out;
+            float __in1 = zfallsink_index_0;
+            float __in2 = zqxn_index_8;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -28528,12 +28471,12 @@ void __program_cloudsc_py_internal(
             zfallsink_slice_times_zqxn_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zrdtgdp + (jl - 1), &zrdtgdp_index, 1);
           {
-            double __in1 = zfallsink_slice_times_zqxn_slice;
-            double __in2 = zrdtgdp_index;
-            double __out;
+            float __in1 = zfallsink_slice_times_zqxn_slice;
+            float __in2 = zrdtgdp_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -28543,8 +28486,8 @@ void __program_cloudsc_py_internal(
             zpfplsx_slice = __out;
           }
           {
-            double __inp = zpfplsx_slice;
-            double __out;
+            float __inp = zpfplsx_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1091_16)
@@ -28557,41 +28500,30 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_76 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_76 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_76); jl = (jl + 1)) {
       {
-        double zpfplsx_index_2;
-        double zpfplsx_index_3;
-        double zqpretot_slice_0;
+        float zpfplsx_index_2;
+        float zpfplsx_index_3;
+        float zqpretot_slice_0;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zpfplsx +
                 ((((jk * klon) + jl) + ((klon * (klev + 1)) * (ncldqs - 1))) -
                  1),
             &zpfplsx_index_2, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zpfplsx +
                 ((((jk * klon) + jl) + ((klon * (klev + 1)) * (ncldqr - 1))) -
                  1),
             &zpfplsx_index_3, 1);
         {
-          double __in1 = zpfplsx_index_2;
-          double __in2 = zpfplsx_index_3;
-          double __out;
+          float __in1 = zpfplsx_index_2;
+          float __in2 = zpfplsx_index_3;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -28601,8 +28533,8 @@ void __program_cloudsc_py_internal(
           zqpretot_slice_0 = __out;
         }
         {
-          double __inp = zqpretot_slice_0;
-          double __out;
+          float __inp = zqpretot_slice_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1093_12)
@@ -28613,28 +28545,17 @@ void __program_cloudsc_py_internal(
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_77 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_77 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_77); jl = (jl + 1)) {
       {
-        double zqpretot_index_2;
+        float zqpretot_index_2;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqpretot + (jl - 1), &zqpretot_index_2, 1);
         {
-          double __in1 = zqpretot_index_2;
+          float __in1 = zqpretot_index_2;
           double __in2 = zepsec;
           bool __out;
 
@@ -28650,11 +28571,11 @@ void __program_cloudsc_py_internal(
         {
 
           {
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1096_16)
-            __out = 0.0;
+            __out = float(0.0);
             ///////////////////
 
             zcovptot[(jl - 1)] = __out;
@@ -28663,35 +28584,24 @@ void __program_cloudsc_py_internal(
       }
     }
     for (jm = 1; (jm < nclv); jm = (jm + 1)) {
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_78 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_78 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_78); jl = (jl + 1)) {
         {
-          double zpsupsatsrce_index;
+          float zpsupsatsrce_index;
           double zconvsrce_index_2;
-          double zpsupsatsrce_slice_plus_zconvsrce_slice;
-          double zfallsrce_index_1;
-          double zpsupsatsrce_slice_zconvsrce_slice_plus_zfallsrce_slice;
-          double zfallsink_index_1;
+          float zpsupsatsrce_slice_plus_zconvsrce_slice;
+          float zfallsrce_index_1;
+          float zpsupsatsrce_slice_zconvsrce_slice_plus_zfallsrce_slice;
+          float zfallsink_index_1;
           double zconvsink_index;
-          double zfallsink_slice_plus_zconvsink_slice;
-          double zqxn_index_9;
-          double zfallsink_slice_zconvsink_slice_times_zqxn_slice;
-          double zfluxq_slice;
+          float zfallsink_slice_plus_zconvsink_slice;
+          float zqxn_index_9;
+          float zfallsink_slice_zconvsink_slice_times_zqxn_slice;
+          float zfluxq_slice;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zpsupsatsrce + ((jl + (klon * (jm - 1))) - 1),
               &zpsupsatsrce_index, 1);
 
@@ -28699,9 +28609,9 @@ void __program_cloudsc_py_internal(
               zconvsrce + ((jl + (klon * (jm - 1))) - 1), &zconvsrce_index_2,
               1);
           {
-            double __in1 = zpsupsatsrce_index;
+            float __in1 = zpsupsatsrce_index;
             double __in2 = zconvsrce_index_2;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -28711,13 +28621,13 @@ void __program_cloudsc_py_internal(
             zpsupsatsrce_slice_plus_zconvsrce_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zfallsrce + ((jl + (klon * (jm - 1))) - 1), &zfallsrce_index_1,
               1);
           {
-            double __in1 = zpsupsatsrce_slice_plus_zconvsrce_slice;
-            double __in2 = zfallsrce_index_1;
-            double __out;
+            float __in1 = zpsupsatsrce_slice_plus_zconvsrce_slice;
+            float __in2 = zfallsrce_index_1;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -28727,16 +28637,16 @@ void __program_cloudsc_py_internal(
             zpsupsatsrce_slice_zconvsrce_slice_plus_zfallsrce_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zfallsink + ((jl + (klon * (jm - 1))) - 1), &zfallsink_index_1,
               1);
 
           dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
               zconvsink + ((jl + (klon * (jm - 1))) - 1), &zconvsink_index, 1);
           {
-            double __in1 = zfallsink_index_1;
+            float __in1 = zfallsink_index_1;
             double __in2 = zconvsink_index;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -28746,12 +28656,12 @@ void __program_cloudsc_py_internal(
             zfallsink_slice_plus_zconvsink_slice = __out;
           }
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_9, 1);
           {
-            double __in1 = zfallsink_slice_plus_zconvsink_slice;
-            double __in2 = zqxn_index_9;
-            double __out;
+            float __in1 = zfallsink_slice_plus_zconvsink_slice;
+            float __in2 = zqxn_index_9;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -28761,10 +28671,10 @@ void __program_cloudsc_py_internal(
             zfallsink_slice_zconvsink_slice_times_zqxn_slice = __out;
           }
           {
-            double __in1 =
+            float __in1 =
                 zpsupsatsrce_slice_zconvsrce_slice_plus_zfallsrce_slice;
-            double __in2 = zfallsink_slice_zconvsink_slice_times_zqxn_slice;
-            double __out;
+            float __in2 = zfallsink_slice_zconvsink_slice_times_zqxn_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -28774,8 +28684,8 @@ void __program_cloudsc_py_internal(
             zfluxq_slice = __out;
           }
           {
-            double __inp = zfluxq_slice;
-            double __out;
+            float __inp = zfluxq_slice;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1099_16)
@@ -28786,56 +28696,43 @@ void __program_cloudsc_py_internal(
           }
         }
       }
-      {
-        int iphase_index_4;
 
-        dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-            iphase + (jm - 1), &iphase_index_4, 1);
+      iphase_index_4 = iphase[(jm - 1)];
+      {
+
         {
-          int __in1 = iphase_index_4;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Eq_)
-          __out = (__in1 == 1);
+          __out = (iphase_index_4 == 1);
           ///////////////////
 
           __tmp268 = __out;
         }
       }
       if (__tmp268) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_79 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_79 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_79); jl = (jl + 1)) {
           {
-            double tendency_loc_t_index_3;
-            double zqxn_index_10;
+            float tendency_loc_t_index_3;
+            float zqxn_index_10;
             double zqx_index_54;
-            double zqxn_slice_minus_zqx_slice;
-            double zfluxq_index;
-            double zqxn_slice_zqx_slice_minus_zfluxq_slice;
+            float zqxn_slice_minus_zqx_slice;
+            float zfluxq_index;
+            float zqxn_slice_zqx_slice_minus_zfluxq_slice;
             double ydthf_ralvdcp_times_zqxn_slice_zqx_slice_zfluxq_slice;
             double ydthf_ralvdcp_zqxn_slice_zqx_slice_zfluxq_slice_times_zqtmst;
-            double
+            float
                 tendency_loc_t_slice_plus_ydthf_ralvdcp_zqxn_slice_zqx_slice_zfluxq_slice_zqtmst;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                tendency_loc_t + ((jl + (klon * (jk - 1))) - 1),
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                tendency_loc_t_lowered + ((jl + (klon * (jk - 1))) - 1),
                 &tendency_loc_t_index_3, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_10, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -28843,9 +28740,9 @@ void __program_cloudsc_py_internal(
                        1),
                 &zqx_index_54, 1);
             {
-              double __in1 = zqxn_index_10;
+              float __in1 = zqxn_index_10;
               double __in2 = zqx_index_54;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -28855,12 +28752,12 @@ void __program_cloudsc_py_internal(
               zqxn_slice_minus_zqx_slice = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zfluxq + ((jl + (klon * (jm - 1))) - 1), &zfluxq_index, 1);
             {
-              double __in1 = zqxn_slice_minus_zqx_slice;
-              double __in2 = zfluxq_index;
-              double __out;
+              float __in1 = zqxn_slice_minus_zqx_slice;
+              float __in2 = zfluxq_index;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -28871,7 +28768,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = ydthf_ralvdcp;
-              double __in2 = zqxn_slice_zqx_slice_minus_zfluxq_slice;
+              float __in2 = zqxn_slice_zqx_slice_minus_zfluxq_slice;
               double __out;
 
               ///////////////////
@@ -28896,10 +28793,10 @@ void __program_cloudsc_py_internal(
                   __out;
             }
             {
-              double __in1 = tendency_loc_t_index_3;
+              float __in1 = tendency_loc_t_index_3;
               double __in2 =
                   ydthf_ralvdcp_zqxn_slice_zqx_slice_zfluxq_slice_times_zqtmst;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -28910,70 +28807,57 @@ void __program_cloudsc_py_internal(
                   __out;
             }
             {
-              double __inp =
+              float __inp =
                   tendency_loc_t_slice_plus_ydthf_ralvdcp_zqxn_slice_zqx_slice_zfluxq_slice_zqtmst;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1102_20)
               __out = __inp;
               ///////////////////
 
-              tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+              tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
             }
           }
         }
       }
-      {
-        int iphase_index_5;
 
-        dace::CopyND<int, 1, false, 1>::template ConstDst<1>::Copy(
-            iphase + (jm - 1), &iphase_index_5, 1);
+      iphase_index_5 = iphase[(jm - 1)];
+      {
+
         {
-          int __in1 = iphase_index_5;
           bool __out;
 
           ///////////////////
           // Tasklet code (_Eq_)
-          __out = (__in1 == 2);
+          __out = (iphase_index_5 == 2);
           ///////////////////
 
           __tmp269 = __out;
         }
       }
       if (__tmp269) {
-        {
 
-          {
-            int __in1 = kfdia;
-            int __out;
+        kfdia_plus_1_80 = (kfdia + 1);
 
-            ///////////////////
-            // Tasklet code (_Add_)
-            __out = (__in1 + int(1));
-            ///////////////////
-
-            kfdia_plus_1_80 = __out;
-          }
-        }
         for (jl = kidia; (jl < kfdia_plus_1_80); jl = (jl + 1)) {
           {
-            double tendency_loc_t_index_4;
-            double zqxn_index_11;
+            float tendency_loc_t_index_4;
+            float zqxn_index_11;
             double zqx_index_55;
-            double zqxn_slice_minus_zqx_slice_0;
-            double zfluxq_index_0;
-            double zqxn_slice_zqx_slice_minus_zfluxq_slice_0;
+            float zqxn_slice_minus_zqx_slice_0;
+            float zfluxq_index_0;
+            float zqxn_slice_zqx_slice_minus_zfluxq_slice_0;
             double ydthf_ralsdcp_times_zqxn_slice_zqx_slice_zfluxq_slice;
             double ydthf_ralsdcp_zqxn_slice_zqx_slice_zfluxq_slice_times_zqtmst;
-            double
+            float
                 tendency_loc_t_slice_plus_ydthf_ralsdcp_zqxn_slice_zqx_slice_zfluxq_slice_zqtmst;
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-                tendency_loc_t + ((jl + (klon * (jk - 1))) - 1),
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+                tendency_loc_t_lowered + ((jl + (klon * (jk - 1))) - 1),
                 &tendency_loc_t_index_4, 1);
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_11, 1);
 
             dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -28981,9 +28865,9 @@ void __program_cloudsc_py_internal(
                        1),
                 &zqx_index_55, 1);
             {
-              double __in1 = zqxn_index_11;
+              float __in1 = zqxn_index_11;
               double __in2 = zqx_index_55;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -28993,12 +28877,12 @@ void __program_cloudsc_py_internal(
               zqxn_slice_minus_zqx_slice_0 = __out;
             }
 
-            dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+            dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
                 zfluxq + ((jl + (klon * (jm - 1))) - 1), &zfluxq_index_0, 1);
             {
-              double __in1 = zqxn_slice_minus_zqx_slice_0;
-              double __in2 = zfluxq_index_0;
-              double __out;
+              float __in1 = zqxn_slice_minus_zqx_slice_0;
+              float __in2 = zfluxq_index_0;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Sub_)
@@ -29009,7 +28893,7 @@ void __program_cloudsc_py_internal(
             }
             {
               double __in1 = ydthf_ralsdcp;
-              double __in2 = zqxn_slice_zqx_slice_minus_zfluxq_slice_0;
+              float __in2 = zqxn_slice_zqx_slice_minus_zfluxq_slice_0;
               double __out;
 
               ///////////////////
@@ -29034,10 +28918,10 @@ void __program_cloudsc_py_internal(
                   __out;
             }
             {
-              double __in1 = tendency_loc_t_index_4;
+              float __in1 = tendency_loc_t_index_4;
               double __in2 =
                   ydthf_ralsdcp_zqxn_slice_zqx_slice_zfluxq_slice_times_zqtmst;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (_Add_)
@@ -29048,59 +28932,48 @@ void __program_cloudsc_py_internal(
                   __out;
             }
             {
-              double __inp =
+              float __inp =
                   tendency_loc_t_slice_plus_ydthf_ralsdcp_zqxn_slice_zqx_slice_zfluxq_slice_zqtmst;
-              double __out;
+              float __out;
 
               ///////////////////
               // Tasklet code (assign_1105_20)
               __out = __inp;
               ///////////////////
 
-              tendency_loc_t[((jl + (klon * (jk - 1))) - 1)] = __out;
+              tendency_loc_t_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
             }
           }
         }
       }
-      {
 
-        {
-          int __in1 = kfdia;
-          int __out;
+      kfdia_plus_1_81 = (kfdia + 1);
 
-          ///////////////////
-          // Tasklet code (_Add_)
-          __out = (__in1 + int(1));
-          ///////////////////
-
-          kfdia_plus_1_81 = __out;
-        }
-      }
       for (jl = kidia; (jl < kfdia_plus_1_81); jl = (jl + 1)) {
         {
-          double tendency_loc_cld_index;
-          double zqxn_index_12;
-          double zqx0_index;
-          double zqxn_slice_minus_zqx0_slice;
-          double zqxn_slice_zqx0_slice_times_zqtmst;
-          double tendency_loc_cld_slice_plus_zqxn_slice_zqx0_slice_zqtmst;
+          float tendency_loc_cld_index;
+          float zqxn_index_12;
+          float zqx0_index;
+          float zqxn_slice_minus_zqx0_slice;
+          float zqxn_slice_zqx0_slice_times_zqtmst;
+          float tendency_loc_cld_slice_plus_zqxn_slice_zqx0_slice_zqtmst;
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-              tendency_loc_cld +
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+              tendency_loc_cld_lowered +
                   (((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) - 1),
               &tendency_loc_cld_index, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqxn + ((jl + (klon * (jm - 1))) - 1), &zqxn_index_12, 1);
 
-          dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+          dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
               zqx0 +
                   (((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) - 1),
               &zqx0_index, 1);
           {
-            double __in1 = zqxn_index_12;
-            double __in2 = zqx0_index;
-            double __out;
+            float __in1 = zqxn_index_12;
+            float __in2 = zqx0_index;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Sub_)
@@ -29110,9 +28983,9 @@ void __program_cloudsc_py_internal(
             zqxn_slice_minus_zqx0_slice = __out;
           }
           {
-            double __in1 = zqxn_slice_minus_zqx0_slice;
+            float __in1 = zqxn_slice_minus_zqx0_slice;
             double __in2 = zqtmst;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Mult_)
@@ -29122,9 +28995,9 @@ void __program_cloudsc_py_internal(
             zqxn_slice_zqx0_slice_times_zqtmst = __out;
           }
           {
-            double __in1 = tendency_loc_cld_index;
-            double __in2 = zqxn_slice_zqx0_slice_times_zqtmst;
-            double __out;
+            float __in1 = tendency_loc_cld_index;
+            float __in2 = zqxn_slice_zqx0_slice_times_zqtmst;
+            float __out;
 
             ///////////////////
             // Tasklet code (_Add_)
@@ -29134,54 +29007,43 @@ void __program_cloudsc_py_internal(
             tendency_loc_cld_slice_plus_zqxn_slice_zqx0_slice_zqtmst = __out;
           }
           {
-            double __inp =
+            float __inp =
                 tendency_loc_cld_slice_plus_zqxn_slice_zqx0_slice_zqtmst;
-            double __out;
+            float __out;
 
             ///////////////////
             // Tasklet code (assign_1107_16)
             __out = __inp;
             ///////////////////
 
-            tendency_loc_cld[(
+            tendency_loc_cld_lowered[(
                 ((jl + ((klev * klon) * (jm - 1))) + (klon * (jk - 1))) - 1)] =
                 __out;
           }
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_82 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_82 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_82); jl = (jl + 1)) {
       {
-        double tendency_loc_q_index_2;
-        double zqxn_index_13;
+        float tendency_loc_q_index_2;
+        float zqxn_index_13;
         double zqx_index_56;
-        double zqxn_slice_minus_zqx_slice_1;
-        double zqxn_slice_zqx_slice_times_zqtmst;
-        double tendency_loc_q_slice_plus_zqxn_slice_zqx_slice_zqtmst;
-        double tendency_loc_a_index;
-        double zda_index;
-        double zda_slice_times_zqtmst;
-        double tendency_loc_a_slice_plus_zda_slice_zqtmst;
+        float zqxn_slice_minus_zqx_slice_1;
+        float zqxn_slice_zqx_slice_times_zqtmst;
+        float tendency_loc_q_slice_plus_zqxn_slice_zqx_slice_zqtmst;
+        float tendency_loc_a_index;
+        float zda_index;
+        float zda_slice_times_zqtmst;
+        float tendency_loc_a_slice_plus_zda_slice_zqtmst;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            tendency_loc_q + ((jl + (klon * (jk - 1))) - 1),
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            tendency_loc_q_lowered + ((jl + (klon * (jk - 1))) - 1),
             &tendency_loc_q_index_2, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqxn + ((jl + (klon * (ncldqv - 1))) - 1), &zqxn_index_13, 1);
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -29189,9 +29051,9 @@ void __program_cloudsc_py_internal(
                    1),
             &zqx_index_56, 1);
         {
-          double __in1 = zqxn_index_13;
+          float __in1 = zqxn_index_13;
           double __in2 = zqx_index_56;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -29201,9 +29063,9 @@ void __program_cloudsc_py_internal(
           zqxn_slice_minus_zqx_slice_1 = __out;
         }
         {
-          double __in1 = zqxn_slice_minus_zqx_slice_1;
+          float __in1 = zqxn_slice_minus_zqx_slice_1;
           double __in2 = zqtmst;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29213,9 +29075,9 @@ void __program_cloudsc_py_internal(
           zqxn_slice_zqx_slice_times_zqtmst = __out;
         }
         {
-          double __in1 = tendency_loc_q_index_2;
-          double __in2 = zqxn_slice_zqx_slice_times_zqtmst;
-          double __out;
+          float __in1 = tendency_loc_q_index_2;
+          float __in2 = zqxn_slice_zqx_slice_times_zqtmst;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29225,27 +29087,27 @@ void __program_cloudsc_py_internal(
           tendency_loc_q_slice_plus_zqxn_slice_zqx_slice_zqtmst = __out;
         }
         {
-          double __inp = tendency_loc_q_slice_plus_zqxn_slice_zqx_slice_zqtmst;
-          double __out;
+          float __inp = tendency_loc_q_slice_plus_zqxn_slice_zqx_slice_zqtmst;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1109_12)
           __out = __inp;
           ///////////////////
 
-          tendency_loc_q[((jl + (klon * (jk - 1))) - 1)] = __out;
+          tendency_loc_q_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            tendency_loc_a + ((jl + (klon * (jk - 1))) - 1),
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            tendency_loc_a_lowered + ((jl + (klon * (jk - 1))) - 1),
             &tendency_loc_a_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zda + (jl - 1), &zda_index, 1);
         {
-          double __in1 = zda_index;
+          float __in1 = zda_index;
           double __in2 = zqtmst;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29255,9 +29117,9 @@ void __program_cloudsc_py_internal(
           zda_slice_times_zqtmst = __out;
         }
         {
-          double __in1 = tendency_loc_a_index;
-          double __in2 = zda_slice_times_zqtmst;
-          double __out;
+          float __in1 = tendency_loc_a_index;
+          float __in2 = zda_slice_times_zqtmst;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29267,91 +29129,69 @@ void __program_cloudsc_py_internal(
           tendency_loc_a_slice_plus_zda_slice_zqtmst = __out;
         }
         {
-          double __inp = tendency_loc_a_slice_plus_zda_slice_zqtmst;
-          double __out;
+          float __inp = tendency_loc_a_slice_plus_zda_slice_zqtmst;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1110_12)
           __out = __inp;
           ///////////////////
 
-          tendency_loc_a[((jl + (klon * (jk - 1))) - 1)] = __out;
+          tendency_loc_a_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
       }
     }
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_83 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_83 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_83); jl = (jl + 1)) {
       {
-        double pcovptot_slice;
+        float pcovptot_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zcovptot + (jl - 1), &pcovptot_slice, 1);
         {
-          double __inp = pcovptot_slice;
-          double __out;
+          float __inp = pcovptot_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1112_12)
           __out = __inp;
           ///////////////////
 
-          pcovptot[((jl + (klon * (jk - 1))) - 1)] = __out;
+          pcovptot_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
       }
     }
   }
   for (jk = 1; (jk < (klev + 2)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_84 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_84 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_84); jl = (jl + 1)) {
       {
-        double zpfplsx_index_4;
-        double zpfplsx_index_5;
-        double pfplsl_slice;
-        double zpfplsx_index_6;
-        double zpfplsx_index_7;
-        double pfplsn_slice;
+        float zpfplsx_index_4;
+        float zpfplsx_index_5;
+        float pfplsl_slice;
+        float zpfplsx_index_6;
+        float zpfplsx_index_7;
+        float pfplsn_slice;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zpfplsx + (((jl + (klon * (jk - 1))) +
                         ((klon * (klev + 1)) * (ncldqr - 1))) -
                        1),
             &zpfplsx_index_4, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zpfplsx + (((jl + (klon * (jk - 1))) +
                         ((klon * (klev + 1)) * (ncldql - 1))) -
                        1),
             &zpfplsx_index_5, 1);
         {
-          double __in1 = zpfplsx_index_4;
-          double __in2 = zpfplsx_index_5;
-          double __out;
+          float __in1 = zpfplsx_index_4;
+          float __in2 = zpfplsx_index_5;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29361,32 +29201,32 @@ void __program_cloudsc_py_internal(
           pfplsl_slice = __out;
         }
         {
-          double __inp = pfplsl_slice;
-          double __out;
+          float __inp = pfplsl_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1115_12)
           __out = __inp;
           ///////////////////
 
-          pfplsl[((jl + (klon * (jk - 1))) - 1)] = __out;
+          pfplsl_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zpfplsx + (((jl + (klon * (jk - 1))) +
                         ((klon * (klev + 1)) * (ncldqs - 1))) -
                        1),
             &zpfplsx_index_6, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zpfplsx + (((jl + (klon * (jk - 1))) +
                         ((klon * (klev + 1)) * (ncldqi - 1))) -
                        1),
             &zpfplsx_index_7, 1);
         {
-          double __in1 = zpfplsx_index_6;
-          double __in2 = zpfplsx_index_7;
-          double __out;
+          float __in1 = zpfplsx_index_6;
+          float __in2 = zpfplsx_index_7;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29396,33 +29236,22 @@ void __program_cloudsc_py_internal(
           pfplsn_slice = __out;
         }
         {
-          double __inp = pfplsn_slice;
-          double __out;
+          float __inp = pfplsn_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1116_12)
           __out = __inp;
           ///////////////////
 
-          pfplsn[((jl + (klon * (jk - 1))) - 1)] = __out;
+          pfplsn_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
       }
     }
   }
-  {
 
-    {
-      int __in1 = kfdia;
-      int __out;
+  kfdia_plus_1_85 = (kfdia + 1);
 
-      ///////////////////
-      // Tasklet code (_Add_)
-      __out = (__in1 + int(1));
-      ///////////////////
-
-      kfdia_plus_1_85 = __out;
-    }
-  }
   for (jl = kidia; (jl < kfdia_plus_1_85); jl = (jl + 1)) {
     {
 
@@ -29431,7 +29260,7 @@ void __program_cloudsc_py_internal(
 
         ///////////////////
         // Tasklet code (assign_1118_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         pfsqlf[(jl - 1)] = __out;
@@ -29441,7 +29270,7 @@ void __program_cloudsc_py_internal(
 
         ///////////////////
         // Tasklet code (assign_1119_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         pfsqif[(jl - 1)] = __out;
@@ -29451,7 +29280,7 @@ void __program_cloudsc_py_internal(
 
         ///////////////////
         // Tasklet code (assign_1120_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         pfsqrf[(jl - 1)] = __out;
@@ -29461,102 +29290,91 @@ void __program_cloudsc_py_internal(
 
         ///////////////////
         // Tasklet code (assign_1121_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
         pfsqsf[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_1122_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        pfcqlng[(jl - 1)] = __out;
+        pfcqlng_lowered[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_1123_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        pfcqnng[(jl - 1)] = __out;
+        pfcqnng_lowered[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_1124_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        pfcqrng[(jl - 1)] = __out;
+        pfcqrng_lowered[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_1125_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        pfcqsng[(jl - 1)] = __out;
+        pfcqsng_lowered[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_1126_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        pfsqltur[(jl - 1)] = __out;
+        pfsqltur_lowered[(jl - 1)] = __out;
       }
       {
-        double __out;
+        float __out;
 
         ///////////////////
         // Tasklet code (assign_1127_8)
-        __out = 0.0;
+        __out = float(0.0);
         ///////////////////
 
-        pfsqitur[(jl - 1)] = __out;
+        pfsqitur_lowered[(jl - 1)] = __out;
       }
     }
   }
   for (jk = 1; (jk < (klev + 1)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_86 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_86 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_86); jl = (jl + 1)) {
       {
         double neg_zrg_r;
-        double paph_index_6;
-        double paph_index_7;
-        double paph_slice_minus_paph_slice;
+        float paph_index_6;
+        float paph_index_7;
+        float paph_slice_minus_paph_slice;
         double expr_times_paph_slice_paph_slice;
         double pfsqlf_index;
         double pfsqif_index;
         double pfsqrf_slice;
         double pfsqsf_slice;
-        double pfcqlng_index;
-        double pfcqnng_index;
-        double pfcqrng_slice;
+        float pfcqlng_index;
+        float pfcqnng_index;
+        float pfcqrng_slice;
 
         {
           double __in = zrg_r;
@@ -29570,15 +29388,15 @@ void __program_cloudsc_py_internal(
           neg_zrg_r = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            paph + (((jk * klon) + jl) - 1), &paph_index_6, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            paph_lowered + (((jk * klon) + jl) - 1), &paph_index_6, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            paph + ((jl + (klon * (jk - 1))) - 1), &paph_index_7, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            paph_lowered + ((jl + (klon * (jk - 1))) - 1), &paph_index_7, 1);
         {
-          double __in1 = paph_index_6;
-          double __in2 = paph_index_7;
-          double __out;
+          float __in1 = paph_index_6;
+          float __in2 = paph_index_7;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -29589,7 +29407,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in1 = neg_zrg_r;
-          double __in2 = paph_slice_minus_paph_slice;
+          float __in2 = paph_slice_minus_paph_slice;
           double __out;
 
           ///////////////////
@@ -29668,148 +29486,153 @@ void __program_cloudsc_py_internal(
           pfsqsf[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqlng + ((jl + (klon * (jk - 1))) - 1), &pfcqlng_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqlng_lowered + ((jl + (klon * (jk - 1))) - 1), &pfcqlng_index,
+            1);
         {
-          double __inp = pfcqlng_index;
-          double __out;
+          float __inp = pfcqlng_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1135_12)
           __out = __inp;
           ///////////////////
 
-          pfcqlng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqlng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqlng + ((jl + (klon * (jk - 1))) - 1), &pfcqrng_slice, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqlng_lowered + ((jl + (klon * (jk - 1))) - 1), &pfcqrng_slice,
+            1);
         {
-          double __inp = pfcqrng_slice;
-          double __out;
+          float __inp = pfcqrng_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1137_12)
           __out = __inp;
           ///////////////////
 
-          pfcqrng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqrng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqnng + ((jl + (klon * (jk - 1))) - 1), &pfcqnng_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqnng_lowered + ((jl + (klon * (jk - 1))) - 1), &pfcqnng_index,
+            1);
         {
-          double __inp = pfcqnng_index;
-          double __out;
+          float __inp = pfcqnng_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1136_12)
           __out = __inp;
           ///////////////////
 
-          pfcqnng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqnng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqnng + ((jl + (klon * (jk - 1))) - 1), &pfcqsng_slice, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqnng_lowered + ((jl + (klon * (jk - 1))) - 1), &pfcqsng_slice,
+            1);
       }
       {
-        double pfsqltur_index;
-        double pfsqitur_index;
+        float pfsqltur_index;
+        float pfsqitur_index;
         double zalfaw_1;
         double pfsqlf_index_0;
-        double zqxn2d_index;
-        double zqx0_index_0;
-        double zqxn2d_slice_minus_zqx0_slice;
-        double pvfl_index;
-        double pvfl_slice_times_ptsphy;
-        double zqxn2d_slice_zqx0_slice_plus_pvfl_slice_ptsphy;
-        double plude_index_5;
+        float zqxn2d_index;
+        float zqx0_index_0;
+        float zqxn2d_slice_minus_zqx0_slice;
+        float pvfl_index;
+        float pvfl_slice_times_ptsphy;
+        float zqxn2d_slice_zqx0_slice_plus_pvfl_slice_ptsphy;
+        float plude_index_5;
         double zalfaw_times_plude_slice;
-        double
+        float
             zqxn2d_slice_zqx0_slice_pvfl_slice_ptsphy_minus_zalfaw_plude_slice;
-        double
+        float
             zqxn2d_slice_zqx0_slice_pvfl_slice_ptsphy_zalfaw_plude_slice_times_zgdph_r;
         double
             pfsqlf_slice_plus_zqxn2d_slice_zqx0_slice_pvfl_slice_ptsphy_zalfaw_plude_slice_zgdph_r;
-        double pfcqlng_index_0;
-        double zlneg_index_2;
-        double zlneg_slice_times_zgdph_r;
-        double pfcqlng_slice_plus_zlneg_slice_zgdph_r;
-        double pfsqltur_index_0;
-        double pvfl_index_0;
-        double pvfl_slice_times_ptsphy_0;
-        double pvfl_slice_ptsphy_times_zgdph_r;
-        double pfsqltur_slice_plus_pvfl_slice_ptsphy_zgdph_r;
+        float pfcqlng_index_0;
+        float zlneg_index_2;
+        float zlneg_slice_times_zgdph_r;
+        float pfcqlng_slice_plus_zlneg_slice_zgdph_r;
+        float pfsqltur_index_0;
+        float pvfl_index_0;
+        float pvfl_slice_times_ptsphy_0;
+        float pvfl_slice_ptsphy_times_zgdph_r;
+        float pfsqltur_slice_plus_pvfl_slice_ptsphy_zgdph_r;
         double pfsqrf_index;
-        double zqxn2d_index_0;
-        double zqx0_index_1;
-        double zqxn2d_slice_minus_zqx0_slice_0;
-        double zqxn2d_slice_zqx0_slice_times_zgdph_r;
+        float zqxn2d_index_0;
+        float zqx0_index_1;
+        float zqxn2d_slice_minus_zqx0_slice_0;
+        float zqxn2d_slice_zqx0_slice_times_zgdph_r;
         double pfsqrf_slice_plus_zqxn2d_slice_zqx0_slice_zgdph_r;
-        double pfcqrng_index;
-        double zlneg_index_3;
-        double zlneg_slice_times_zgdph_r_0;
-        double pfcqrng_slice_plus_zlneg_slice_zgdph_r;
+        float pfcqrng_index;
+        float zlneg_index_3;
+        float zlneg_slice_times_zgdph_r_0;
+        float pfcqrng_slice_plus_zlneg_slice_zgdph_r;
         double pfsqif_index_0;
-        double zqxn2d_index_1;
-        double zqx0_index_2;
-        double zqxn2d_slice_minus_zqx0_slice_1;
-        double pvfi_index;
-        double pvfi_slice_times_ptsphy;
-        double zqxn2d_slice_zqx0_slice_plus_pvfi_slice_ptsphy;
+        float zqxn2d_index_1;
+        float zqx0_index_2;
+        float zqxn2d_slice_minus_zqx0_slice_1;
+        float pvfi_index;
+        float pvfi_slice_times_ptsphy;
+        float zqxn2d_slice_zqx0_slice_plus_pvfi_slice_ptsphy;
         double __tmp270;
-        double plude_index_6;
+        float plude_index_6;
         double __tmp271;
-        double
+        float
             zqxn2d_slice_zqx0_slice_pvfi_slice_ptsphy_minus_1_0_zalfaw_plude_slice;
-        double
+        float
             zqxn2d_slice_zqx0_slice_pvfi_slice_ptsphy_1_0_zalfaw_plude_slice_times_zgdph_r;
         double
             pfsqif_slice_plus_zqxn2d_slice_zqx0_slice_pvfi_slice_ptsphy_1_0_zalfaw_plude_slice_zgdph_r;
-        double pfcqnng_index_0;
-        double zlneg_index_4;
-        double zlneg_slice_times_zgdph_r_1;
-        double pfcqnng_slice_plus_zlneg_slice_zgdph_r;
-        double pfsqitur_index_0;
-        double pvfi_index_0;
-        double pvfi_slice_times_ptsphy_0;
-        double pvfi_slice_ptsphy_times_zgdph_r;
-        double pfsqitur_slice_plus_pvfi_slice_ptsphy_zgdph_r;
+        float pfcqnng_index_0;
+        float zlneg_index_4;
+        float zlneg_slice_times_zgdph_r_1;
+        float pfcqnng_slice_plus_zlneg_slice_zgdph_r;
+        float pfsqitur_index_0;
+        float pvfi_index_0;
+        float pvfi_slice_times_ptsphy_0;
+        float pvfi_slice_ptsphy_times_zgdph_r;
+        float pfsqitur_slice_plus_pvfi_slice_ptsphy_zgdph_r;
         double pfsqsf_index;
-        double zqxn2d_index_2;
-        double zqx0_index_3;
-        double zqxn2d_slice_minus_zqx0_slice_2;
-        double zqxn2d_slice_zqx0_slice_times_zgdph_r_0;
+        float zqxn2d_index_2;
+        float zqx0_index_3;
+        float zqxn2d_slice_minus_zqx0_slice_2;
+        float zqxn2d_slice_zqx0_slice_times_zgdph_r_0;
         double pfsqsf_slice_plus_zqxn2d_slice_zqx0_slice_zgdph_r;
-        double pfcqsng_index;
-        double zlneg_index_5;
-        double zlneg_slice_times_zgdph_r_2;
-        double pfcqsng_slice_plus_zlneg_slice_zgdph_r;
+        float pfcqsng_index;
+        float zlneg_index_5;
+        float zlneg_slice_times_zgdph_r_2;
+        float pfcqsng_slice_plus_zlneg_slice_zgdph_r;
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfsqltur + ((jl + (klon * (jk - 1))) - 1), &pfsqltur_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfsqltur_lowered + ((jl + (klon * (jk - 1))) - 1), &pfsqltur_index,
+            1);
         {
-          double __inp = pfsqltur_index;
-          double __out;
+          float __inp = pfsqltur_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1139_12)
           __out = __inp;
           ///////////////////
 
-          pfsqltur[(((jk * klon) + jl) - 1)] = __out;
+          pfsqltur_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfsqltur + (((jk * klon) + jl) - 1), &pfsqltur_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfsqltur_lowered + (((jk * klon) + jl) - 1), &pfsqltur_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pvfl + ((jl + (klon * (jk - 1))) - 1), &pvfl_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pvfl_lowered + ((jl + (klon * (jk - 1))) - 1), &pvfl_index_0, 1);
         {
-          double __in1 = pvfl_index_0;
+          float __in1 = pvfl_index_0;
           double __in2 = ptsphy;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29819,9 +29642,9 @@ void __program_cloudsc_py_internal(
           pvfl_slice_times_ptsphy_0 = __out;
         }
         {
-          double __in1 = pvfl_slice_times_ptsphy_0;
+          float __in1 = pvfl_slice_times_ptsphy_0;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29831,9 +29654,9 @@ void __program_cloudsc_py_internal(
           pvfl_slice_ptsphy_times_zgdph_r = __out;
         }
         {
-          double __in1 = pfsqltur_index_0;
-          double __in2 = pvfl_slice_ptsphy_times_zgdph_r;
-          double __out;
+          float __in1 = pfsqltur_index_0;
+          float __in2 = pvfl_slice_ptsphy_times_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29843,29 +29666,29 @@ void __program_cloudsc_py_internal(
           pfsqltur_slice_plus_pvfl_slice_ptsphy_zgdph_r = __out;
         }
         {
-          double __inp = pfsqltur_slice_plus_pvfl_slice_ptsphy_zgdph_r;
-          double __out;
+          float __inp = pfsqltur_slice_plus_pvfl_slice_ptsphy_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1144_12)
           __out = __inp;
           ///////////////////
 
-          pfsqltur[(((jk * klon) + jl) - 1)] = __out;
+          pfsqltur_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqlng + (((jk * klon) + jl) - 1), &pfcqlng_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqlng_lowered + (((jk * klon) + jl) - 1), &pfcqlng_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zlneg +
                 (((jl + ((klev * klon) * (ncldql - 1))) + (klon * (jk - 1))) -
                  1),
             &zlneg_index_2, 1);
         {
-          double __in1 = zlneg_index_2;
+          float __in1 = zlneg_index_2;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29875,9 +29698,9 @@ void __program_cloudsc_py_internal(
           zlneg_slice_times_zgdph_r = __out;
         }
         {
-          double __in1 = pfcqlng_index_0;
-          double __in2 = zlneg_slice_times_zgdph_r;
-          double __out;
+          float __in1 = pfcqlng_index_0;
+          float __in2 = zlneg_slice_times_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29887,40 +29710,40 @@ void __program_cloudsc_py_internal(
           pfcqlng_slice_plus_zlneg_slice_zgdph_r = __out;
         }
         {
-          double __inp = pfcqlng_slice_plus_zlneg_slice_zgdph_r;
-          double __out;
+          float __inp = pfcqlng_slice_plus_zlneg_slice_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1143_12)
           __out = __inp;
           ///////////////////
 
-          pfcqlng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqlng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
         {
-          double __inp = pfcqsng_slice;
-          double __out;
+          float __inp = pfcqsng_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1138_12)
           __out = __inp;
           ///////////////////
 
-          pfcqsng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqsng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqsng + (((jk * klon) + jl) - 1), &pfcqsng_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqsng_lowered + (((jk * klon) + jl) - 1), &pfcqsng_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zlneg +
                 (((jl + ((klev * klon) * (ncldqs - 1))) + (klon * (jk - 1))) -
                  1),
             &zlneg_index_5, 1);
         {
-          double __in1 = zlneg_index_5;
+          float __in1 = zlneg_index_5;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29930,9 +29753,9 @@ void __program_cloudsc_py_internal(
           zlneg_slice_times_zgdph_r_2 = __out;
         }
         {
-          double __in1 = pfcqsng_index;
-          double __in2 = zlneg_slice_times_zgdph_r_2;
-          double __out;
+          float __in1 = pfcqsng_index;
+          float __in2 = zlneg_slice_times_zgdph_r_2;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -29942,32 +29765,32 @@ void __program_cloudsc_py_internal(
           pfcqsng_slice_plus_zlneg_slice_zgdph_r = __out;
         }
         {
-          double __inp = pfcqsng_slice_plus_zlneg_slice_zgdph_r;
-          double __out;
+          float __inp = pfcqsng_slice_plus_zlneg_slice_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1151_12)
           __out = __inp;
           ///////////////////
 
-          pfcqsng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqsng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqxn2d +
                 (((jl + ((klev * klon) * (ncldqr - 1))) + (klon * (jk - 1))) -
                  1),
             &zqxn2d_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqx0 +
                 (((jl + ((klev * klon) * (ncldqr - 1))) + (klon * (jk - 1))) -
                  1),
             &zqx0_index_1, 1);
         {
-          double __in1 = zqxn2d_index_0;
-          double __in2 = zqx0_index_1;
-          double __out;
+          float __in1 = zqxn2d_index_0;
+          float __in2 = zqx0_index_1;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -29977,9 +29800,9 @@ void __program_cloudsc_py_internal(
           zqxn2d_slice_minus_zqx0_slice_0 = __out;
         }
         {
-          double __in1 = zqxn2d_slice_minus_zqx0_slice_0;
+          float __in1 = zqxn2d_slice_minus_zqx0_slice_0;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -29993,7 +29816,7 @@ void __program_cloudsc_py_internal(
             pfsqrf + (((jk * klon) + jl) - 1), &pfsqrf_index, 1);
         {
           double __in1 = pfsqrf_index;
-          double __in2 = zqxn2d_slice_zqx0_slice_times_zgdph_r;
+          float __in2 = zqxn2d_slice_zqx0_slice_times_zgdph_r;
           double __out;
 
           ///////////////////
@@ -30015,15 +29838,15 @@ void __program_cloudsc_py_internal(
           pfsqrf[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zlneg +
                 (((jl + ((klev * klon) * (ncldqr - 1))) + (klon * (jk - 1))) -
                  1),
             &zlneg_index_3, 1);
         {
-          double __in1 = zlneg_index_3;
+          float __in1 = zlneg_index_3;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30033,12 +29856,12 @@ void __program_cloudsc_py_internal(
           zlneg_slice_times_zgdph_r_0 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqrng + (((jk * klon) + jl) - 1), &pfcqrng_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqrng_lowered + (((jk * klon) + jl) - 1), &pfcqrng_index, 1);
         {
-          double __in1 = pfcqrng_index;
-          double __in2 = zlneg_slice_times_zgdph_r_0;
-          double __out;
+          float __in1 = pfcqrng_index;
+          float __in2 = zlneg_slice_times_zgdph_r_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -30048,15 +29871,15 @@ void __program_cloudsc_py_internal(
           pfcqrng_slice_plus_zlneg_slice_zgdph_r = __out;
         }
         {
-          double __inp = pfcqrng_slice_plus_zlneg_slice_zgdph_r;
-          double __out;
+          float __inp = pfcqrng_slice_plus_zlneg_slice_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1146_12)
           __out = __inp;
           ///////////////////
 
-          pfcqrng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqrng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
@@ -30078,7 +29901,7 @@ void __program_cloudsc_py_internal(
 
           ///////////////////
           // Tasklet code (_Sub_)
-          __out = (1.0 - __in2);
+          __out = (float(1.0) - __in2);
           ///////////////////
 
           __tmp270 = __out;
@@ -30087,33 +29910,33 @@ void __program_cloudsc_py_internal(
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             pfsqlf + (((jk * klon) + jl) - 1), &pfsqlf_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqxn2d +
                 (((jl + ((klev * klon) * (ncldql - 1))) + (klon * (jk - 1))) -
                  1),
             &zqxn2d_index, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqxn2d +
                 (((jl + ((klev * klon) * (ncldqi - 1))) + (klon * (jk - 1))) -
                  1),
             &zqxn2d_index_1, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqx0 +
                 (((jl + ((klev * klon) * (ncldql - 1))) + (klon * (jk - 1))) -
                  1),
             &zqx0_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqx0 +
                 (((jl + ((klev * klon) * (ncldqi - 1))) + (klon * (jk - 1))) -
                  1),
             &zqx0_index_2, 1);
         {
-          double __in1 = zqxn2d_index;
-          double __in2 = zqx0_index_0;
-          double __out;
+          float __in1 = zqxn2d_index;
+          float __in2 = zqx0_index_0;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -30123,9 +29946,9 @@ void __program_cloudsc_py_internal(
           zqxn2d_slice_minus_zqx0_slice = __out;
         }
         {
-          double __in1 = zqxn2d_index_1;
-          double __in2 = zqx0_index_2;
-          double __out;
+          float __in1 = zqxn2d_index_1;
+          float __in2 = zqx0_index_2;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -30135,12 +29958,12 @@ void __program_cloudsc_py_internal(
           zqxn2d_slice_minus_zqx0_slice_1 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pvfl + ((jl + (klon * (jk - 1))) - 1), &pvfl_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pvfl_lowered + ((jl + (klon * (jk - 1))) - 1), &pvfl_index, 1);
         {
-          double __in1 = pvfl_index;
+          float __in1 = pvfl_index;
           double __in2 = ptsphy;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30150,9 +29973,9 @@ void __program_cloudsc_py_internal(
           pvfl_slice_times_ptsphy = __out;
         }
         {
-          double __in1 = zqxn2d_slice_minus_zqx0_slice;
-          double __in2 = pvfl_slice_times_ptsphy;
-          double __out;
+          float __in1 = zqxn2d_slice_minus_zqx0_slice;
+          float __in2 = pvfl_slice_times_ptsphy;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -30162,14 +29985,14 @@ void __program_cloudsc_py_internal(
           zqxn2d_slice_zqx0_slice_plus_pvfl_slice_ptsphy = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_5, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_5, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            plude + ((jl + (klon * (jk - 1))) - 1), &plude_index_6, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            plude_lowered + ((jl + (klon * (jk - 1))) - 1), &plude_index_6, 1);
         {
           double __in1 = zalfaw;
-          double __in2 = plude_index_5;
+          float __in2 = plude_index_5;
           double __out;
 
           ///////////////////
@@ -30180,9 +30003,9 @@ void __program_cloudsc_py_internal(
           zalfaw_times_plude_slice = __out;
         }
         {
-          double __in1 = zqxn2d_slice_zqx0_slice_plus_pvfl_slice_ptsphy;
+          float __in1 = zqxn2d_slice_zqx0_slice_plus_pvfl_slice_ptsphy;
           double __in2 = zalfaw_times_plude_slice;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -30194,7 +30017,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in1 = __tmp270;
-          double __in2 = plude_index_6;
+          float __in2 = plude_index_6;
           double __out;
 
           ///////////////////
@@ -30205,10 +30028,10 @@ void __program_cloudsc_py_internal(
           __tmp271 = __out;
         }
         {
-          double __in1 =
+          float __in1 =
               zqxn2d_slice_zqx0_slice_pvfl_slice_ptsphy_minus_zalfaw_plude_slice;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30220,7 +30043,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in1 = pfsqlf_index_0;
-          double __in2 =
+          float __in2 =
               zqxn2d_slice_zqx0_slice_pvfl_slice_ptsphy_zalfaw_plude_slice_times_zgdph_r;
           double __out;
 
@@ -30248,12 +30071,12 @@ void __program_cloudsc_py_internal(
         dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
             pfsqif + (((jk * klon) + jl) - 1), &pfsqif_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pvfi + ((jl + (klon * (jk - 1))) - 1), &pvfi_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pvfi_lowered + ((jl + (klon * (jk - 1))) - 1), &pvfi_index, 1);
         {
-          double __in1 = pvfi_index;
+          float __in1 = pvfi_index;
           double __in2 = ptsphy;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30263,9 +30086,9 @@ void __program_cloudsc_py_internal(
           pvfi_slice_times_ptsphy = __out;
         }
         {
-          double __in1 = zqxn2d_slice_minus_zqx0_slice_1;
-          double __in2 = pvfi_slice_times_ptsphy;
-          double __out;
+          float __in1 = zqxn2d_slice_minus_zqx0_slice_1;
+          float __in2 = pvfi_slice_times_ptsphy;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -30275,9 +30098,9 @@ void __program_cloudsc_py_internal(
           zqxn2d_slice_zqx0_slice_plus_pvfi_slice_ptsphy = __out;
         }
         {
-          double __in1 = zqxn2d_slice_zqx0_slice_plus_pvfi_slice_ptsphy;
+          float __in1 = zqxn2d_slice_zqx0_slice_plus_pvfi_slice_ptsphy;
           double __in2 = __tmp271;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -30288,10 +30111,10 @@ void __program_cloudsc_py_internal(
               __out;
         }
         {
-          double __in1 =
+          float __in1 =
               zqxn2d_slice_zqx0_slice_pvfi_slice_ptsphy_minus_1_0_zalfaw_plude_slice;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30303,7 +30126,7 @@ void __program_cloudsc_py_internal(
         }
         {
           double __in1 = pfsqif_index_0;
-          double __in2 =
+          float __in2 =
               zqxn2d_slice_zqx0_slice_pvfi_slice_ptsphy_1_0_zalfaw_plude_slice_times_zgdph_r;
           double __out;
 
@@ -30328,29 +30151,30 @@ void __program_cloudsc_py_internal(
           pfsqif[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfsqitur + ((jl + (klon * (jk - 1))) - 1), &pfsqitur_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfsqitur_lowered + ((jl + (klon * (jk - 1))) - 1), &pfsqitur_index,
+            1);
         {
-          double __inp = pfsqitur_index;
-          double __out;
+          float __inp = pfsqitur_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1140_12)
           __out = __inp;
           ///////////////////
 
-          pfsqitur[(((jk * klon) + jl) - 1)] = __out;
+          pfsqitur_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfsqitur + (((jk * klon) + jl) - 1), &pfsqitur_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfsqitur_lowered + (((jk * klon) + jl) - 1), &pfsqitur_index_0, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pvfi + ((jl + (klon * (jk - 1))) - 1), &pvfi_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pvfi_lowered + ((jl + (klon * (jk - 1))) - 1), &pvfi_index_0, 1);
         {
-          double __in1 = pvfi_index_0;
+          float __in1 = pvfi_index_0;
           double __in2 = ptsphy;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30360,9 +30184,9 @@ void __program_cloudsc_py_internal(
           pvfi_slice_times_ptsphy_0 = __out;
         }
         {
-          double __in1 = pvfi_slice_times_ptsphy_0;
+          float __in1 = pvfi_slice_times_ptsphy_0;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30372,9 +30196,9 @@ void __program_cloudsc_py_internal(
           pvfi_slice_ptsphy_times_zgdph_r = __out;
         }
         {
-          double __in1 = pfsqitur_index_0;
-          double __in2 = pvfi_slice_ptsphy_times_zgdph_r;
-          double __out;
+          float __in1 = pfsqitur_index_0;
+          float __in2 = pvfi_slice_ptsphy_times_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -30384,26 +30208,26 @@ void __program_cloudsc_py_internal(
           pfsqitur_slice_plus_pvfi_slice_ptsphy_zgdph_r = __out;
         }
         {
-          double __inp = pfsqitur_slice_plus_pvfi_slice_ptsphy_zgdph_r;
-          double __out;
+          float __inp = pfsqitur_slice_plus_pvfi_slice_ptsphy_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1149_12)
           __out = __inp;
           ///////////////////
 
-          pfsqitur[(((jk * klon) + jl) - 1)] = __out;
+          pfsqitur_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zlneg +
                 (((jl + ((klev * klon) * (ncldqi - 1))) + (klon * (jk - 1))) -
                  1),
             &zlneg_index_4, 1);
         {
-          double __in1 = zlneg_index_4;
+          float __in1 = zlneg_index_4;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30413,12 +30237,12 @@ void __program_cloudsc_py_internal(
           zlneg_slice_times_zgdph_r_1 = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfcqnng + (((jk * klon) + jl) - 1), &pfcqnng_index_0, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfcqnng_lowered + (((jk * klon) + jl) - 1), &pfcqnng_index_0, 1);
         {
-          double __in1 = pfcqnng_index_0;
-          double __in2 = zlneg_slice_times_zgdph_r_1;
-          double __out;
+          float __in1 = pfcqnng_index_0;
+          float __in2 = zlneg_slice_times_zgdph_r_1;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Add_)
@@ -30428,32 +30252,32 @@ void __program_cloudsc_py_internal(
           pfcqnng_slice_plus_zlneg_slice_zgdph_r = __out;
         }
         {
-          double __inp = pfcqnng_slice_plus_zlneg_slice_zgdph_r;
-          double __out;
+          float __inp = pfcqnng_slice_plus_zlneg_slice_zgdph_r;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1148_12)
           __out = __inp;
           ///////////////////
 
-          pfcqnng[(((jk * klon) + jl) - 1)] = __out;
+          pfcqnng_lowered[(((jk * klon) + jl) - 1)] = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqxn2d +
                 (((jl + ((klev * klon) * (ncldqs - 1))) + (klon * (jk - 1))) -
                  1),
             &zqxn2d_index_2, 1);
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
             zqx0 +
                 (((jl + ((klev * klon) * (ncldqs - 1))) + (klon * (jk - 1))) -
                  1),
             &zqx0_index_3, 1);
         {
-          double __in1 = zqxn2d_index_2;
-          double __in2 = zqx0_index_3;
-          double __out;
+          float __in1 = zqxn2d_index_2;
+          float __in2 = zqx0_index_3;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Sub_)
@@ -30463,9 +30287,9 @@ void __program_cloudsc_py_internal(
           zqxn2d_slice_minus_zqx0_slice_2 = __out;
         }
         {
-          double __in1 = zqxn2d_slice_minus_zqx0_slice_2;
+          float __in1 = zqxn2d_slice_minus_zqx0_slice_2;
           double __in2 = zgdph_r;
-          double __out;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30479,7 +30303,7 @@ void __program_cloudsc_py_internal(
             pfsqsf + (((jk * klon) + jl) - 1), &pfsqsf_index, 1);
         {
           double __in1 = pfsqsf_index;
-          double __in2 = zqxn2d_slice_zqx0_slice_times_zgdph_r_0;
+          float __in2 = zqxn2d_slice_zqx0_slice_times_zgdph_r_0;
           double __out;
 
           ///////////////////
@@ -30504,28 +30328,17 @@ void __program_cloudsc_py_internal(
     }
   }
   for (jk = 1; (jk < (klev + 2)); jk = (jk + 1)) {
-    {
 
-      {
-        int __in1 = kfdia;
-        int __out;
+    kfdia_plus_1_87 = (kfdia + 1);
 
-        ///////////////////
-        // Tasklet code (_Add_)
-        __out = (__in1 + int(1));
-        ///////////////////
-
-        kfdia_plus_1_87 = __out;
-      }
-    }
     for (jl = kidia; (jl < kfdia_plus_1_87); jl = (jl + 1)) {
       {
         double neg_ydcst_rlvtt;
-        double pfplsl_index;
-        double pfhpsl_slice;
+        float pfplsl_index;
+        float pfhpsl_slice;
         double neg_ydcst_rlstt;
-        double pfplsn_index;
-        double pfhpsn_slice;
+        float pfplsn_index;
+        float pfhpsn_slice;
 
         {
           double __in = ydcst_rlvtt;
@@ -30539,12 +30352,12 @@ void __program_cloudsc_py_internal(
           neg_ydcst_rlvtt = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfplsl + ((jl + (klon * (jk - 1))) - 1), &pfplsl_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfplsl_lowered + ((jl + (klon * (jk - 1))) - 1), &pfplsl_index, 1);
         {
           double __in1 = neg_ydcst_rlvtt;
-          double __in2 = pfplsl_index;
-          double __out;
+          float __in2 = pfplsl_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30554,15 +30367,15 @@ void __program_cloudsc_py_internal(
           pfhpsl_slice = __out;
         }
         {
-          double __inp = pfhpsl_slice;
-          double __out;
+          float __inp = pfhpsl_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1154_12)
           __out = __inp;
           ///////////////////
 
-          pfhpsl[((jl + (klon * (jk - 1))) - 1)] = __out;
+          pfhpsl_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
         {
           double __in = ydcst_rlstt;
@@ -30576,12 +30389,12 @@ void __program_cloudsc_py_internal(
           neg_ydcst_rlstt = __out;
         }
 
-        dace::CopyND<double, 1, false, 1>::template ConstDst<1>::Copy(
-            pfplsn + ((jl + (klon * (jk - 1))) - 1), &pfplsn_index, 1);
+        dace::CopyND<float, 1, false, 1>::template ConstDst<1>::Copy(
+            pfplsn_lowered + ((jl + (klon * (jk - 1))) - 1), &pfplsn_index, 1);
         {
           double __in1 = neg_ydcst_rlstt;
-          double __in2 = pfplsn_index;
-          double __out;
+          float __in2 = pfplsn_index;
+          float __out;
 
           ///////////////////
           // Tasklet code (_Mult_)
@@ -30591,20 +30404,756 @@ void __program_cloudsc_py_internal(
           pfhpsn_slice = __out;
         }
         {
-          double __inp = pfhpsn_slice;
-          double __out;
+          float __inp = pfhpsn_slice;
+          float __out;
 
           ///////////////////
           // Tasklet code (assign_1155_12)
           __out = __inp;
           ///////////////////
 
-          pfhpsn[((jl + (klon * (jk - 1))) - 1)] = __out;
+          pfhpsn_lowered[((jl + (klon * (jk - 1))) - 1)] = __out;
         }
       }
     }
   }
-  return;
+  {
+
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pq_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pq[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = tendency_tmp_t_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            tendency_tmp_t[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = tendency_tmp_q_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            tendency_tmp_q[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = tendency_loc_t_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            tendency_loc_t[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = tendency_loc_q_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            tendency_loc_q[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = tendency_loc_a_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            tendency_loc_a[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < nclv; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klev; __i1 += 1) {
+          for (auto __i2 = 0; __i2 < klon; __i2 += 1) {
+            {
+              float _in = tendency_loc_cld_lowered[(
+                  (((__i0 * klev) * klon) + (__i1 * klon)) + __i2)];
+              double _out;
+
+              ///////////////////
+              _out = static_cast<double>(_in);
+              ///////////////////
+
+              tendency_loc_cld[((((__i0 * klev) * klon) + (__i1 * klon)) +
+                                __i2)] = _out;
+            }
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pvfa_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pvfa[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pvfl_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pvfl[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pvfi_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pvfi[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pdyna_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pdyna[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pdynl_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pdynl[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pdyni_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pdyni[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = phrsw_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            phrsw[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = phrlw_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            phrlw[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pvervel_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pvervel[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pap_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pap[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = paph_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            paph[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klon; __i0 += 1) {
+        {
+          float _in = plsm_lowered[__i0];
+          double _out;
+
+          ///////////////////
+          _out = static_cast<double>(_in);
+          ///////////////////
+
+          plsm[__i0] = _out;
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = plu_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            plu[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = plude_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            plude[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = psnde_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            psnde[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pmfu_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pmfu[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pmfd_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pmfd[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < nclv; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klev; __i1 += 1) {
+          for (auto __i2 = 0; __i2 < klon; __i2 += 1) {
+            {
+              float _in = pclv_lowered[(
+                  (((__i0 * klev) * klon) + (__i1 * klon)) + __i2)];
+              double _out;
+
+              ///////////////////
+              _out = static_cast<double>(_in);
+              ///////////////////
+
+              pclv[((((__i0 * klev) * klon) + (__i1 * klon)) + __i2)] = _out;
+            }
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = psupsat_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            psupsat[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = plcrit_aer_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            plcrit_aer[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = picrit_aer_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            picrit_aer[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pre_ice_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pre_ice[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pccn_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pccn[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pnice_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pnice[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klev; __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pcovptot_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pcovptot[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < klon; __i0 += 1) {
+        {
+          float _in = prainfrac_toprfz_lowered[__i0];
+          double _out;
+
+          ///////////////////
+          _out = static_cast<double>(_in);
+          ///////////////////
+
+          prainfrac_toprfz[__i0] = _out;
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfcqnng_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfcqnng[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfcqlng_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfcqlng[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfcqrng_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfcqrng[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfcqsng_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfcqsng[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfsqltur_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfsqltur[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfsqitur_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfsqitur[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfplsl_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfplsl[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfplsn_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfplsn[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfhpsl_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfhpsl[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+    {
+#pragma omp parallel for
+      for (auto __i0 = 0; __i0 < (klev + 1); __i0 += 1) {
+        for (auto __i1 = 0; __i1 < klon; __i1 += 1) {
+          {
+            float _in = pfhpsn_lowered[((__i0 * klon) + __i1)];
+            double _out;
+
+            ///////////////////
+            _out = static_cast<double>(_in);
+            ///////////////////
+
+            pfhpsn[((__i0 * klon) + __i1)] = _out;
+          }
+        }
+      }
+    }
+  }
   delete[] zlcond1;
   delete[] zlcond2;
   delete[] zrainaut;
@@ -30685,6 +31234,49 @@ void __program_cloudsc_py_internal(
   delete[] zconvsrce;
   delete[] zconvsink;
   delete[] zpsupsatsrce;
+  delete[] pq_lowered;
+  delete[] tendency_tmp_t_lowered;
+  delete[] tendency_tmp_q_lowered;
+  delete[] tendency_loc_t_lowered;
+  delete[] tendency_loc_q_lowered;
+  delete[] tendency_loc_a_lowered;
+  delete[] tendency_loc_cld_lowered;
+  delete[] pvfa_lowered;
+  delete[] pvfl_lowered;
+  delete[] pvfi_lowered;
+  delete[] pdyna_lowered;
+  delete[] pdynl_lowered;
+  delete[] pdyni_lowered;
+  delete[] phrsw_lowered;
+  delete[] phrlw_lowered;
+  delete[] pvervel_lowered;
+  delete[] pap_lowered;
+  delete[] paph_lowered;
+  delete[] plsm_lowered;
+  delete[] plu_lowered;
+  delete[] plude_lowered;
+  delete[] psnde_lowered;
+  delete[] pmfu_lowered;
+  delete[] pmfd_lowered;
+  delete[] pclv_lowered;
+  delete[] psupsat_lowered;
+  delete[] plcrit_aer_lowered;
+  delete[] picrit_aer_lowered;
+  delete[] pre_ice_lowered;
+  delete[] pccn_lowered;
+  delete[] pnice_lowered;
+  delete[] pcovptot_lowered;
+  delete[] prainfrac_toprfz_lowered;
+  delete[] pfcqnng_lowered;
+  delete[] pfcqlng_lowered;
+  delete[] pfcqrng_lowered;
+  delete[] pfcqsng_lowered;
+  delete[] pfsqltur_lowered;
+  delete[] pfsqitur_lowered;
+  delete[] pfplsl_lowered;
+  delete[] pfplsn_lowered;
+  delete[] pfhpsl_lowered;
+  delete[] pfhpsn_lowered;
 }
 
 DACE_EXPORTED void __program_cloudsc_py(
