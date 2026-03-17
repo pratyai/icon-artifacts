@@ -29,6 +29,14 @@ struct CopyND<float, 1, false, 1> {
                                    [[maybe_unused]] const Args &...src_otherdims) {
             dst[0] = static_cast<float>(src[0]);
         }
+
+        // Mixed-type copy (half -> float)
+        template <typename... Args>
+        static DACE_HDFI void Copy(const dace::float16 *src, float *dst,
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
+            dst[0] = static_cast<float>(src[0]);
+        }
     };
 
     template <int SRC_STRIDE, int... OTHER_SRCDIMS>
@@ -47,6 +55,14 @@ struct CopyND<float, 1, false, 1> {
                                    [[maybe_unused]] const int &dst_stride,
                                    [[maybe_unused]] const Args &...dst_otherdims) {
             dst[0] = static_cast<double>(src[0]);
+        }
+
+        // Mixed-type copy (float -> half)
+        template <typename... Args>
+        static DACE_HDFI void Copy(const float *src, dace::float16 *dst,
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
+            dst[0] = dace::float16(src[0]);
         }
     };
 };
@@ -70,6 +86,14 @@ struct CopyND<double, 1, false, 1> {
                                    [[maybe_unused]] const Args &...src_otherdims) {
             dst[0] = static_cast<double>(src[0]);
         }
+
+        // Mixed-type copy (half -> double)
+        template <typename... Args>
+        static DACE_HDFI void Copy(const dace::float16 *src, double *dst,
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
+            dst[0] = static_cast<double>(static_cast<float>(src[0]));
+        }
     };
 
     template <int SRC_STRIDE, int... OTHER_SRCDIMS>
@@ -85,6 +109,61 @@ struct CopyND<double, 1, false, 1> {
         // Mixed-type copy (double -> float)
         template <typename... Args>
         static DACE_HDFI void Copy(const double *src, float *dst,
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
+            dst[0] = static_cast<float>(src[0]);
+        }
+
+        // Mixed-type copy (double -> half)
+        template <typename... Args>
+        static DACE_HDFI void Copy(const double *src, dace::float16 *dst,
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
+            dst[0] = dace::float16(static_cast<float>(src[0]));
+        }
+    };
+};
+
+template <>
+struct CopyND<dace::float16, 1, false, 1> {
+    template <int DST_STRIDE, int... OTHER_DSTDIMS>
+    struct ConstDst {
+        template <typename... Args>
+        static DACE_HDFI void Copy(const dace::float16 *src, dace::float16 *dst,
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
+            dst[0] = src[0];
+        }
+        template <typename... Args>
+        static DACE_HDFI void Copy(const double *src, dace::float16 *dst,
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
+            dst[0] = dace::float16(static_cast<float>(src[0]));
+        }
+        template <typename... Args>
+        static DACE_HDFI void Copy(const float *src, dace::float16 *dst,
+                                   [[maybe_unused]] const int &src_stride,
+                                   [[maybe_unused]] const Args &...src_otherdims) {
+            dst[0] = dace::float16(src[0]);
+        }
+    };
+
+    template <int SRC_STRIDE, int... OTHER_SRCDIMS>
+    struct ConstSrc {
+        template <typename... Args>
+        static DACE_HDFI void Copy(const dace::float16 *src, dace::float16 *dst,
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
+            dst[0] = src[0];
+        }
+        template <typename... Args>
+        static DACE_HDFI void Copy(const dace::float16 *src, double *dst,
+                                   [[maybe_unused]] const int &dst_stride,
+                                   [[maybe_unused]] const Args &...dst_otherdims) {
+            dst[0] = static_cast<double>(static_cast<float>(src[0]));
+        }
+        template <typename... Args>
+        static DACE_HDFI void Copy(const dace::float16 *src, float *dst,
                                    [[maybe_unused]] const int &dst_stride,
                                    [[maybe_unused]] const Args &...dst_otherdims) {
             dst[0] = static_cast<float>(src[0]);
