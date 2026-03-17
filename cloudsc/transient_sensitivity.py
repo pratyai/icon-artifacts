@@ -54,17 +54,22 @@ def _discover_arrays(file_path: Path, kind: str = "all") -> list[str]:
 
     # Function parameter arrays: double *__restrict__ name
     # Extract from __program_cloudsc_py_internal signature
-    param_pattern = re.compile(r"(?:double|float|int)\s+\*__restrict__\s+(\w+)")
+    param_array_pattern = re.compile(r"(?:double|float|int)\s+\*__restrict__\s+(\w+)")
+    # Function parameter scalars: double name (no pointer)
+    param_scalar_pattern = re.compile(r"(?:double|float)\s+(\w+)(?:\s*,|\s*\))")
     sig_match = re.search(
         r"void __program_cloudsc_py_internal\((.*?)\)\s*\{",
         code, re.DOTALL,
     )
+    param_names = set()
+    param_scalar_names = set()
     if sig_match:
-        param_names = set(param_pattern.findall(sig_match.group(1)))
-    else:
-        param_names = set()
-    # Exclude non-arrays
+        sig_text = sig_match.group(1)
+        param_names = set(param_array_pattern.findall(sig_text))
+        param_scalar_names = set(param_scalar_pattern.findall(sig_text))
+    # Exclude non-arrays / non-perturbable
     param_names -= {"handle", "ktype", "ldcum"}
+    param_scalar_names -= {"handle", "ktype", "ldcum"}
 
     # Local scalars: double name; (inside the function body, after the opening brace)
     scalar_names = set()
@@ -88,10 +93,10 @@ def _discover_arrays(file_path: Path, kind: str = "all") -> list[str]:
     elif kind == "lowered":
         return sorted(n for n in heap_names if n.endswith("_lowered"))
     elif kind == "param":
-        return sorted(param_names)
+        return sorted(param_names | param_scalar_names)
     elif kind == "scalar":
-        return sorted(scalar_names)
-    return sorted(heap_names | param_names | scalar_names)
+        return sorted(scalar_names | param_scalar_names)
+    return sorted(heap_names | param_names | param_scalar_names | scalar_names)
 
 
 def inject_noise(file_path: Path, targets: list[str], eps: float = 1e-7) -> int:
@@ -149,7 +154,8 @@ def inject_noise(file_path: Path, targets: list[str], eps: float = 1e-7) -> int:
             nonlocal patched_count
             indent = m.group(1)
             value = m.group(2).strip()
-            if "static_cast" in value or "new " in value:
+            # Skip boundary cast restores, static_cast, and allocations
+            if "static_cast" in value or "new " in value or value == "_out":
                 return m.group(0)
             patched_count += 1
             return f"{indent}{target} = transient_noise::perturb({value}, {eps});"
@@ -172,6 +178,28 @@ def inject_noise(file_path: Path, targets: list[str], eps: float = 1e-7) -> int:
 
         code = read_pattern.sub(read_replacer, code)
 
+        # 3. Read-only scalar params: no write sites, no CopyND — perturb once
+        #    at the top of the function body by inserting an in-place assignment.
+        if patched_count == 0:
+            body_match = re.search(
+                r"(void __program_cloudsc_py_internal\([^)]*\)\s*\{)",
+                code, re.DOTALL,
+            )
+            if body_match:
+                # Check this target is actually a scalar param (appears in signature, no pointer)
+                sig_match = re.search(
+                    r"void __program_cloudsc_py_internal\((.*?)\)\s*\{",
+                    code, re.DOTALL,
+                )
+                if sig_match:
+                    sig_text = sig_match.group(1)
+                    # Match "double name" or "float name" (not pointer) in signature
+                    if re.search(rf"(?:double|float)\s+{re.escape(target)}\b(?!\s*\*)", sig_text):
+                        insert_pos = body_match.end()
+                        perturb_line = f"\n    {target} = transient_noise::perturb({target}, {eps}); // sensi"
+                        code = code[:insert_pos] + perturb_line + code[insert_pos:]
+                        patched_count += 1
+
     with open(file_path, "w") as f:
         f.write(code)
 
@@ -189,6 +217,8 @@ def strip_noise(file_path: Path):
         r"\1",
         code,
     )
+    # Remove injected scalar-param perturbation lines
+    code = re.sub(r"\n[ \t]+\w+ = \w+; // sensi", "", code)
     code = code.replace('#include "transient_noise.h"\n', "")
 
     with open(file_path, "w") as f:
@@ -234,7 +264,11 @@ def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
 
     nans = ("", float("nan"), float("nan"), float("nan"), float("nan"))
 
-    if not Path(ref_path).exists() or not Path(test_path).exists():
+    if not Path(ref_path).exists():
+        print(f"    FAIL: ref file missing: {ref_path}")
+        return nans
+    if not Path(test_path).exists():
+        print(f"    FAIL: test file missing: {test_path}")
         return nans
 
     worst_field = ""
@@ -264,6 +298,7 @@ def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
                 worst_field_abs = float(np.mean(np.abs(ref_data)))
 
     if not worst_field:
+        print(f"    FAIL: all fields had zero diff (noise had no effect?)")
         return nans
 
     return worst_field, worst_mean_abs, worst_stderr_abs, worst_field_abs, worst_snr
@@ -337,11 +372,13 @@ def sweep(
 
         for s in range(samples):
             if not _run(steps):
+                print(f"    FAIL: run crashed")
                 failed = True
                 break
             field, mean_abs, stderr_abs, field_val, snr = _compute_error_stats(
                 ref_dir, test_dir, step=steps - 1)
             if snr != snr:  # nan
+                print(f"    FAIL: comparison returned NaN (missing output file or all-zero diff)")
                 failed = True
                 break
             worst_field = field

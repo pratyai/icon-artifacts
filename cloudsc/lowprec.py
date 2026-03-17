@@ -17,6 +17,8 @@ import re
 
 import dace
 from dace import dtypes, nodes
+from dace.sdfg.state import ConditionalBlock
+from dace.properties import CodeBlock
 
 
 LOWPREC_MAP = {
@@ -93,8 +95,9 @@ def inject_cpu_boundary_cast(
     sdfg: dace.SDFG,
     array_names: list[str],
     external_dtype: dace.typeclass,
+    scalar_names: list[str] | None = None,
 ):
-    """Insert boundary cast states for non-transient CPU arrays.
+    """Insert boundary cast states for non-transient CPU arrays and scalars.
 
     For each non-transient array:
     1. Create a lowered transient ``{name}_lowered`` with external_dtype
@@ -102,10 +105,17 @@ def inject_cpu_boundary_cast(
     3. Propagate the lowered dtype into NestedSDFGs
     4. After all renames, add entry/exit cast states at the SDFG boundary
 
-    The original non-transient array stays double (ABI preserved).
+    For each non-transient scalar:
+    1. Create a lowered transient scalar ``{name}_lowered``
+    2. Rename internal references
+    3. Add simple cast tasklet (no Map) in entry/exit states
+
+    The original non-transient data stays double (ABI preserved).
     All computation runs in the lowered dtype.
     """
-    lowered_pairs = []  # (orig_name, lowered_name) for entry/exit state creation
+    scalar_names = scalar_names or []
+    array_pairs = []  # (orig_name, lowered_name) for arrays
+    scalar_pairs = []  # (orig_name, lowered_name) for scalars
 
     for name in array_names:
         if name not in sdfg.arrays:
@@ -130,53 +140,119 @@ def inject_cpu_boundary_cast(
             f"{lowered_name} ({external_dtype})"
         )
 
-        # Rename ALL AccessNodes and memlets in ALL states
         _rename_array_references(sdfg, name, lowered_name)
-
-        # Propagate lowered dtype into NestedSDFGs
         _propagate_dtype(sdfg, lowered_name, external_dtype)
 
-        lowered_pairs.append((name, lowered_name))
+        array_pairs.append((name, lowered_name))
 
-    if not lowered_pairs:
+    for name in scalar_names:
+        if name not in sdfg.arrays:
+            print(f"  cpu_boundary_cast(scalar): {name} not in SDFG, skipping.")
+            continue
+
+        arr = sdfg.arrays[name]
+        orig_dtype = arr.dtype
+        lowered_name = f"{name}_lowered"
+
+        sdfg.add_scalar(
+            lowered_name,
+            dtype=external_dtype,
+            transient=True,
+            storage=dtypes.StorageType.Register,
+        )
+
+        print(
+            f"  cpu_boundary_cast(scalar): {name} ({orig_dtype}) → "
+            f"{lowered_name} ({external_dtype})"
+        )
+
+        _rename_array_references(sdfg, name, lowered_name)
+        _propagate_dtype(sdfg, lowered_name, external_dtype)
+
+        scalar_pairs.append((name, lowered_name))
+
+    if not array_pairs and not scalar_pairs:
         return
 
     # Add entry state: cast double→float for all inputs ("H2D")
-    _add_entry_cast_state(sdfg, lowered_pairs, external_dtype)
+    _add_entry_cast_state(sdfg, array_pairs, external_dtype, scalar_pairs)
 
     # Add exit state: cast float→double for all outputs ("D2H")
-    _add_exit_cast_state(sdfg, lowered_pairs)
+    _add_exit_cast_state(sdfg, array_pairs, scalar_pairs)
 
     # Re-index internal CFG list after adding new states
     sdfg.reset_cfg_list()
 
 
 def _rename_array_references(sdfg: dace.SDFG, old_name: str, new_name: str):
-    """Rename all AccessNodes and memlets from old_name to new_name in all states."""
-    for state in sdfg.states():
-        for node in state.nodes():
-            if isinstance(node, nodes.AccessNode) and node.data == old_name:
-                node.data = new_name
-        for edge in state.edges():
-            if edge.data.data == old_name:
-                edge.data.data = new_name
+    """Rename all AccessNodes, memlets, and ConditionalBlock conditions
+    from old_name to new_name across the full CFG tree."""
+    _rename_in_cfg(sdfg, old_name, new_name)
+
+
+def _rename_in_cfg(cfg, old_name: str, new_name: str):
+    """Recursively walk CFG nodes (states, loops, conditionals) and rename.
+
+    Covers: AccessNodes, memlets, ConditionalBlock branch conditions,
+    and InterstateEdge conditions/assignments.
+    """
+    # Rename in interstate edges (conditions + assignments)
+    for _src, _dst, edge in cfg.edges():
+        if hasattr(edge, 'condition') and old_name in edge.condition.get_free_symbols():
+            new_code = re.sub(
+                r'\b' + re.escape(old_name) + r'\b', new_name,
+                edge.condition.as_string,
+            )
+            edge.condition = CodeBlock(new_code)
+        if hasattr(edge, 'assignments'):
+            new_assigns = {}
+            for k, v in edge.assignments.items():
+                nk = new_name if k == old_name else k
+                nv = re.sub(r'\b' + re.escape(old_name) + r'\b', new_name, str(v))
+                new_assigns[nk] = nv
+            edge.assignments = new_assigns
+
+    for node in cfg.nodes():
+        if isinstance(node, ConditionalBlock):
+            # Rename in branch conditions
+            for i, (cond, region) in enumerate(node.branches):
+                if cond is not None and old_name in cond.get_free_symbols():
+                    new_code = re.sub(
+                        r'\b' + re.escape(old_name) + r'\b',
+                        new_name,
+                        cond.as_string,
+                    )
+                    node.branches[i] = (CodeBlock(new_code), region)
+                _rename_in_cfg(region, old_name, new_name)
+        elif isinstance(node, dace.SDFGState):
+            # Rename AccessNodes and memlets in this state
+            for n in node.nodes():
+                if isinstance(n, nodes.AccessNode) and n.data == old_name:
+                    n.data = new_name
+            for edge in node.edges():
+                if edge.data.data == old_name:
+                    edge.data.data = new_name
+        elif hasattr(node, 'nodes'):
+            # LoopRegion or other control flow region
+            _rename_in_cfg(node, old_name, new_name)
 
 
 def _add_entry_cast_state(
     sdfg: dace.SDFG,
-    pairs: list[tuple[str, str]],
+    array_pairs: list[tuple[str, str]],
     external_dtype: dace.typeclass,
+    scalar_pairs: list[tuple[str, str]] | None = None,
 ):
-    """Add a new entry state with cast Maps: orig(double) → lowered(float).
+    """Add a new entry state with cast Maps/tasklets: orig(double) → lowered(float).
 
     Inserts before the current start state, like an H2D copy state.
     """
-    # Find the current source states (no incoming interstate edges)
+    scalar_pairs = scalar_pairs or []
     source_states = sdfg.source_nodes()
 
     cast_state = sdfg.add_state("boundary_cast_entry", is_start_state=True)
 
-    for orig_name, lowered_name in pairs:
+    for orig_name, lowered_name in array_pairs:
         orig_arr = sdfg.arrays[orig_name]
 
         src_an = cast_state.add_access(orig_name)
@@ -191,6 +267,14 @@ def _add_entry_cast_state(
             f"h2d_{orig_name}",
         )
 
+    for orig_name, lowered_name in scalar_pairs:
+        _add_scalar_cast_tasklet(
+            cast_state,
+            orig_name, lowered_name,
+            external_dtype,
+            f"h2d_{orig_name}",
+        )
+
     # Connect to previous source states
     for src_state in source_states:
         sdfg.add_edge(cast_state, src_state, dace.InterstateEdge())
@@ -198,18 +282,19 @@ def _add_entry_cast_state(
 
 def _add_exit_cast_state(
     sdfg: dace.SDFG,
-    pairs: list[tuple[str, str]],
+    array_pairs: list[tuple[str, str]],
+    scalar_pairs: list[tuple[str, str]] | None = None,
 ):
-    """Add a new exit state with cast Maps: lowered(float) → orig(double).
+    """Add a new exit state with cast Maps/tasklets: lowered(float) → orig(double).
 
     Appends after the current sink states, like a D2H copy state.
     """
-    # Find the current sink states (no outgoing interstate edges)
+    scalar_pairs = scalar_pairs or []
     sink_states = sdfg.sink_nodes()
 
     cast_state = sdfg.add_state("boundary_cast_exit")
 
-    for orig_name, lowered_name in pairs:
+    for orig_name, lowered_name in array_pairs:
         orig_arr = sdfg.arrays[orig_name]
 
         src_an = cast_state.add_access(lowered_name)
@@ -221,6 +306,14 @@ def _add_exit_cast_state(
             dst_an, orig_name,
             orig_arr.shape,
             orig_arr.dtype,  # cast back to double
+            f"d2h_{orig_name}",
+        )
+
+    for orig_name, lowered_name in scalar_pairs:
+        _add_scalar_cast_tasklet(
+            cast_state,
+            lowered_name, orig_name,
+            sdfg.arrays[orig_name].dtype,  # cast back to double
             f"d2h_{orig_name}",
         )
 
@@ -294,6 +387,35 @@ def _add_cast_map(
     state.add_edge(
         map_exit, exit_out_conn, dst_an, None,
         dace.Memlet.from_array(dst_name, dst_desc),
+    )
+
+
+def _add_scalar_cast_tasklet(
+    state: dace.SDFGState,
+    src_name: str,
+    dst_name: str,
+    target_dtype: dace.typeclass,
+    label: str,
+):
+    """Add a tasklet that casts a scalar: src → dst (no Map needed)."""
+    src_an = state.add_access(src_name)
+    dst_an = state.add_access(dst_name)
+
+    tasklet = state.add_tasklet(
+        name=label,
+        inputs={"_in"},
+        outputs={"_out"},
+        code=f"_out = static_cast<{target_dtype.ctype}>(_in);",
+        language=dtypes.Language.CPP,
+    )
+
+    state.add_edge(
+        src_an, None, tasklet, "_in",
+        dace.Memlet(f"{src_name}[0]"),
+    )
+    state.add_edge(
+        tasklet, "_out", dst_an, None,
+        dace.Memlet(f"{dst_name}[0]"),
     )
 
 
@@ -514,85 +636,405 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
 
     print(f"Applying precision lowering: fp64 → {external_dtype}")
 
+    # # 0. Remove the return block — boundary_cast_exit will be the new sink
+    # from dace.sdfg.state import ReturnBlock
+    # return_blocks = [s for s in sdfg.nodes() if isinstance(s, ReturnBlock)]
+    # assert len(return_blocks) == 1, (
+    #     f"Expected exactly 1 ReturnBlock, found {len(return_blocks)}"
+    # )
+    # rb = return_blocks[0]
+    # for edge in list(sdfg.in_edges(rb)):
+    #     sdfg.remove_edge(edge)
+    # sdfg.remove_node(rb)
+    # print(f"  Removed ReturnBlock: {rb.label}")
+
     # Exclusion list: arrays/scalars that must stay fp64.
     # Everything NOT in this set gets lowered.
+    # TODO: scan SDFG for scalars used in ConditionalBlock branch conditions —
+    #   these can cause large errors even when per-variable sensitivity is high,
+    #   because correlated fp32 rounding on BOTH sides of a comparison flips
+    #   branches that one-at-a-time perturbation can't detect (e.g. yrecldp_ramin).
     _LOWERING_EXCLUDE = {
-        # === MUST STAY FP64 ===
-        # high-sensitivity inputs (SNR < 10 dB)
-        "pt", "pa", "tendency_tmp_a",
-        # accumulation chain (SNR -51..52 dB)
-        "zsolqa", "psum_solqa", "za", "zlcust",
-        # moisture (tiny values, SNR 18 dB)
-        "zqxfg",
-        # temperature (large magnitude, small differences, SNR 75 dB)
-        "ztp1",
-        # condensation / evaporation (SNR 51..70 dB)
-        "zlcond1", "zlcond2",
-        # input params (SNR 62..105 dB)
-        "psupsat", "pq", "pap", "paph",
-        # thermodynamic (SNR ~105 dB)
-        # "zqlhs", "zdqsliqdt", "zdqsicedt",
-        #
-        # === SAFE: verified lowerable to fp32 ===
-        # (commented out — kept for reference)
-        #
-        # -- flux outputs --
-        # "pfsqlf", "pfsqrf", "pfsqif", "pfsqsf",
-        # "pfcqlng", "pfcqrng", "pfcqnng", "pfcqsng",
-        # "pfhpsn", "pfplsn",
-        # -- high-sensitivity inputs (safe subgroups) --
-        # "tendency_tmp_q", "tendency_tmp_t", "tendency_tmp_cld",
-        # "pclv", "plude",
-        # "phrlw", "pvfl", "pvfi",
-        # -- accumulation chain --
-        # "zgdph_r", "zalfaw", "zqx", "zexplicit",
-        # "zqxn2d", "zqx0", "zqxn", "zqxnm1",
-        # "zlneg", "zfoealfa",
-        # "zconvsrce", "zconvsink",
-        # -- moisture --
-        # "zvqx",
-        # -- temperature / pressure --
-        # "ztold", "zdp",
-        # -- solution arrays --
-        # "zsolqb", "zratio",
-        # "zsinksum", "zfallsink", "zfallsrce",
-        # -- phase fractions --
-        # "zliqfrac", "zicefrac", "zli", "zlfinalsum",
-        # -- flux arrays --
-        # "zfluxq", "zpfplsx",
-        # -- thermodynamic (dqs, saturation, foeew) --
-        # "zqold", "zdtgdp", "zrdtgdp",
-        # "zdqs", "zdqsmixdt",
-        # "zqsmix", "zqsliq", "zqsice",
-        # "zfoeewmt", "zfoeew", "zfoeeliqt",
-        # -- condensation / evaporation --
-        # "zrainaut", "zsnowaut",
-        # -- cloud fractions / cover --
-        # "zliqcld", "zicecld", "zlicld",
-        # "zcovpclr", "zcovptot", "zcovpmax",
-        # "zaorig", "zanewm1", "zda", "zacust",
-        # -- saturation / supersaturation --
-        # "zsupsat", "zcorqsliq", "zcorqsice", "zcorqsmix",
-        # -- ice nucleation --
-        # "zfokoop", "zicenuclei", "zicetot",
-        # -- precipitation / fluxes --
-        # "zqpretot", "zldefr", "zldifdt", "zmf", "zrho",
-        # "zsolab", "zsolac", "zmeltmax", "zfrzmax",
-        # "zevaplimice", "zevaplimmix", "zcldtopdist",
-        # "zrainacc", "zraincld", "zsnowcld", "zsnowrime",
-        # -- pressure + other --
-        # "zgdp", "zpsupsatsrce",
-        # -- non-transient input arrays --
-        # "pvfa", "pdyna", "pdynl", "pdyni",
-        # "phrsw", "pvervel", "plsm", "plu", "psnde",
-        # "pmfu", "pmfd",
-        # "plcrit_aer", "picrit_aer",
-        # "pre_ice", "pccn", "pnice",
-        # "pcovptot", "prainfrac_toprfz",
-        # "pfsqltur", "pfsqitur", "pfplsl", "pfhpsl",
-        # -- output arrays --
-        # "tendency_loc_t", "tendency_loc_q",
-        # "tendency_loc_a", "tendency_loc_cld",
+        # === CRITICAL LOCAL (SNR < 20 dB) ===
+        "za",  # -85.8 dB
+        "zlcust",  # -26.3 dB
+        "zlfinal",  # -26.3 dB
+        "zqxfg",  # 15.2 dB
+        "zdepos",  # 16.3 dB
+
+        # === HIGH-SENSITIVITY LOCAL (SNR 20-100 dB) ===
+        "zsolqa",  # 51.5 dB
+        "psum_solqa",  # 52.0 dB
+        "zlcond1",  # 52.5 dB
+        "zlcond2",  # 73.5 dB
+        "ztp1",  # 73.9 dB
+        "zsupsat",  # 81.3 dB
+        # "zqlhs",  # 88.2 dB
+        # "zqxn",  # 89.2 dB
+        # "zexplicit",  # 93.8 dB
+        # "zfallsink",  # 98.3 dB
+        # "zfallsrce",  # 98.8 dB
+        # "zqx",  # 99.4 dB
+
+        # === MODERATE LOCAL (SNR 100-135 dB) ===
+        # "zfoeew",  # 102.5 dB
+        # "zqsmix",  # 105.0 dB
+        # "zconvsrce",  # 105.7 dB
+        # "zqsice",  # 105.9 dB
+        # "zfokoop",  # 107.9 dB
+        # "zqe",  # 108.1 dB
+        # "zevap",  # 109.5 dB
+        # "zqold",  # 110.2 dB
+        # "zqsat",  # 110.8 dB
+        # "zfac",  # 111.6 dB
+        # "zqe_0",  # 112.0 dB
+        # "zfluxq",  # 113.3 dB
+        # "zfoeewmt",  # 113.3 dB
+        # "zqsat_0",  # 115.8 dB
+        # "zqp",  # 116.0 dB
+        # "zcor_3",  # 116.2 dB
+        # "zcor",  # 116.6 dB
+        # "zsolqb",  # 118.5 dB
+        # "zconvsink",  # 123.2 dB
+        # "zcovptot",  # 127.6 dB
+        # "zqe_5",  # 127.8 dB
+        # "zgdp",  # 128.8 dB
+        # "zaorig",  # 129.0 dB
+        # "zanew",  # 129.1 dB
+        # "zdtgdp",  # 129.4 dB
+        # "zfac_0",  # 129.5 dB
+        # "zdp",  # 130.1 dB
+        # "zqp1env",  # 131.5 dB
+
+        # === SAFE LOCAL (SNR >= 135 dB) ===
+        # "zinfactor",  # 135.0 dB
+        # "zfoealfa",  # 137.5 dB
+        # "zrdtgdp",  # 138.7 dB
+        # "zlneg",  # 138.8 dB
+        # "zalfaw",  # 139.3 dB
+        # "zpfplsx",  # 139.3 dB
+        # "zqxn2d",  # 141.5 dB
+        # "zda",  # 141.9 dB
+        # "zratio",  # 142.2 dB
+        # "zgdph_r",  # 143.8 dB
+        # "zsolac",  # 143.8 dB
+        # "zcorqsice",  # 144.2 dB
+        # "zcovpclr",  # 144.3 dB
+        # "zrr",  # 145.3 dB
+        # "zdpevap",  # 146.8 dB
+        # "zdenom_1",  # 146.9 dB
+        # "zdpr_0",  # 146.9 dB
+        # "zqtmst",  # 146.9 dB
+        # "zdenom",  # 147.0 dB
+        # "zdpr",  # 147.0 dB
+        # "zevap_2",  # 147.0 dB
+        # "zdpevap_1",  # 147.1 dB
+        # "zleros",  # 148.1 dB
+        # "zanewm1",  # 148.8 dB
+        # "zmf",  # 149.2 dB
+        # "zdqs",  # 149.3 dB
+        # "zlicld",  # 149.6 dB
+        # "zsnowrime",  # 149.8 dB
+        # "zldifdt",  # 149.9 dB
+        # "zvqx",  # 150.5 dB
+        # "zicecld",  # 150.6 dB
+        # "zrho",  # 150.6 dB
+        # "zqxnm1",  # 151.2 dB
+        # "zcor_2",  # 151.7 dB
+        # "zacust",  # 152.0 dB
+        # "zrg_r",  # 152.1 dB
+        # "zdtforc",  # 152.3 dB
+        # "ztmpa",  # 152.4 dB
+        # "zaeros",  # 152.6 dB
+        # "ze",  # 153.0 dB
+        # "zmfdn",  # 153.0 dB
+        # "zdtforc_0",  # 154.3 dB
+        # "zfall",  # 154.4 dB
+        # "zwtot",  # 154.8 dB
+        # "zevaplimmix",  # 155.1 dB
+        # "zacond",  # 155.2 dB
+        # "zdtdp",  # 155.2 dB
+        # "zsolab",  # 155.2 dB
+        # "zdqsicedt",  # 155.4 dB
+        # "zfaci",  # 155.4 dB
+        # "ztold",  # 155.4 dB
+        # "zcorqsmix",  # 155.5 dB
+        # "zzzdt",  # 156.0 dB
+        # "zdtdiab",  # 156.2 dB
+        # "zdqsmixdt",  # 156.8 dB
+        # "zfaci_0",  # 157.4 dB
+        # "zcor_1",  # 157.8 dB
+        # "zdtdp_0",  # 157.8 dB
+        # "zcor_0",  # 158.4 dB
+        # "zli",  # 160.2 dB
+        # "zrdcp",  # 162.3 dB
+        # "zliqcld",  # 162.7 dB
+        # "zlevap",  # 164.2 dB
+        # "zcdmax_0",  # 165.4 dB
+        # "zcdmax",  # 166.0 dB
+        # "zicefrac",  # 166.1 dB
+        # "zbeta",  # 170.4 dB
+        # "zbeta_1",  # 170.6 dB
+        # "zfacw",  # 171.4 dB
+        # "zmfdn_0",  # 173.7 dB
+        # "zvpliq",  # 175.0 dB
+        # "zpreclr",  # 175.1 dB
+        # "zpreclr_1",  # 175.1 dB
+        # "zbeta1",  # 175.2 dB
+        # "zbeta1_0",  # 175.2 dB
+        # "zsnowaut",  # 177.5 dB
+        # "zliqfrac",  # 178.3 dB
+        # "zqadj",  # 178.9 dB
+        # "zdpmxdt",  # 179.5 dB
+        # "zqadj_0",  # 179.5 dB
+        # "zsinksum",  # 180.3 dB
+        # "zzco",  # 180.7 dB
+        # "zmm",  # 183.7 dB
+        # "zlcrit",  # 184.5 dB
+        # "ztmpa_0",  # 186.1 dB
+        # "zcond1",  # 190.9 dB
+        # "zcldtopdist",  # 191.3 dB
+        # "zcond",  # 191.5 dB
+        # "zinew",  # 201.0 dB
+        # "zicenuclei",  # 202.7 dB
+        # "zcvds",  # 203.7 dB
+        # "zvpice",  # 207.3 dB
+        # "zbdd",  # 207.6 dB
+        # "zrainaut",  # 208.9 dB
+        # "zadd",  # 211.0 dB
+        # "zice0",  # 218.3 dB
+        # "zconst",  # 224.2 dB
+        # "zqadj_1",  # 229.5 dB
+        # "zcor_4",  # 230.5 dB
+        # "zsnowcld",  # 231.9 dB
+        # "zfallcorr",  # 237.6 dB
+        # "zpsupsatsrce",  # 814.4 dB
+        # "zqx0",  # 820.0 dB
+
+        # === FAIL LOCAL (crash on perturbation) ===
+        # "zalfa",  # FAIL
+        # "zalfa2",  # FAIL
+        # "zbeta_0",  # FAIL
+        # "zcons1",  # FAIL
+        # "zcons1_0",  # FAIL
+        # "zcorr2",  # FAIL
+        # "zcovpmax",  # FAIL
+        # "zdenom_0",  # FAIL
+        # "zdpevap_0",  # FAIL
+        # "zepsec",  # FAIL
+        # "zepsilon",  # FAIL
+        # "zesatliq",  # FAIL
+        # "zevap_1",  # FAIL
+        # "zevap_denom",  # FAIL
+        # "zfallcorr_0",  # FAIL
+        # "zfoeeliqt",  # FAIL
+        # "zfrz",  # FAIL
+        # "zfrz_0",  # FAIL
+        # "zfrz_1",  # FAIL
+        # "zfrzmax",  # FAIL
+        # "zicetot",  # FAIL
+        # "zlambda",  # FAIL
+        # "zlambda_0",  # FAIL
+        # "zlcondlim",  # FAIL
+        # "zldefr",  # FAIL
+        # "zlfinal_0",  # FAIL
+        # "zlfinalsum",  # FAIL
+        # "zmax",  # FAIL
+        # "zmelt",  # FAIL
+        # "zmeltmax",  # FAIL
+        # "zpreclr_0",  # FAIL
+        # "zqe_2",  # FAIL
+        # "zqe_4",  # FAIL
+        # "zqpretot",  # FAIL
+        # "zqsliq",  # FAIL
+        # "zrainacc",  # FAIL
+        # "zraincld",  # FAIL
+        # "zrat",  # FAIL
+        # "zrhc",  # FAIL
+        # "zrldcp",  # FAIL
+        # "zsigk",  # FAIL
+        # "zsubsat",  # FAIL
+        # "zsubsat_0",  # FAIL
+        # "ztdmtw0",  # FAIL
+        # "ztemp",  # FAIL
+        # "ztw1",  # FAIL
+        # "ztw2",  # FAIL
+        # "ztw3",  # FAIL
+        # "ztw4",  # FAIL
+        # "ztw5",  # FAIL
+        # "zzdl",  # FAIL
+        # "zzrh",  # FAIL
+        # "zzrh_0",  # FAIL
+        # "zzrh_1",  # FAIL
+
+        # === UNUSED LOCAL (0 injection sites) ===
+        # "zalfaw_0",  # unused
+        # "zalfaw_1",  # unused
+        # "zcorqsliq",  # not in sensi
+        # "zdqsliqdt",  # not in sensi
+        # "zevaplimice",  # not in sensi
+        # "zfac_1",  # unused
+        # "zqe_1",  # unused
+        # "zre_ice",  # unused
+        # "zzratio",  # unused
+
+        # === HIGH-SENSITIVITY PARAMS (SNR < 100 dB) ===
+        "pa",  # 7.7 dB
+        "psupsat",  # 61.8 dB
+        "paph",  # 77.7 dB
+        "pt",  # 81.4 dB
+        "ptsphy",  # 93.4 dB
+
+        # === SAFE PARAMS (SNR >= 100 dB) ===
+        "pap",  # 104.8 dB
+        "pq",  # 107.4 dB
+        # "pclv",  # 126.5 dB
+        # "plude",  # 126.9 dB
+        # "pfsqitur",  # 128.0 dB
+        # "pfcqlng",  # 128.5 dB
+        # "pfsqltur",  # 129.2 dB
+        # "pfcqnng",  # 130.4 dB
+        # "pvfl",  # 130.9 dB
+        # "pvfi",  # 131.5 dB
+        # "pmfu",  # 131.6 dB
+        # "pvfa",  # 131.6 dB
+        # "pdynl",  # 131.7 dB
+        # "pdyna",  # 131.9 dB
+        # "phrsw",  # 131.9 dB
+        # "plu",  # 131.9 dB
+        # "pvervel",  # 131.9 dB
+        # "pdyni",  # 132.0 dB
+        # "phrlw",  # 132.0 dB
+        # "pfsqlf",  # 134.5 dB
+        # "pfsqif",  # 137.0 dB
+        # "pfcqsng",  # 139.8 dB
+        # "pfcqrng",  # 139.9 dB
+        # "pfsqrf",  # 140.5 dB
+        # "pfsqsf",  # 140.8 dB
+        # "pfplsn",  # 142.6 dB
+        # "pfhpsn",  # 144.4 dB
+        # "pcovptot",  # 144.8 dB
+
+        # === FAIL PARAMS (crash on perturbation) ===
+        # "pccn",  # FAIL
+        # "pfhpsl",  # FAIL
+        # "pfplsl",  # FAIL
+        # "picrit_aer",  # FAIL
+        # "plcrit_aer",  # FAIL
+        # "plsm",  # FAIL
+        # "pmfd",  # FAIL
+        # "pnice",  # FAIL
+        # "prainfrac_toprfz",  # FAIL
+        # "pre_ice",  # FAIL
+        # "psnde",  # FAIL
+
+        # === TENDENCIES ===
+        "tendency_tmp_a",  # 6.4 dB
+        # "tendency_loc_t",  # 115.9 dB
+        # "tendency_tmp_q",  # 126.9 dB
+        # "tendency_tmp_cld",  # 127.6 dB
+        # "tendency_tmp_t",  # 130.1 dB
+        # "tendency_loc_a",  # 144.7 dB
+        # "tendency_loc_q",  # 144.7 dB
+        # "tendency_loc_cld",  # 144.8 dB
+
+        # === PARAM SCALARS (OK, sorted by SNR) ===
+        "ydcst_rtt",  # 84.5 dB
+        # "ydthf_r2es",  # 110.5 dB
+        # "ydthf_r3ies",  # 114.1 dB
+        # "ydthf_rtice",  # 116.0 dB
+        # "ydthf_r3les",  # 116.6 dB
+        # "ydthf_r4les",  # 132.7 dB
+        # "ydthf_ralsdcp",  # 133.6 dB
+        # "ydcst_rg",  # 134.4 dB
+        # "ydthf_ralvdcp",  # 138.6 dB
+        # "ydcst_rlstt",  # 145.2 dB
+        # "ydthf_rtwat_rtice_r",  # 145.2 dB
+        # "ydcst_rd",  # 155.7 dB
+        # "yrecldp_rvice",  # 158.4 dB
+        # "ydthf_r5ies",  # 160.0 dB
+        # "yrecldp_rcldiff",  # 161.4 dB
+        # "ydcst_rcpd",  # 161.5 dB
+        # "yrecldp_rkooptau",  # 162.4 dB
+        # "ydthf_r4ies",  # 168.6 dB
+        # "yrecldp_rpecons",  # 169.0 dB
+        # "yrecldp_rcovpmin",  # 169.8 dB
+        # "ydcst_retv",  # 170.1 dB
+        # "ydthf_r5les",  # 173.5 dB
+        # "yrecldp_rvrfactor",  # 175.5 dB
+        # "yrecldp_rlcritsnow",  # 182.8 dB
+        # "yrecldp_rsnowlin1",  # 183.8 dB
+        # "yrecldp_rcldiff_convi",  # 185.1 dB
+        # "yrecldp_rvsnow",  # 186.3 dB
+        # "yrecldp_rsnowlin2",  # 186.9 dB
+        # "ydthf_r5alscp",  # 200.5 dB
+        # "yrecldp_rdepliqrefdepth",  # 205.2 dB
+        # "yrecldp_rcl_kkbauq",  # 205.6 dB
+        # "yrecldp_rcl_const8s",  # 210.6 dB
+        # "ydthf_r5alvcp",  # 211.0 dB
+        # "ydcst_rv",  # 212.0 dB
+        # "yrecldp_rcl_kkbaun",  # 213.1 dB
+        # "yrecldp_rdepliqrefrate",  # 213.2 dB
+        # "yrecldp_rcl_kk_cloud_num_sea",  # 221.3 dB
+        # "yrecldp_rcl_kkaau",  # 227.7 dB
+        # "yrecldp_rcl_const1s",  # 230.2 dB
+        # "yrecldp_rcl_const7s",  # 237.3 dB
+        # "yrecldp_rdensref",  # 238.8 dB
+        # "yrecldp_riceinit",  # 789.7 dB
+
+        # === PARAM SCALARS (FAIL) ===
+        # "ydcst_rlmlt",  # FAIL
+        # "ydcst_rlvtt",  # FAIL
+        # "ydthf_ralfdcp",  # FAIL
+        # "ydthf_rkoop1",  # FAIL
+        # "ydthf_rkoop2",  # FAIL
+        # "ydthf_rticecu",  # FAIL
+        # "ydthf_rtwat",  # FAIL
+        # "ydthf_rtwat_rticecu_r",  # FAIL
+        # "yrecldp_ramid",  # FAIL
+        "yrecldp_ramin",  # FAIL — lowering drops SNR by ~70 dB on tendencies
+        # "yrecldp_rccn",  # FAIL
+        # "yrecldp_rcl_apb1",  # FAIL
+        # "yrecldp_rcl_apb2",  # FAIL
+        # "yrecldp_rcl_apb3",  # FAIL
+        # "yrecldp_rcl_cdenom1",  # FAIL
+        # "yrecldp_rcl_cdenom2",  # FAIL
+        # "yrecldp_rcl_cdenom3",  # FAIL
+        # "yrecldp_rcl_const1i",  # FAIL
+        # "yrecldp_rcl_const1r",  # FAIL
+        # "yrecldp_rcl_const2i",  # FAIL
+        # "yrecldp_rcl_const2r",  # FAIL
+        # "yrecldp_rcl_const2s",  # FAIL
+        # "yrecldp_rcl_const3i",  # FAIL
+        # "yrecldp_rcl_const3r",  # FAIL
+        # "yrecldp_rcl_const3s",  # FAIL
+        # "yrecldp_rcl_const4i",  # FAIL
+        # "yrecldp_rcl_const4r",  # FAIL
+        # "yrecldp_rcl_const4s",  # FAIL
+        # "yrecldp_rcl_const5i",  # FAIL
+        # "yrecldp_rcl_const5r",  # FAIL
+        # "yrecldp_rcl_const5s",  # FAIL
+        # "yrecldp_rcl_const6i",  # FAIL
+        # "yrecldp_rcl_const6r",  # FAIL
+        # "yrecldp_rcl_const6s",  # FAIL
+        # "yrecldp_rcl_fac1",  # FAIL
+        # "yrecldp_rcl_fac2",  # FAIL
+        # "yrecldp_rcl_fzrab",  # FAIL
+        # "yrecldp_rcl_ka273",  # FAIL
+        # "yrecldp_rcl_kk_cloud_num_land",  # FAIL
+        # "yrecldp_rcl_kkaac",  # FAIL
+        # "yrecldp_rcl_kkbac",  # FAIL
+        # "yrecldp_rclcrit_land",  # FAIL
+        # "yrecldp_rclcrit_sea",  # FAIL
+        # "yrecldp_rcldtopcf",  # FAIL
+        # "yrecldp_rkconv",  # FAIL
+        # "yrecldp_rlmin",  # FAIL
+        # "yrecldp_rnice",  # FAIL
+        # "yrecldp_rprc1",  # FAIL
+        # "yrecldp_rprecrhmax",  # FAIL
+        # "yrecldp_rtaumel",  # FAIL
+        # "yrecldp_rthomo",  # FAIL
+        # "yrecldp_rvrain",  # FAIL
     }
 
     # --- Scan: find everything that CAN be lowered ---
@@ -615,6 +1057,15 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
         and arr.dtype == dace.float64
         and arr.transient
         and arr.total_size != 1
+    ]
+
+    # All non-transient fp64 scalars (function params: ptsphy, ydcst_*, ydthf_*, yrecldp_*)
+    all_param_scalars = [
+        name
+        for name, arr in sdfg.arrays.items()
+        if isinstance(arr, dace.data.Scalar)
+        and arr.dtype == dace.float64
+        and not arr.transient
     ]
 
     # All top-level transient fp64 scalars
@@ -643,11 +1094,12 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
 
     # --- Apply: lower everything not excluded ---
 
-    # 1. Non-transient arrays: boundary cast
+    # 1. Non-transient arrays + scalar params: boundary cast
     bc_targets = [n for n in all_non_transient if not is_excluded(n)]
-    if bc_targets:
-        print(f"Boundary cast: {len(bc_targets)} non-transient arrays")
-        inject_cpu_boundary_cast(sdfg, bc_targets, external_dtype)
+    ps_targets = [n for n in all_param_scalars if not is_excluded(n)]
+    if bc_targets or ps_targets:
+        print(f"Boundary cast: {len(bc_targets)} non-transient arrays, {len(ps_targets)} scalar params")
+        inject_cpu_boundary_cast(sdfg, bc_targets, external_dtype, scalar_names=ps_targets)
 
     # 2. Transient arrays: lower directly
     ta_targets = [n for n in all_transient_arrays if not is_excluded(n)]
