@@ -514,18 +514,6 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
 
     print(f"Applying precision lowering: fp64 → {external_dtype}")
 
-    # 0. Remove the return block — boundary_cast_exit will be the new sink
-    from dace.sdfg.state import ReturnBlock
-    return_blocks = [s for s in sdfg.nodes() if isinstance(s, ReturnBlock)]
-    assert len(return_blocks) == 1, (
-        f"Expected exactly 1 ReturnBlock, found {len(return_blocks)}"
-    )
-    rb = return_blocks[0]
-    for edge in list(sdfg.in_edges(rb)):
-        sdfg.remove_edge(edge)
-    sdfg.remove_node(rb)
-    print(f"  Removed ReturnBlock: {rb.label}")
-
     # Exclusion list: arrays/scalars that must stay fp64.
     # Everything NOT in this set gets lowered.
     _LOWERING_EXCLUDE = {

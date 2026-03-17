@@ -6,10 +6,6 @@ from pathlib import Path
 
 from dace.codegen import codegen, compiler
 from dace.sdfg import infer_types
-from dace.transformation.interstate import LoopToMap
-from dace.transformation.passes import SymbolPropagation
-from dace.transformation.interstate import EndStateElimination, StartStateElimination, SymbolAliasPromotion, StateAssignElimination, StateFusion, TrueConditionElimination, FalseConditionElimination, HoistState
-from dace.transformation.interstate import ConditionFusion
 
 dace.config.Config.set("compiler", "default_data_types", value="C")
 
