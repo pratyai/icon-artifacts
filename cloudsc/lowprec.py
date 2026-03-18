@@ -656,7 +656,7 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
     #   branches that one-at-a-time perturbation can't detect (e.g. yrecldp_ramin).
     _LOWERING_EXCLUDE = {
         # === CRITICAL LOCAL (SNR < 20 dB) ===
-        "za",  # -85.8 dB
+        "za",  # -65.3 dB
         "zlcust",  # -26.3 dB
         "zlfinal",  # -26.3 dB
         "zqxfg",  # 15.2 dB
@@ -870,9 +870,9 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
         # === UNUSED LOCAL (0 injection sites) ===
         # "zalfaw_0",  # unused
         # "zalfaw_1",  # unused
-        # "zcorqsliq",  # not in sensi
-        # "zdqsliqdt",  # not in sensi
-        # "zevaplimice",  # not in sensi
+        # "zcorqsliq",  # FAIL
+        # "zdqsliqdt",  # FAIL
+        # "zevaplimice",  # FAIL
         # "zfac_1",  # unused
         # "zqe_1",  # unused
         # "zre_ice",  # unused
@@ -883,7 +883,7 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
         "psupsat",  # 61.8 dB
         "paph",  # 77.7 dB
         "pt",  # 81.4 dB
-        "ptsphy",  # 93.4 dB
+        "ptsphy",  # 67.7 dB
 
         # === SAFE PARAMS (SNR >= 100 dB) ===
         "pap",  # 104.8 dB
@@ -930,7 +930,7 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
 
         # === TENDENCIES ===
         "tendency_tmp_a",  # 6.4 dB
-        # "tendency_loc_t",  # 115.9 dB
+        # "tendency_loc_t",  # 118.1 dB
         # "tendency_tmp_q",  # 126.9 dB
         # "tendency_tmp_cld",  # 127.6 dB
         # "tendency_tmp_t",  # 130.1 dB

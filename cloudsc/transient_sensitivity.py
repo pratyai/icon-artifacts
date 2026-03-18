@@ -253,8 +253,8 @@ def _run(steps: int = 1) -> bool:
 def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
     """Compare ref vs test output for given step.
 
-    Finds the worst-affected output field by SNR.
-    Returns (field_name, mean_abs_err, stderr_abs_err, field_abs_value, snr).
+    Finds the worst-affected output field by vSNR (variance-based).
+    Returns (field_name, mean_abs_err, stderr_abs_err, field_abs_value, snr, vsnr).
     """
     import h5py
     import numpy as np
@@ -262,7 +262,7 @@ def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
     ref_path = f"{ref_dir}/cpp_output_step_{step}.h5"
     test_path = f"{test_dir}/cpp_output_step_{step}.h5"
 
-    nans = ("", float("nan"), float("nan"), float("nan"), float("nan"))
+    nans = ("", float("nan"), float("nan"), float("nan"), float("nan"), float("nan"))
 
     if not Path(ref_path).exists():
         print(f"    FAIL: ref file missing: {ref_path}")
@@ -272,6 +272,7 @@ def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
         return nans
 
     worst_field = ""
+    worst_vsnr = float("inf")
     worst_snr = float("inf")
     worst_mean_abs = 0.0
     worst_stderr_abs = 0.0
@@ -283,13 +284,16 @@ def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
             test_data = f_test[key][()].astype(np.float64).ravel()
             if ref_data.shape != test_data.shape:
                 continue
-            signal = np.mean(np.square(ref_data))
             noise = np.mean(np.square(ref_data - test_data))
             if noise == 0:
                 continue
-            snr = 10 * np.log10(signal / noise) if signal > 0 else 0.0
+            ms = np.mean(np.square(ref_data))
+            var = np.var(ref_data)
+            snr = 10 * np.log10(ms / noise) if ms > 0 else 0.0
+            vsnr = 10 * np.log10(var / noise) if var > 0 else 0.0
 
-            if snr < worst_snr:
+            if vsnr < worst_vsnr:
+                worst_vsnr = vsnr
                 worst_snr = snr
                 worst_field = key
                 abs_err = np.abs(ref_data - test_data)
@@ -301,7 +305,7 @@ def _compute_error_stats(ref_dir: str, test_dir: str, step: int):
         print(f"    FAIL: all fields had zero diff (noise had no effect?)")
         return nans
 
-    return worst_field, worst_mean_abs, worst_stderr_abs, worst_field_abs, worst_snr
+    return worst_field, worst_mean_abs, worst_stderr_abs, worst_field_abs, worst_snr, worst_vsnr
 
 
 def sweep(
@@ -356,15 +360,16 @@ def sweep(
         n_sites = inject_noise(file_path, [name], eps=eps)
         if n_sites == 0:
             print(f"    Unused (no read/write sites)")
-            results.append((name, 0, "", float("nan"), float("nan"), float("nan"), float("inf")))
+            results.append((name, 0, "", float("nan"), float("nan"), float("nan"), float("inf"), float("inf"), "unused"))
             continue
 
         if not _recompile():
-            results.append((name, n_sites, "", float("nan"), float("nan"), float("nan"), float("nan")))
+            results.append((name, n_sites, "", float("nan"), float("nan"), float("nan"), float("nan"), float("nan"), "FAIL"))
             continue
 
         # Run multiple samples (each run gets different random noise)
         sample_snrs = []
+        sample_vsnrs = []
         sample_mean_abs = []
         sample_field_vals = []
         worst_field = ""
@@ -375,7 +380,7 @@ def sweep(
                 print(f"    FAIL: run crashed")
                 failed = True
                 break
-            field, mean_abs, stderr_abs, field_val, snr = _compute_error_stats(
+            field, mean_abs, stderr_abs, field_val, snr, vsnr = _compute_error_stats(
                 ref_dir, test_dir, step=steps - 1)
             if snr != snr:  # nan
                 print(f"    FAIL: comparison returned NaN (missing output file or all-zero diff)")
@@ -383,44 +388,49 @@ def sweep(
                 break
             worst_field = field
             sample_snrs.append(snr)
+            sample_vsnrs.append(vsnr)
             sample_mean_abs.append(mean_abs)
             sample_field_vals.append(field_val)
 
         if failed or not sample_snrs:
-            results.append((name, n_sites, "", float("nan"), float("nan"), float("nan"), float("nan")))
+            results.append((name, n_sites, "", float("nan"), float("nan"), float("nan"), float("nan"), float("nan"), "FAIL"))
             continue
 
         arr_snr = np.array(sample_snrs)
+        arr_vsnr = np.array(sample_vsnrs)
         arr_abs = np.array(sample_mean_abs)
         mean_snr = float(np.mean(arr_snr))
+        mean_vsnr = float(np.mean(arr_vsnr))
         mean_abs_err = float(np.mean(arr_abs))
         stderr_abs_err = float(np.std(arr_abs) / np.sqrt(len(arr_abs)))
         field_val = float(np.mean(sample_field_vals))
 
-        results.append((name, n_sites, worst_field, mean_abs_err, stderr_abs_err, field_val, mean_snr))
-        print(f"    {n_sites} sites, worst = {worst_field} (SNR={mean_snr:.1f} dB, "
+        results.append((name, n_sites, worst_field, mean_abs_err, stderr_abs_err, field_val, mean_snr, mean_vsnr, "ok"))
+        print(f"    {n_sites} sites, worst = {worst_field} (SNR={mean_snr:.1f} dB, vSNR={mean_vsnr:.1f} dB, "
               f"|err|={mean_abs_err:.2e} ± {stderr_abs_err:.2e}, |field|={field_val:.2e})")
 
     # Restore clean source
     shutil.copy2(backup, file_path)
     backup.unlink()
 
-    # Print ranked table (sorted by SNR, worst first)
-    results.sort(key=lambda r: r[6] if r[6] == r[6] else float("inf"))
+    # Print ranked table (sorted by vSNR, worst first)
+    import polars as pl
 
-    print("\n" + "=" * 105)
-    print(f"Sensitivity ranking (eps={eps}, {steps} steps)")
-    print(f"{'Array':<22} {'Sites':>5} {'Worst Field':<18} {'Mean |Err|':>12} {'Stderr':>12} {'|Field|':>12} {'SNR dB':>8}")
-    print("-" * 105)
-    for name, sites, field, mean_abs, stderr_abs, field_val, snr in results:
-        if sites == 0:
-            print(f"{name:<22} {'0':>5} {'(unused)':<18} {'---':>12} {'---':>12} {'---':>12} {'---':>8}")
-            continue
-        def fmt(v):
-            return f"{v:.2e}" if v == v else "FAIL"
-        snr_s = f"{snr:.1f}" if snr == snr else "FAIL"
-        print(f"{name:<22} {sites:>5} {field:<18} {fmt(mean_abs):>12} {fmt(stderr_abs):>12} {fmt(field_val):>12} {snr_s:>8}")
-    print("=" * 105)
+    df = pl.DataFrame({
+        "Array": [r[0] for r in results],
+        "Status": [r[8] for r in results],
+        "Sites": [r[1] for r in results],
+        "Worst Field": [r[2] for r in results],
+        "Mean |Err|": [r[3] for r in results],
+        "Stderr": [r[4] for r in results],
+        "|Field|": [r[5] for r in results],
+        "SNR (dB)": [r[6] for r in results],
+        "vSNR (dB)": [r[7] for r in results],
+    }).sort("vSNR (dB)", nulls_last=True)
+
+    print(f"\nSensitivity ranking (eps={eps}, {steps} steps)")
+    with pl.Config(tbl_rows=df.height, tbl_width_chars=-1, tbl_cols=-1):
+        print(df)
 
     return results
 

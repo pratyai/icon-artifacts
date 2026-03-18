@@ -7,14 +7,15 @@ import sys
 import re
 
 def calculate_snr(ref, test):
-    """Calculates Signal-to-Noise Ratio in dB."""
-    signal_power = np.mean(np.square(ref))
+    """Calculates SNR in dB — both mean-square and variance-based."""
     noise_power = np.mean(np.square(ref - test))
     if noise_power == 0:
-        return float('inf')
-    if signal_power == 0:
-        return 0.0
-    return 10 * np.log10(signal_power / noise_power)
+        return float('inf'), float('inf')
+    ms = np.mean(np.square(ref))
+    var = np.var(ref)
+    snr_ms = 10 * np.log10(ms / noise_power) if ms > 0 else 0.0
+    snr_var = 10 * np.log10(var / noise_power) if var > 0 else 0.0
+    return snr_ms, snr_var
 
 def get_comparison_results(file_ref, file_test, tol=1e-12):
     if not os.path.exists(file_ref):
@@ -57,17 +58,18 @@ def get_comparison_results(file_ref, file_test, tol=1e-12):
             max_rel = np.max(rel_err)
             
             rms = np.sqrt(np.mean(np.square(abs_err)))
-            snr = calculate_snr(ref_data, test_data)
-            
+            snr_ms, snr_var = calculate_snr(ref_data, test_data)
+
             status = "PASS" if max_rel <= tol else "FAIL"
-            
+
             results.append({
                 "Field": key,
                 "Status": status,
                 "Max Abs Err": max_abs,
                 "Max Rel Err": max_rel,
                 "RMS": rms,
-                "SNR (dB)": snr,
+                "SNR (dB)": snr_ms,
+                "vSNR (dB)": snr_var,
                 "Ref L-inf": np.max(np.abs(ref_data)),
                 "Ref L2": np.linalg.norm(ref_data.flatten())
             })
@@ -137,9 +139,9 @@ def compare_all_steps(ref_dir="outputs_ref", test_dir="outputs_cpp", tol=1e-12):
     agg_df = (
         df_all
         .group_by("Field", maintain_order=True)
-        .agg(pl.all().sort_by("SNR (dB)").first())
+        .agg(pl.all().sort_by("vSNR (dB)").first())
         .rename({"Step": "Worst Step"})
-        .select(["Field", "Status", "Max Abs Err", "Max Rel Err", "RMS", "SNR (dB)", "Worst Step", "Ref L-inf", "Ref L2"])
+        .select(["Field", "Status", "Max Abs Err", "Max Rel Err", "RMS", "SNR (dB)", "vSNR (dB)", "Worst Step", "Ref L-inf", "Ref L2"])
     )
 
     with pl.Config(tbl_rows=agg_df.height, tbl_width_chars=-1, tbl_cols=-1):
