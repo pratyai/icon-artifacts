@@ -34,7 +34,7 @@ def fix_missing_nsdfg_symbols(sdfg: dace.SDFG):
 def checkpoint(sdfg: dace.SDFG, name: str, out_dir: str):
     """Validate and save a checkpoint SDFG."""
     path = os.path.join(out_dir, f"{name}.sdfgz")
-    sdfg.save(path)
+    sdfg.save(path, compress=True)
     sdfg.validate()
     print(f"  checkpoint: {path}")
 
@@ -96,5 +96,5 @@ if __name__ == "__main__":
     checkpoint(sdfg, "after_simplify", out_dir)
 
     out_path = args.output or args.input.replace(".sdfgz", "_opt.sdfgz")
-    sdfg.save(out_path)
+    sdfg.save(out_path, compress=True)
     print(f"Saved to {out_path}")

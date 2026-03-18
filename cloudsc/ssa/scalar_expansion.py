@@ -149,13 +149,150 @@ def _all_accesses_in_compatible_loops(
     return True
 
 
+def _loop_writes_before_reads(loop: LoopRegion, name: str) -> bool:
+    """Check if the first access to `name` in the loop body is a write.
+
+    Uses topological order of the loop's CFG children.  Returns True only
+    if the first encountered access is a pure write (no read component).
+    """
+    import networkx as nx
+    G = nx.DiGraph()
+    for n in loop.nodes():
+        G.add_node(n)
+    for e in loop.edges():
+        G.add_edge(e.src, e.dst)
+    topo = list(nx.topological_sort(G))
+
+    for child in topo:
+        if isinstance(child, LoopRegion):
+            child_states = list(child.all_states())
+        elif isinstance(child, dace.SDFGState):
+            child_states = [child]
+        else:
+            child_states = []
+            if hasattr(child, 'all_states'):
+                child_states = list(child.all_states())
+
+        for state in child_states:
+            for node in state.nodes():
+                if isinstance(node, nd.AccessNode) and node.data == name:
+                    is_r = state.out_degree(node) > 0
+                    is_w = state.in_degree(node) > 0
+                    if is_w and not is_r:
+                        return True   # first access is pure write
+                    else:
+                        return False  # first access reads
+    return False  # no access found
+
+
+def _loose_accesses_before_loops(parent: LoopRegion, name: str,
+                                  compatible_loops: list[LoopRegion]) -> bool:
+    """Check that all loose accesses to `name` come topologically before
+    any compatible inner loop in the parent's CFG.
+    """
+    import networkx as nx
+    G = nx.DiGraph()
+    for n in parent.nodes():
+        G.add_node(n)
+    for e in parent.edges():
+        G.add_edge(e.src, e.dst)
+    topo = list(nx.topological_sort(G))
+
+    compatible_set = set(compatible_loops)
+    covered_states = set()
+    for loop in compatible_loops:
+        covered_states |= set(loop.all_states())
+
+    first_loop_idx = None
+    last_loose_idx = None
+
+    for i, child in enumerate(topo):
+        if child in compatible_set:
+            if first_loop_idx is None:
+                first_loop_idx = i
+
+        # Check if this child has a loose access
+        if isinstance(child, dace.SDFGState):
+            child_states = [child]
+        elif hasattr(child, 'all_states'):
+            child_states = list(child.all_states())
+        else:
+            child_states = []
+
+        for state in child_states:
+            if state in covered_states:
+                continue
+            for node in state.nodes():
+                if isinstance(node, nd.AccessNode) and node.data == name:
+                    last_loose_idx = i
+                    break
+
+    if last_loose_idx is None:
+        return True   # no loose accesses
+    if first_loop_idx is None:
+        return False  # loose accesses but no loops
+    return last_loose_idx < first_loop_idx
+
+
+def _loose_accesses_after_loops(parent: LoopRegion, name: str,
+                                 compatible_loops: list[LoopRegion]) -> bool:
+    """Check that all loose accesses to `name` come topologically after
+    all compatible inner loops in the parent's CFG.
+    """
+    import networkx as nx
+    G = nx.DiGraph()
+    for n in parent.nodes():
+        G.add_node(n)
+    for e in parent.edges():
+        G.add_edge(e.src, e.dst)
+    topo = list(nx.topological_sort(G))
+
+    compatible_set = set(compatible_loops)
+    covered_states = set()
+    for loop in compatible_loops:
+        covered_states |= set(loop.all_states())
+
+    last_loop_idx = None
+    first_loose_idx = None
+
+    for i, child in enumerate(topo):
+        if child in compatible_set:
+            last_loop_idx = i
+
+        if isinstance(child, dace.SDFGState):
+            child_states = [child]
+        elif hasattr(child, 'all_states'):
+            child_states = list(child.all_states())
+        else:
+            child_states = []
+
+        for state in child_states:
+            if state in covered_states:
+                continue
+            for node in state.nodes():
+                if isinstance(node, nd.AccessNode) and node.data == name:
+                    if first_loose_idx is None:
+                        first_loose_idx = i
+                    break
+
+    if first_loose_idx is None:
+        return True   # no loose accesses
+    if last_loop_idx is None:
+        return False
+    return first_loose_idx > last_loop_idx
+
+
 def _expand_scalar(sdfg: dace.SDFG, name: str, dim_size, offset,
-                    access_loops: list[LoopRegion]) -> bool:
+                    access_loops: list[LoopRegion],
+                    parent: LoopRegion = None,
+                    loose_index=None) -> bool:
     """Promote scalar `name` to a 1-D array and reindex all accesses.
 
     `dim_size` is the symbolic size of the new dimension.
     `offset` is the loop start value (for index computation: itervar - offset).
     `access_loops` are the LoopRegions whose bodies need reindexing.
+    `parent` / `loose_index` — if provided, loose accesses (in parent but
+    outside access_loops) are reindexed to [loose_index].
     """
     if name not in sdfg.arrays:
         return False
@@ -189,6 +326,23 @@ def _expand_scalar(sdfg: dace.SDFG, name: str, dim_size, offset,
                 edge.data.subset = new_range
                 if edge.data.other_subset is not None:
                     edge.data.other_subset = new_range
+
+    # Reindex loose accesses to [loose_index] (Pattern B)
+    if parent is not None and loose_index is not None:
+        covered_states = set()
+        for loop in access_loops:
+            covered_states |= set(loop.all_states())
+
+        loose_range = sbs.Range([(loose_index, loose_index, 1)])
+        for state in parent.all_states():
+            if state in covered_states:
+                continue
+            for edge in state.edges():
+                if edge.data.data != name:
+                    continue
+                edge.data.subset = loose_range
+                if edge.data.other_subset is not None:
+                    edge.data.other_subset = loose_range
 
     return True
 
@@ -251,6 +405,7 @@ def expand_scalars(sdfg: dace.SDFG) -> int:
             else:
                 expansion_targets[scalar_name] = {
                     'start': start,
+                    'end': end,
                     'dim_size': dim_size,
                     'offset': start,
                     'loops': set(siblings),
@@ -269,14 +424,36 @@ def expand_scalars(sdfg: dace.SDFG) -> int:
         access_loops = list(info['loops'])
         parent = info['parent']
 
-        # Safety: only expand if ALL accesses are inside compatible loops
+        # Safety: only expand if ALL accesses are inside compatible loops,
+        # OR if loose accesses satisfy Pattern A or Pattern B.
+        loose_mode = None  # None = no loose, 'A' = before, 'B' = after
         if not _all_accesses_in_compatible_loops(sdfg, parent, name,
                                                   access_loops):
-            skipped += 1
-            continue
+            # Pattern A: loose before loops + loops write first
+            if (_loose_accesses_before_loops(parent, name, access_loops)
+                    and all(_loop_writes_before_reads(lp, name)
+                            for lp in access_loops)):
+                loose_mode = 'A'
+            # Pattern B: loose after loops — reindex loose to last element
+            # Also requires loops write before read (not loop-carried)
+            elif (_loose_accesses_after_loops(parent, name, access_loops)
+                    and all(_loop_writes_before_reads(lp, name)
+                            for lp in access_loops)):
+                loose_mode = 'B'
+            else:
+                skipped += 1
+                continue
+
+        # Compute last-element index for Pattern B
+        last_index = None
+        if loose_mode == 'B':
+            last_index = (symbolic.pystr_to_symbolic(info['end'])
+                          - symbolic.pystr_to_symbolic(info['offset']))
 
         if _expand_scalar(sdfg, name, info['dim_size'], info['offset'],
-                          access_loops):
+                          access_loops,
+                          parent=parent if loose_mode == 'B' else None,
+                          loose_index=last_index):
             expanded += 1
 
     print(f"Scalar expansion: {expanded} scalars expanded"
