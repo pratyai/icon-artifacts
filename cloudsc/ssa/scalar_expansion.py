@@ -17,6 +17,7 @@ Usage (standalone):
 from __future__ import annotations
 
 import sympy as sp
+from tqdm import tqdm
 
 import dace
 from dace import nodes as nd, symbolic, subsets as sbs
@@ -362,7 +363,7 @@ def expand_scalars(sdfg: dace.SDFG) -> int:
     # For each inner loop, find blocked scalars and gather expansion info
     expansion_targets: dict[str, dict] = {}  # name -> expansion info
 
-    for loop in all_loops:
+    for loop in tqdm(all_loops, desc="Finding blocked scalars", unit="loop"):
         blocked = _blocked_scalars(sdfg, loop)
         if not blocked:
             continue

@@ -16,6 +16,7 @@ from __future__ import annotations
 import copy
 from collections import defaultdict
 
+from tqdm import tqdm
 import dace
 from dace import nodes as nd
 from dace.sdfg.state import LoopRegion
@@ -106,7 +107,7 @@ def privatize_scalars(sdfg: dace.SDFG) -> int:
                 all_loops.append(child)
 
     privatized = 0
-    for loop in all_loops:
+    for loop in tqdm(all_loops, desc="Privatizing scalars", unit="loop"):
         candidates = _scalars_in_loop(sdfg, loop)
         for name in candidates:
             if not _is_loop_private(sdfg, loop, name):

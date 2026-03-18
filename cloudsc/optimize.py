@@ -13,7 +13,16 @@ from dace import nodes as nd
 from dace.transformation.interstate import LoopToMap
 
 from ssa import (ssa_transform, isolate_loop_variables, privatize_scalars,
-                 expand_scalars)
+                 expand_scalars, propagate_constants, unroll_loops)
+
+SYMBOL_MAP = {
+    "nclv": 5,
+    "ncldql": 1,
+    "ncldqi": 2,
+    "ncldqr": 3,
+    "ncldqs": 4,
+    "ncldqv": 5,
+}
 
 
 def fix_missing_nsdfg_symbols(sdfg: dace.SDFG):
@@ -56,41 +65,56 @@ if __name__ == "__main__":
                         help="Skip scalar expansion")
     parser.add_argument("--no-l2m", action="store_true",
                         help="Skip LoopToMap")
+    parser.add_argument("--no-unroll", action="store_true",
+                        help="Skip unroll")
+    parser.add_argument("--no-propagate", action="store_true",
+                        help="Skip constant propagation")
     args = parser.parse_args()
 
     sdfg = dace.SDFG.from_file(args.input)
     only_ssa = set(args.only_ssa.split(",")) if args.only_ssa else None
     out_dir = os.path.dirname(args.output or args.input)
 
-    # 1. SSA — split multi-write scalars into unique versions
+    # 1. Constant propagation — nclv and related indices become concrete
+    if not args.no_propagate:
+        propagate_constants(sdfg, SYMBOL_MAP)
+        fix_missing_nsdfg_symbols(sdfg)
+        checkpoint(sdfg, "after_propagate", out_dir)
+
+    # 2. SSA — split multi-write scalars into unique versions
     if not args.no_ssa:
         ssa_result = ssa_transform(sdfg, only=only_ssa)
         print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
               f"for {len(ssa_result)} variables")
         checkpoint(sdfg, "after_ssa", out_dir)
 
-    # 2. Loop variable isolation — unique itervar per LoopRegion
+    # 3. Loop variable isolation — unique itervar per LoopRegion
     if not args.no_isolate:
         isolate_loop_variables(sdfg)
         checkpoint(sdfg, "after_isolate", out_dir)
 
-    # 3. Scalar privatization — fresh transients for loop-private scalars
+    # 4. Scalar privatization — fresh transients for loop-private scalars
     if not args.no_privatize:
         privatize_scalars(sdfg)
         checkpoint(sdfg, "after_privatize", out_dir)
 
-    # 4. Scalar expansion — promote blocking scalars to arrays
+    # 5. Scalar expansion — promote blocking scalars to arrays
     if not args.no_expand:
         expand_scalars(sdfg)
         checkpoint(sdfg, "after_expand", out_dir)
 
-    # 5. LoopToMap — convert eligible control-flow loops into dataflow maps
+    # 6. LoopToMap — convert eligible control-flow loops into dataflow maps
     if not args.no_l2m:
         n = sdfg.apply_transformations_repeated(LoopToMap, validate=False)
         print(f"LoopToMap: converted {n} loops to maps")
         checkpoint(sdfg, "after_l2m", out_dir)
 
-    # 6. Fix missing NestedSDFG symbols, then simplify
+    # 7. Unroll — unroll maps/loops with nclv-sized extents
+    if not args.no_unroll:
+        unroll_loops(sdfg, SYMBOL_MAP)
+        checkpoint(sdfg, "after_unroll", out_dir)
+
+    # 8. Fix missing NestedSDFG symbols, then simplify
     fix_missing_nsdfg_symbols(sdfg)
     sdfg.simplify()
     checkpoint(sdfg, "after_simplify", out_dir)

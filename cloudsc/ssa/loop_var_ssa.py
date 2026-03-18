@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 
 import dace
+from tqdm import tqdm
 from dace.sdfg.state import LoopRegion, ConditionalBlock
 
 
@@ -104,7 +105,7 @@ def isolate_loop_variables(sdfg: dace.SDFG) -> int:
                 all_loops.append(child)
 
     counter: dict[str, int] = {}
-    for loop in all_loops:
+    for loop in tqdm(all_loops, desc="Isolating loop vars", unit="loop"):
         var = loop.loop_variable
         idx = counter.get(var, 0)
         counter[var] = idx + 1
