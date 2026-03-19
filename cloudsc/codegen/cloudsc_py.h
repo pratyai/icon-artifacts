@@ -2,9 +2,7 @@
 #include "copy_cast.h"
 typedef void *cloudsc_pyHandle_t;
 extern "C" cloudsc_pyHandle_t __dace_init_cloudsc_py(int klev, int klon,
-                                                     int ncldqi, int ncldql,
-                                                     int ncldqr, int ncldqs,
-                                                     int ncldqv, int nclv);
+                                                     int nclv);
 extern "C" int __dace_exit_cloudsc_py(cloudsc_pyHandle_t handle);
 extern "C" void __program_cloudsc_py(
     cloudsc_pyHandle_t handle, int *__restrict__ ktype, int *__restrict__ ldcum,
@@ -34,8 +32,7 @@ extern "C" void __program_cloudsc_py(
     double *__restrict__ tendency_loc_t, double *__restrict__ tendency_tmp_a,
     double *__restrict__ tendency_tmp_cld, double *__restrict__ tendency_tmp_q,
     double *__restrict__ tendency_tmp_t, int kfdia, int kidia, int klev,
-    int klon, int ncldqi, int ncldql, int ncldqr, int ncldqs, int ncldqv,
-    int nclv, double ptsphy, double ydcst_rcpd, double ydcst_rd,
+    int klon, int nclv, double ptsphy, double ydcst_rcpd, double ydcst_rd,
     double ydcst_retv, double ydcst_rg, double ydcst_rlmlt, double ydcst_rlstt,
     double ydcst_rlvtt, double ydcst_rtt, double ydcst_rv, double ydthf_r2es,
     double ydthf_r3ies, double ydthf_r3les, double ydthf_r4ies,

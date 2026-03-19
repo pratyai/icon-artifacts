@@ -20,6 +20,63 @@ def repl_in_file(file_path: str, src: str, dst: str):
         f.write(code.replace(src, dst))
 
 
+def stabilize_interface(header_path: str, main_cpp: str):
+    """Parse the generated header and rewrite cloudsc_main.cpp call sites to match.
+
+    This avoids compile errors when DaCe bakes in different sets of symbols
+    depending on optimization passes applied to the SDFG.
+    """
+    with open(header_path) as f:
+        header = f.read()
+
+    # Collapse to single line for easier parsing
+    h = re.sub(r"\s+", " ", header)
+
+    # Extract __dace_init param names (just the variable names, not types)
+    m = re.search(r"__dace_init_cloudsc_py\(([^)]+)\)", h)
+    if not m:
+        print("  WARNING: could not parse __dace_init signature")
+        return
+    init_params = [p.strip().split()[-1] for p in m.group(1).split(",")]
+
+    # Extract __program param names
+    m = re.search(r"__program_cloudsc_py\(([^)]+)\)", h)
+    if not m:
+        print("  WARNING: could not parse __program signature")
+        return
+    # Param may be "double *__restrict__ pq" or "int nclv" — grab last word, strip *
+    prog_params = []
+    for p in m.group(1).split(","):
+        tokens = p.strip().replace("*", "").replace("__restrict__", "").split()
+        prog_params.append(tokens[-1])
+
+    # Build call strings
+    init_call = f"__dace_init_cloudsc_py({', '.join(init_params)})"
+    prog_call = f"__program_cloudsc_py({', '.join(prog_params)})"
+
+    with open(main_cpp) as f:
+        code = f.read()
+
+    # Replace all __dace_init_cloudsc_py(...) calls
+    code = re.sub(
+        r"__dace_init_cloudsc_py\([^)]+\)",
+        init_call,
+        code,
+    )
+
+    # Replace all __program_cloudsc_py(...) calls
+    code = re.sub(
+        r"__program_cloudsc_py\([^)]+\)",
+        prog_call,
+        code,
+    )
+
+    with open(main_cpp, "w") as f:
+        f.write(code)
+
+    print(f"  Stabilized interface: init({len(init_params)} args), program({len(prog_params)} args)")
+
+
 def modify_files_in_directory(directory):
     pattern = re.compile(r"^(\s*)int tmp_struct_symbol")
     for root, _, files in os.walk(directory):
@@ -143,7 +200,8 @@ def main():
     from text_patches import apply_text_patches
     apply_text_patches(codegen_dir, args.lowprec)
 
-    # cloudsc_main.cpp is maintained manually (includes sensitivity mode etc.)
+    # Rewrite cloudsc_main.cpp call sites to match the generated interface
+    stabilize_interface(str(header), "cloudsc_main.cpp")
 
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
 
