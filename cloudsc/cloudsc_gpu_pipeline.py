@@ -223,8 +223,8 @@ def main():
     # 5. Build Script Generation
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
 
-    # Default to Daint P100 (sm_60) unless specified
-    gencode_num = os.getenv("GENCODE_NUMBER", "60")
+    # Default to GH200 (sm_90) unless specified
+    gencode_num = os.getenv("GENCODE_NUMBER", "90")
     arch = f"arch=compute_{gencode_num},code=sm_{gencode_num}"
 
     # Ensure ptx_out directory exists
@@ -260,13 +260,14 @@ def main():
     suppress = " ".join([f"--diag-suppress {x}" for x in [68, 550, 20208, 1835, 177, 20012, 1098]])
     
     # We include all .cu files in codegen/
+    # And we add the memory wrapper implementations
     cmd = (
         f"nvcc {nvcc_flags} -gencode {arch} {suppress} \\\n"
         f"    -Xcompiler=\"{xcompiler_flags}\" \\\n"
         f"    --keep --keep-dir=ptx_out \\\n"
         f"    -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree \\\n"
         f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
-        "    cloudsc_main.cu codegen/*.cu \\\n"
+        "    cloudsc_main.cu gpu_mem.cpp codegen/*.cu \\\n"
         f"    -o cloudsc_gpu_bin {h5_libs} -lcudart -lpthread"
     )
 
