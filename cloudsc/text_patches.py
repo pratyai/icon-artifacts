@@ -93,6 +93,30 @@ def inject_copy_cast(file_path: Path):
             f.write(new_content)
 
 
+def comment_out_syncs(file_path: Path):
+    """Comment out conservative CUDA synchronization calls to allow kernel overlap.
+
+    Ported from velocity/utils/compile_if_propagated_sdfgs.py.
+    """
+    with open(file_path, "r") as f:
+        lines = f.readlines()
+
+    modified = False
+    new_lines = []
+    for line in lines:
+        # Match typical CUDA sync/event primitives
+        if any(x in line for x in ["cudaStreamSynchronize", "EventRecord", "StreamWaitEvent"]):
+            # Don't comment out syncs used for our own timers/profiling if they exist
+            if not any(x in line for x in ["stop", "start"]):
+                line = "//" + line
+                modified = True
+        new_lines.append(line)
+
+    if modified:
+        with open(file_path, "w") as f:
+            f.writelines(new_lines)
+
+
 def apply_text_patches(codegen_dir: Path, lowprec: str):
     """Apply all text-level patches to generated source files.
 
@@ -100,12 +124,15 @@ def apply_text_patches(codegen_dir: Path, lowprec: str):
         codegen_dir: Path to the codegen/ directory with generated .cpp/.h files.
         lowprec: Precision mode string.
     """
-    if lowprec in ("fp64", "f64"):
-        return  # nothing to patch
-
     source_files = list(codegen_dir.glob("*.cpp")) + list(codegen_dir.glob("*.h")) + list(codegen_dir.glob("*.cu"))
 
     for f in source_files:
+        # Synchronizations are commented out regardless of precision for performance
+        comment_out_syncs(f)
+
+        if lowprec in ("fp64", "f64"):
+            continue
+
         if lowprec in ("fp16", "f16"):
             fix_mixed_precision_ambiguity(f)
         inject_copy_cast(f)

@@ -10,6 +10,7 @@ from dace.codegen import codegen, compiler
 from dace.sdfg import infer_types
 
 dace.config.Config.set("compiler", "default_data_types", value="C")
+dace.config.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
 
 # --- Source Management ---
 
@@ -90,6 +91,15 @@ def modify_file(file_path, pattern):
             f.writelines(new_lines)
 
 
+def _replace_cpp_with_cu(directory: Path):
+    """Renames all .cpp and .cc files in a directory to .cu."""
+    for ext in ["*.cpp", "*.cc"]:
+        for file in directory.glob(ext):
+            new_name = file.with_suffix(".cu")
+            file.rename(new_name)
+            print(f"  Renamed: {file.name} -> {new_name.name}")
+
+
 def flatten_build_folder_gpu(build_loc: Path, sdfg_name: str):
     """Moves CPU and CUDA files to codegen/ and cleans up."""
     # Handle CPU files
@@ -112,6 +122,9 @@ def flatten_build_folder_gpu(build_loc: Path, sdfg_name: str):
 
     # Clean up
     shutil.rmtree(build_loc, ignore_errors=True)
+
+    # Rename all .cpp to .cu in the flattened codegen directory
+    _replace_cpp_with_cu(build_loc.parent)
 
     # Patch includes in all moved files
     for f in build_loc.parent.glob("*"):
@@ -190,11 +203,11 @@ def main():
 
     nvcc_flags = "-O3 -std=c++20" if args.release else "-O0 -g -std=c++20"
     
-    # We include all .cpp and .cu files in codegen/
+    # We include all .cu files in codegen/
     cmd = (
         f"nvcc {nvcc_flags} \\\n"
         f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
-        "    cloudsc_main.cu codegen/*.cpp codegen/*.cu \\\n"
+        "    cloudsc_main.cu codegen/*.cu \\\n"
         f"    -o cloudsc_gpu_bin {h5_libs} -lcudart -lpthread"
     )
 
