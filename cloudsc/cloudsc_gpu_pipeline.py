@@ -223,6 +223,15 @@ def main():
     # 5. Build Script Generation
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
 
+    # Default to Daint P100 (sm_60) unless specified
+    gencode_num = os.getenv("GENCODE_NUMBER", "60")
+    arch = f"arch=compute_{gencode_num},code=sm_{gencode_num}"
+
+    # Ensure ptx_out directory exists
+    ptx_dir = Path("ptx_out")
+    if not ptx_dir.exists():
+        ptx_dir.mkdir()
+
     h5_cflags = ""
     h5_libs = ""
     try:
@@ -231,11 +240,31 @@ def main():
     except Exception:
         pass # Handle manually if needed
 
-    nvcc_flags = "-O3 -std=c++20" if args.release else "-O0 -g -std=c++20"
+    if args.release:
+        nvcc_flags = (
+            "-O3 -std=c++20 -DNDEBUG --use_fast_math --restrict "
+            "-Xptxas=-O3 -Xptxas=-v --ftz=true --fmad=true "
+            "--expt-relaxed-constexpr -lineinfo "
+            "--prec-div=false --prec-sqrt=false"
+        )
+        xcompiler_flags = (
+            "-O3 -march=native -mtune=native -DNDEBUG -Wall -Wextra "
+            "-Wno-unused-parameter -Wconversion -Wno-sign-conversion "
+            "-Wfloat-conversion -Wno-unknown-pragmas -faligned-new"
+        )
+    else:
+        nvcc_flags = "-O0 -g -std=c++20 --expt-relaxed-constexpr -lineinfo"
+        xcompiler_flags = "-O0 -Wall -Wextra -Wno-unused-parameter"
+    
+    # Suppress noisy DaCe-related CUDA warnings
+    suppress = " ".join([f"--diag-suppress {x}" for x in [68, 550, 20208, 1835, 177, 20012, 1098]])
     
     # We include all .cu files in codegen/
     cmd = (
-        f"nvcc {nvcc_flags} \\\n"
+        f"nvcc {nvcc_flags} -gencode {arch} {suppress} \\\n"
+        f"    -Xcompiler=\"{xcompiler_flags}\" \\\n"
+        f"    --keep --keep-dir=ptx_out \\\n"
+        f"    -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree \\\n"
         f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
         "    cloudsc_main.cu codegen/*.cu \\\n"
         f"    -o cloudsc_gpu_bin {h5_libs} -lcudart -lpthread"
