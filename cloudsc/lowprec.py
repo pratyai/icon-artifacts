@@ -114,6 +114,12 @@ def inject_cpu_boundary_cast(
     All computation runs in the lowered dtype.
     """
     scalar_names = scalar_names or []
+
+    # Identify modified outputs BEFORE performing any renames.
+    # If we rename first, read_and_write_sets will only see the new name,
+    # making it impossible to match against the original parameter names.
+    _, written = sdfg.read_and_write_sets()
+
     array_pairs = []  # (orig_name, lowered_name) for arrays
     scalar_pairs = []  # (orig_name, lowered_name) for scalars
 
@@ -174,11 +180,23 @@ def inject_cpu_boundary_cast(
     if not array_pairs and not scalar_pairs:
         return
 
+    array_outputs = [p for p in array_pairs if p[0] in written]
+    scalar_outputs = [p for p in scalar_pairs if p[0] in written]
+
+    # Debug: Print what we are excluding
+    excluded_arrays = [p[0] for p in array_pairs if p[0] not in written]
+    excluded_scalars = [p[0] for p in scalar_pairs if p[0] not in written]
+    if excluded_arrays:
+        print(f"  lowprec: Excluding {len(excluded_arrays)} read-only arrays from exit cast: {excluded_arrays[:10]}...")
+    if excluded_scalars:
+        print(f"  lowprec: Excluding {len(excluded_scalars)} read-only scalars from exit cast: {excluded_scalars[:10]}...")
+
     # Add entry state: cast double→float for all inputs ("H2D")
     _add_entry_cast_state(sdfg, array_pairs, external_dtype, scalar_pairs)
 
-    # Add exit state: cast float→double for all outputs ("D2H")
-    _add_exit_cast_state(sdfg, array_pairs, scalar_pairs)
+    # Add exit state: cast float→double for modified outputs ("D2H")
+    if array_outputs or scalar_outputs:
+        _add_exit_cast_state(sdfg, array_outputs, scalar_outputs)
 
     # Re-index internal CFG list after adding new states
     sdfg.reset_cfg_list()
@@ -1095,8 +1113,10 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
     # --- Apply: lower everything not excluded ---
 
     # 1. Non-transient arrays + scalar params: boundary cast
-    bc_targets = [n for n in all_non_transient if not is_excluded(n)]
-    ps_targets = [n for n in all_param_scalars if not is_excluded(n)]
+    # Only boundary cast things that ARE NOT already being offloaded to GPU.
+    # Offloaded things (with gpu_ siblings) are handled by gpu_offload.py logic.
+    bc_targets = [n for n in all_non_transient if not is_excluded(n) and f"gpu_{n}" not in sdfg.arrays]
+    ps_targets = [n for n in all_param_scalars if not is_excluded(n) and f"gpu_{n}" not in sdfg.arrays]
     if bc_targets or ps_targets:
         print(f"Boundary cast: {len(bc_targets)} non-transient arrays, {len(ps_targets)} scalar params")
         inject_cpu_boundary_cast(sdfg, bc_targets, external_dtype, scalar_names=ps_targets)
