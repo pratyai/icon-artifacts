@@ -21,7 +21,7 @@ double* load_h5_array_double(hid_t file_id, std::string name, size_t max_size) {
         H5Sclose(space_id);
         H5Dclose(dataset_id);
     } else {
-        for(size_t i=0; i<max_size; ++i) ptr[i] = 0.5;
+        for(size_t i=0; i<max_size; ++i) ptr[i] = 0.0;
     }
     return ptr;
 }
