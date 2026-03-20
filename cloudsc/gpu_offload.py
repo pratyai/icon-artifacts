@@ -685,6 +685,11 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False):
     # 9. Transify non-transient scalars written inside GPU kernels
     _transify_gpu_scalars(sdfg, verbose)
 
+    # 10. Propagate missing symbols and data through the hierarchy
+    # (Fixes bugs where DaCe creates new symbols for ranges but doesn't link them)
+    from utils.add_missing_symbols import add_missing_data_and_symbols_to_all_nsdfgs
+    add_missing_data_and_symbols_to_all_nsdfgs(sdfg)
+
     # Re-index CFG
     sdfg.reset_cfg_list()
     print("GPU offloading complete.")

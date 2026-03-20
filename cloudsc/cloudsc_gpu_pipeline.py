@@ -176,6 +176,31 @@ def main():
     infer_types.infer_connector_types(sdfg)
     infer_types.set_default_schedule_and_storage_types(sdfg, None)
 
+    # 4. Symbol Propagation (Fixes mangled names by replacing symbols with their RHS)
+    for s in sdfg.all_sdfgs_recursive():
+        # Find all assignments 'K = V' across all interstate edges
+        defines = {}
+        for edge in s.all_interstate_edges():
+            if edge.data.assignments:
+                for k, v in edge.data.assignments.items():
+                    defines[str(k)] = str(v)
+        
+        if defines:
+            # Replace every occurrence of K with its RHS expression V
+            for k, v in defines.items():
+                s.replace(k, v)
+            
+            # Clean up: remove redundant assignments and symbol table entries
+            for edge in s.all_interstate_edges():
+                if edge.data.assignments:
+                    for k in list(edge.data.assignments.keys()):
+                        ks = str(k)
+                        if ks in defines or not ks.isidentifier():
+                            del edge.data.assignments[k]
+            for k in defines:
+                if k in s.symbols:
+                    s.remove_symbol(k)
+
     program_objects = codegen.generate_code(sdfg, validate=False)
     compiler.generate_program_folder(sdfg, program_objects, sdfg.build_folder)
 
