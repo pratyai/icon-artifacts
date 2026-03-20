@@ -220,9 +220,9 @@ def main():
             pass
 
     if args.release:
-        cpp_flags = "-O3 -g -std=c++20 -DNDEBUG -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter"
+        cpp_flags = "-O3 -g -std=c++20 -DNDEBUG -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas"
     else:
-        cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter"
+        cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas"
 
     cmd = (
         f"c++ {cpp_flags} \\\n"
