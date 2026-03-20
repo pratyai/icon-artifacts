@@ -175,7 +175,6 @@ def main():
     sdfg.expand_library_nodes()
     infer_types.infer_connector_types(sdfg)
     infer_types.set_default_schedule_and_storage_types(sdfg, None)
-
     # 4. Symbol Propagation (Fixes mangled names by replacing symbols with their RHS)
     for s in sdfg.all_sdfgs_recursive():
         # Find all assignments 'K = V' across all interstate edges
@@ -183,7 +182,12 @@ def main():
         for edge in s.all_interstate_edges():
             if edge.data.assignments:
                 for k, v in edge.data.assignments.items():
-                    defines[str(k)] = str(v)
+                    # Only propagate "Pure" symbols (math expressions).
+                    # If the RHS contains a data access (like imelt[0]), 
+                    # replacing it into symbolic math breaks DaCe's C++ codegen.
+                    str_v = str(v)
+                    if "[" not in str_v and "]" not in str_v:
+                        defines[str(k)] = str_v
         
         if defines:
             # Replace every occurrence of K with its RHS expression V
@@ -200,6 +204,7 @@ def main():
             for k in defines:
                 if k in s.symbols:
                     s.remove_symbol(k)
+
 
     program_objects = codegen.generate_code(sdfg, validate=False)
     compiler.generate_program_folder(sdfg, program_objects, sdfg.build_folder)
