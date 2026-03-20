@@ -94,7 +94,7 @@ def compare_files(file_ref, file_test, tol=1e-12):
     else:
         print(f"\n✅ Validation PASSED (tol={tol})")
 
-def compare_all_steps(ref_dir="outputs_ref", test_dir="outputs_cpp", tol=1e-12):
+def compare_all_steps(ref_dir="outputs_ref", test_dir="outputs_cpp", test_prefix="cpp", tol=1e-12):
     print(f"Comparing all steps in {ref_dir} and {test_dir}\n")
     
     ref_files = [f for f in os.listdir(ref_dir) if f.startswith("ref_output_step_") and f.endswith(".h5")]
@@ -109,7 +109,7 @@ def compare_all_steps(ref_dir="outputs_ref", test_dir="outputs_cpp", tol=1e-12):
             continue
         
         step_idx = int(match.group(1))
-        test_file = f"cpp_output_step_{step_idx}.h5"
+        test_file = f"{test_prefix}_output_step_{step_idx}.h5"
         test_path = os.path.join(test_dir, test_file)
         ref_path = os.path.join(ref_dir, ref_file)
         
@@ -159,15 +159,19 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=int, help="Comparison step index (compares ref vs cpp)")
     parser.add_argument("--ref", type=str, help="Path to reference HDF5 file")
     parser.add_argument("--test", type=str, help="Path to test HDF5 file")
+    parser.add_argument("--gpu", action="store_true", help="Compare GPU outputs (defaults to outputs_gpu/gpu_*)")
     parser.add_argument("--tol", type=float, default=1e-12, help="Relative error tolerance")
     args = parser.parse_args()
 
+    test_dir = "outputs_gpu" if args.gpu else "outputs_cpp"
+    test_prefix = "gpu" if args.gpu else "cpp"
+
     if args.step is not None:
         file_ref = f"outputs_ref/ref_output_step_{args.step}.h5"
-        file_test = f"outputs_cpp/cpp_output_step_{args.step}.h5"
+        file_test = f"{test_dir}/{test_prefix}_output_step_{args.step}.h5"
         compare_files(file_ref, file_test, args.tol)
     elif args.ref and args.test:
         compare_files(args.ref, args.test, args.tol)
     else:
         # Default behavior: compare all available matching steps
-        compare_all_steps(tol=args.tol)
+        compare_all_steps(test_dir=test_dir, test_prefix=test_prefix, tol=args.tol)
