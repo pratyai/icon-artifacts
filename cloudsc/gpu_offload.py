@@ -51,7 +51,8 @@ def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
             # If only read, they are passed by value as kernel parameters.
             if name not in written:
                 continue
-        if isinstance(desc, dace.data.Data):
+        
+        if isinstance(desc, dace.data.Array):
             if desc.transient:
                 trans_arrays.append(name)
             else:
@@ -531,11 +532,6 @@ def _handle_dual_access_arrays(sdfg: dace.SDFG, interstate: Set[str], verbose: b
     gpu_accessed = _find_gpu_accessed_arrays(sdfg)
     dual = interstate & gpu_accessed
 
-    if not dual:
-        if verbose:
-            print(f"  No dual-access (interstate + GPU) arrays")
-        return
-
     # Find which are written inside GPU maps
     written_in_gpu = set()
     for state in sdfg.all_states():
@@ -551,8 +547,20 @@ def _handle_dual_access_arrays(sdfg: dace.SDFG, interstate: Set[str], verbose: b
             outermost = parent
             while scope[outermost] is not None:
                 outermost = scope[outermost]
-            if outermost.map.schedule == dtypes.ScheduleType.GPU_Device:
+            if isinstance(outermost, nodes.MapEntry) and outermost.map.schedule == dtypes.ScheduleType.GPU_Device:
                 written_in_gpu.add(node.data)
+
+    # Filter 'dual' to only include Arrays or written Scalars.
+    # Read-only scalars are passed by value and don't need a gpu_ sibling.
+    dual = {
+        name for name in dual
+        if isinstance(sdfg.arrays[name], dace.data.Array) or name in written_in_gpu
+    }
+
+    if not dual:
+        if verbose:
+            print(f"  No dual-access (interstate + GPU) arrays")
+        return
 
     # Create gpu_ descriptors for dual arrays
     for name in dual:
