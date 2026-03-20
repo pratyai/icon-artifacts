@@ -223,9 +223,16 @@ def main():
     # 5. Build Script Generation
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
 
-    # Default to GH200 (sm_90) unless specified
-    gencode_num = os.getenv("GENCODE_NUMBER", "90")
-    arch = f"arch=compute_{gencode_num},code=sm_{gencode_num}"
+    # GPU Architecture detection (matches velocity)
+    gencode_num = os.getenv("GENCODE_NUMBER")
+    gencode_arch = os.getenv("GENCODE_ARCH")
+    
+    if gencode_arch:
+        arch = gencode_arch
+    elif gencode_num:
+        arch = f"arch=compute_{gencode_num},code=sm_{gencode_num}"
+    else:
+        raise ValueError("GENCODE_NUMBER (e.g. 90) or GENCODE_ARCH must be set in environment.")
 
     # Ensure ptx_out directory exists
     ptx_dir = Path("ptx_out")
