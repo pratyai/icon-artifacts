@@ -14,7 +14,6 @@ from dace.transformation.interstate import LoopToMap
 
 from ssa import (ssa_transform, isolate_loop_variables, privatize_scalars,
                  expand_scalars, propagate_constants, unroll_loops)
-from ssa.yakup_unroll import unroll as yakup_unroll
 
 SYMBOL_MAP = {
     "nclv": 5,

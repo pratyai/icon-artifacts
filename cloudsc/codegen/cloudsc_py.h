@@ -1,5 +1,4 @@
 #include <dace/dace.h>
-#include "copy_cast.h"
 typedef void *cloudsc_pyHandle_t;
 extern "C" cloudsc_pyHandle_t __dace_init_cloudsc_py(int klev, int klon,
                                                      int nclv);

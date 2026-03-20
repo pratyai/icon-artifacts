@@ -103,7 +103,7 @@ def apply_text_patches(codegen_dir: Path, lowprec: str):
     if lowprec in ("fp64", "f64"):
         return  # nothing to patch
 
-    source_files = list(codegen_dir.glob("*.cpp")) + list(codegen_dir.glob("*.h"))
+    source_files = list(codegen_dir.glob("*.cpp")) + list(codegen_dir.glob("*.h")) + list(codegen_dir.glob("*.cu"))
 
     for f in source_files:
         if lowprec in ("fp16", "f16"):
