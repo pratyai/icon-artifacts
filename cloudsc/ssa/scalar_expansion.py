@@ -105,8 +105,21 @@ def _find_enclosing_loop(sdfg: dace.SDFG,
 
 
 def _loops_sharing_range(parent: LoopRegion, start, end, step) -> list:
-    """Find all direct-child LoopRegions of `parent` whose range matches."""
+    """Find all direct-child LoopRegions of `parent` whose range matches.
+    Normalizes SSA version suffixes to ensure matching bounds.
+    """
+    import re
+    def _norm(expr):
+        # Strip SSA version suffixes (e.g., _43) from variable names for comparison
+        expr_str = re.sub(r'_[0-9]+(?![a-zA-Z0-9_])', '', str(expr))
+        try:
+            return symbolic.pystr_to_symbolic(expr_str)
+        except Exception:
+            return symbolic.pystr_to_symbolic(str(expr))
+
     matching = []
+    n_start, n_end, n_step = _norm(start), _norm(end), _norm(step)
+    
     for child in parent.nodes():
         if not isinstance(child, LoopRegion):
             continue
@@ -114,12 +127,9 @@ def _loops_sharing_range(parent: LoopRegion, start, end, step) -> list:
         if info is None:
             continue
         _, c_start, c_end, c_step = info
-        if (symbolic.pystr_to_symbolic(c_start) ==
-                symbolic.pystr_to_symbolic(start)
-                and symbolic.pystr_to_symbolic(c_end) ==
-                symbolic.pystr_to_symbolic(end)
-                and symbolic.pystr_to_symbolic(c_step) ==
-                symbolic.pystr_to_symbolic(step)):
+        if (_norm(c_start) == n_start and
+                _norm(c_end) == n_end and
+                _norm(c_step) == n_step):
             matching.append(child)
     return matching
 
@@ -429,6 +439,8 @@ def expand_scalars(sdfg: dace.SDFG) -> int:
     expanded = 0
     skipped = 0
     for name, targets in expansion_targets.items():
+        if name == 'zalfaw__v1__priv_for_428':
+            breakpoint()
         if name not in sdfg.arrays:
             continue
         desc = sdfg.arrays[name]

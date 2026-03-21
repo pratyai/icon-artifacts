@@ -11,6 +11,7 @@ import os
 import dace
 from dace import nodes as nd
 from dace.transformation.interstate import LoopToMap
+from dace.transformation.passes.analysis import loop_analysis
 
 from ssa import (ssa_transform, isolate_loop_variables, privatize_scalars,
                  expand_scalars, propagate_constants, unroll_loops)
@@ -129,6 +130,38 @@ if __name__ == "__main__":
     if not args.no_unroll:
         unroll_loops(sdfg, SYMBOL_MAP)
         checkpoint(sdfg, "after_unroll", out_dir)
+
+    # # 2. SSA — split multi-write scalars into unique versions
+    # ssa_result = ssa_transform(sdfg, only=only_ssa)
+    # print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
+    #         f"for {len(ssa_result)} variables")
+    # checkpoint(sdfg, "after_ssa_p2", out_dir)
+
+    # # 3. Loop variable isolation — unique itervar per LoopRegion
+    # isolate_loop_variables(sdfg)
+    # checkpoint(sdfg, "after_isolate_p2", out_dir)
+
+    # # 4. Scalar privatization — fresh transients for loop-private scalars
+    # privatize_scalars(sdfg)
+    # checkpoint(sdfg, "after_privatize_p2", out_dir)
+
+    # # 5. Scalar expansion — promote blocking scalars to arrays
+    # expand_scalars(sdfg)
+    # checkpoint(sdfg, "after_expand_p2", out_dir)
+
+    # # 6. LoopToMap — convert eligible control-flow loops into dataflow maps
+    # n = sdfg.apply_transformations_repeated(LoopToMap, validate=False)
+    # print(f"LoopToMap: converted {n} loops to maps")
+    # checkpoint(sdfg, "after_l2m_p2", out_dir)
+
+    # for node, _ in sdfg.all_nodes_recursive():
+    #     if isinstance(node, dace.sdfg.state.LoopRegion):
+    #         start = loop_analysis.get_init_assignment(node)
+    #         end = loop_analysis.get_loop_end(node)
+    #         if str(start) == 'kidia':
+    #             raise AssertionError(f"Horizontal LoopRegion {node.label} ({start} to {end}) "
+    #                                     "was not converted to a Map. This usually means "
+    #                                     "there is a data dependency blocking LoopToMap.")
 
     # 8. Fix missing NestedSDFG symbols, then simplify
     fix_missing_nsdfg_symbols(sdfg)
