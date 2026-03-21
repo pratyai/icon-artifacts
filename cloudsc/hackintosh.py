@@ -20,13 +20,43 @@ FORCED_EXPANSION = {
     "zqe__priv_for_428_1",
     "zevap__priv_for_428_1",
     "zfallcorr__v1__priv_for_428_1",
-    # "zdqs_index",
-    # "zevaplimmix_index",
-    # "zlcust_index_0",
-    # "zlcust_index_1",
-    # "zlcust_index_2",
-    # "zlcust_index_3",
-    # "zdtgdp_index_3",
+    "zzrh__priv_for_428_1",
+    "zdqs_index",
+    "zevaplimmix_index",
+    "zlcust_index_0",
+    "zlcust_index_1",
+    "zlcust_index_2",
+    "zlcust_index_3",
+    "zdtgdp_index_3",
+    "zdtgdp_index_4",
+    "zlcust_slice_minus_zdqs_slice",
+    "zlcust_slice_minus_zlfinal",
+    "zlfinal_0",
+    "zlfinal__v3",
+    "zlfinal__v4",
+    "zlfinalsum_slice_plus_zlfinal",
+    "zlfinalsum_index",
+    "zsolqa_index_10",
+    "zsolqa_index_8",
+    "zsolqa_index_9",
+    "zsolqa_slice_minus_zevap",
+    "zsolqa_slice_plus_zevap",
+    "zfall",
+    "zfallsink_slice",
+    "zfallsrce_index",
+    "zpfplsx_index",
+    "zqpretot_index",
+    "zfallsrce_slice",
+    "zfallsrce_index_0",
+    "zqpretot_slice_plus_zqxfg_slice",
+    "zsolqa_slice_plus_zlcust_slice",
+    "zqxfg_index_17",
+    "zsolqa_index_31",
+    "zqxfg_index_18",
+    "zsolqa_slice_plus_zfallsrce_slice",
+    "zrho_index_8",
+    "zqxfg_slice_plus_zfallsrce_slice",
+    "zvqx_index_0",
 }
 
 # Set of loop labels to force convert to Maps, even if safety checks fail.
@@ -35,6 +65,17 @@ FORCED_L2M = {
     "for_597",
     "for_664",
     "if_854_body_for_855",
+    "for_561",
+    "for_765",
+    "if_764_body_for_765",
+    "if_910_else_929_if_929_body_for_930",
+    "if_953_body_for_954",
+    "for_1128",
+}
+
+# Set of data arrays to force SSA on.
+FORCED_SSA = {
+    "llo1__priv_for_428_1",
 }
 
 if __name__ == "__main__":
@@ -55,7 +96,14 @@ if __name__ == "__main__":
     print(f"  Expanded {expanded} scalars")
     sdfg.validate()
 
-    # 2. Forced LoopToMap for specific labels that regular pass might skip
+    # 2. Forced SSA
+    if FORCED_SSA:
+        print(f"Running forced SSA on: {FORCED_SSA}")
+        from ssa.data_ssa import ssa_transform
+        ssa_transform(sdfg, only=FORCED_SSA)
+        sdfg.validate()
+
+    # 3. Forced LoopToMap for specific labels that regular pass might skip
     forced_count = 0
     for node, graph in sdfg.all_nodes_recursive():
         if not isinstance(node, dace.sdfg.state.LoopRegion):

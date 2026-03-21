@@ -1,14 +1,13 @@
-"""scalar_expansion.py — Expand scalars to arrays indexed by inner-loop itervar.
+"""scalar_expansion.py — Expand scalars to arrays indexed by loop itervar.
 
 When a scalar blocks LoopToMap because its write index doesn't depend on the
-inner loop's itervar, we promote it to a 1-D array indexed by that itervar.
+loop's itervar, we promote it to a 1-D array indexed by that itervar.
 This lets each iteration write to its own slot, satisfying LoopToMap's
 write-index check.
 
 Safety constraint: a scalar is only expanded if ALL its accesses within the
-parent loop are inside inner loops with compatible ranges.  Accesses "loose"
-in the parent body (outside any inner loop) would not have an itervar in
-scope to index with, so those scalars are skipped.
+parent region are either inside the loop being expanded (or its siblings) 
+OR follow specific loose access patterns (A/B).
 
 Usage (standalone):
     python -m ssa.scalar_expansion input.sdfgz -o output.sdfgz
@@ -22,7 +21,7 @@ from tqdm import tqdm
 
 import dace
 from dace import nodes as nd, symbolic, subsets as sbs
-from dace.sdfg.state import LoopRegion
+from dace.sdfg.state import LoopRegion, ControlFlowRegion
 from dace.transformation.passes.analysis import loop_analysis
 from dace.transformation.interstate.loop_to_map import _check_range
 
@@ -39,11 +38,7 @@ def _get_loop_range(loop: LoopRegion):
 
 
 def _blocked_scalars(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
-    """Return set of scalar names that block this loop from LoopToMap.
-
-    A scalar blocks if it's in `other_access_nodes`, is written in the loop,
-    and the write index doesn't depend on the itervar.
-    """
+    """Return set of scalar names that block this loop from LoopToMap."""
     info = _get_loop_range(loop)
     if info is None:
         return set()
@@ -52,7 +47,6 @@ def _blocked_scalars(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
     _, write_set = loop.read_and_write_sets()
     loop_states = set(loop.all_states())
 
-    # Replicate LoopToMap's other_access_nodes computation
     other_access_nodes = set()
     for state in sdfg.states():
         if state in loop_states:
@@ -93,25 +87,23 @@ def _blocked_scalars(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
     return blocked
 
 
-def _find_enclosing_loop(sdfg: dace.SDFG,
-                          inner: LoopRegion) -> LoopRegion | None:
-    """Find the immediate parent LoopRegion of `inner`."""
+def _find_enclosing_region(sdfg: dace.SDFG,
+                            child: nd.Node | dace.SDFGState | ControlFlowRegion) -> ControlFlowRegion | dace.SDFG | None:
+    """Find the immediate parent region of `child`."""
+    if hasattr(child, 'parent_graph'):
+        return child.parent_graph
     for cfg in sdfg.all_control_flow_regions():
-        if not isinstance(cfg, LoopRegion):
-            continue
-        for child in cfg.nodes():
-            if child is inner:
-                return cfg
+        if child in cfg.nodes():
+            return cfg
     return None
 
 
-def _loops_sharing_range(parent: LoopRegion, start, end, step) -> list:
-    """Find all direct-child LoopRegions of `parent` whose range matches.
-    Normalizes SSA version suffixes to ensure matching bounds.
-    """
+def _loops_sharing_range(parent: ControlFlowRegion | dace.SDFG, start, end, step) -> list:
+    """Find all direct-child LoopRegions of `parent` whose range matches."""
+    if parent is None:
+        return []
     import re
     def _norm(expr):
-        # Strip SSA version suffixes (e.g., _43) from variable names for comparison
         expr_str = re.sub(r'_[0-9]+(?![a-zA-Z0-9_])', '', str(expr))
         try:
             return symbolic.pystr_to_symbolic(expr_str)
@@ -136,11 +128,7 @@ def _loops_sharing_range(parent: LoopRegion, start, end, step) -> list:
 
 
 def _loop_writes_before_reads(loop: LoopRegion, name: str) -> bool:
-    """Check if the first access to `name` in the loop body is a write.
-
-    Uses topological order of the loop's CFG children.  Returns True only
-    if the first encountered access is a pure write (no read component).
-    """
+    """Check if the first access to `name` in the loop body is a write."""
     import networkx as nx
     G = nx.DiGraph()
     for n in loop.nodes():
@@ -150,32 +138,27 @@ def _loop_writes_before_reads(loop: LoopRegion, name: str) -> bool:
     topo = list(nx.topological_sort(G))
 
     for child in topo:
-        if isinstance(child, LoopRegion):
+        if isinstance(child, (LoopRegion, ControlFlowRegion)):
             child_states = list(child.all_states())
         elif isinstance(child, dace.SDFGState):
             child_states = [child]
         else:
             child_states = []
-            if hasattr(child, 'all_states'):
-                child_states = list(child.all_states())
 
         for state in child_states:
-            for node in state.nodes():
+            for node, _ in state.all_nodes_recursive():
                 if isinstance(node, nd.AccessNode) and node.data == name:
                     is_r = state.out_degree(node) > 0
                     is_w = state.in_degree(node) > 0
                     if is_w and not is_r:
-                        return True   # first access is pure write
+                        return True
                     else:
-                        return False  # first access reads
-    return False  # no access found
+                        return False
+    return False
 
 
-def _loose_accesses_before_loops(parent: LoopRegion, name: str,
+def _loose_accesses_before_loops(parent: ControlFlowRegion | dace.SDFG, name: str,
                                   compatible_loops: list[LoopRegion]) -> bool:
-    """Check that all loose accesses to `name` come topologically before
-    any compatible inner loop in the parent's CFG.
-    """
     import networkx as nx
     G = nx.DiGraph()
     for n in parent.nodes():
@@ -197,7 +180,6 @@ def _loose_accesses_before_loops(parent: LoopRegion, name: str,
             if first_loop_idx is None:
                 first_loop_idx = i
 
-        # Check if this child has a loose access
         if isinstance(child, dace.SDFGState):
             child_states = [child]
         elif hasattr(child, 'all_states'):
@@ -214,17 +196,14 @@ def _loose_accesses_before_loops(parent: LoopRegion, name: str,
                     break
 
     if last_loose_idx is None:
-        return True   # no loose accesses
+        return True
     if first_loop_idx is None:
-        return False  # loose accesses but no loops
+        return False
     return last_loose_idx < first_loop_idx
 
 
-def _loose_accesses_after_loops(parent: LoopRegion, name: str,
+def _loose_accesses_after_loops(parent: ControlFlowRegion | dace.SDFG, name: str,
                                  compatible_loops: list[LoopRegion]) -> bool:
-    """Check that all loose accesses to `name` come topologically after
-    all compatible inner loops in the parent's CFG.
-    """
     import networkx as nx
     G = nx.DiGraph()
     for n in parent.nodes():
@@ -262,25 +241,20 @@ def _loose_accesses_after_loops(parent: LoopRegion, name: str,
                     break
 
     if first_loose_idx is None:
-        return True   # no loose accesses
+        return True
     if last_loop_idx is None:
         return False
     return first_loose_idx > last_loop_idx
 
 
 def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
-    """Expand scalars that block LoopToMap in inner loops.
-
-    Returns number of scalars expanded.
-    """
-    # Collect all LoopRegions
+    """Expand scalars that block LoopToMap in loops."""
     all_loops: list[LoopRegion] = []
     for cfg in sdfg.all_control_flow_regions():
         for child in cfg.nodes():
             if isinstance(child, LoopRegion):
                 all_loops.append(child)
 
-    # name -> list of expansion targets
     expansion_targets: dict[str, list[dict]] = {}
 
     for loop in tqdm(all_loops, desc="Finding blocked scalars", unit="loop"):
@@ -288,10 +262,10 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
             blocked = set()
             read_set, write_set = loop.read_and_write_sets()
             rw_set = read_set | write_set
-            for f in force:
-                for rw in rw_set:
-                    if f in rw:
-                        blocked.add(rw)
+            
+            for rw in rw_set:
+                if rw in force: # Exact match
+                    blocked.add(rw)
         else:
             blocked = _blocked_scalars(sdfg, loop)
 
@@ -303,21 +277,23 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
             continue
         itervar, start, end, step = info
 
-        parent = _find_enclosing_loop(sdfg, loop)
+        parent = _find_enclosing_region(sdfg, loop)
         if parent is None:
-            continue
+            parent = sdfg
 
-        # Find sibling loops with same range
         siblings = _loops_sharing_range(parent, start, end, step)
+        if loop not in siblings: siblings.append(loop)
 
-        # Compute dimension size, ensuring only top-level symbols are used
+        # Compute dimension size
         dim_size = (symbolic.pystr_to_symbolic(end)
                     - symbolic.pystr_to_symbolic(start)
                     + symbolic.pystr_to_symbolic(step))
         dim_size = sp.simplify(dim_size / symbolic.pystr_to_symbolic(step))
 
-        # Top-level symbols fallback
-        top_symbols = set(sdfg.symbols.keys()) | set(sdfg.constants.keys())
+        # Top-level symbols fallback (including transients)
+        top_symbols = (set(sdfg.symbols.keys()) | 
+                       set(sdfg.constants.keys()) |
+                       {n for n, d in sdfg.arrays.items() if d.transient})
         dim_free = {str(s) for s in dim_size.free_symbols}
         if dim_free - top_symbols:
             itervar_base = itervar.split('__')[0]
@@ -361,21 +337,13 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
             continue
 
         for info in targets:
-            # Re-read name in case it was renamed by a previous target of the same scalar
             current_name = name
-            if current_name not in sdfg.arrays:
-                # Find the most recent expansion name
-                for aname in sdfg.arrays:
-                    if aname.startswith(name + "_ext"):
-                        current_name = aname
-            
             if current_name not in sdfg.arrays:
                 continue
 
             access_loops = list(info['loops'])
             parent = info['parent']
 
-            # Safety check
             all_in_loops = True
             covered_states = set()
             for lp in access_loops:
@@ -393,8 +361,8 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
 
             loose_mode = None
             if not all_in_loops:
-                if force and any(f in name for f in force):
-                    loose_mode = None # Just expand what we can
+                if force and name in force:
+                    loose_mode = None
                 elif (_loose_accesses_before_loops(parent, current_name, access_loops)
                         and all(_loop_writes_before_reads(lp, current_name)
                                 for lp in access_loops)):
@@ -417,17 +385,31 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
 
             itervar_offset = symbolic.pystr_to_symbolic(info['offset'])
             
-            # Reindex ALL states in parent recursively
-            for state in parent.all_states():
-                # Find if this state belongs to a loop inside parent
+            from dace.sdfg.replace import replace_properties_dict
+
+            # ONLY reindex states relevant to THIS expansion target
+            relevant_states = set()
+            for lp in access_loops:
+                relevant_states |= set(lp.all_states())
+            
+            if loose_mode is not None or (force and name in force):
+                # In force mode or loose mode, we might need more states from parent
+                for s in parent.all_states():
+                    # Check if this state has any access to current_name
+                    has_access = False
+                    for node, _ in s.all_nodes_recursive():
+                        if isinstance(node, nd.AccessNode) and node.data == current_name:
+                            has_access = True; break
+                    if has_access:
+                        relevant_states.add(s)
+
+            for state in relevant_states:
                 local_loop = None
                 for cfg in sdfg.all_control_flow_regions():
                     if isinstance(cfg, LoopRegion) and state in cfg.all_states():
-                        # innermost loop check
                         if local_loop is None or len(list(cfg.all_states())) < len(list(local_loop.all_states())):
                             local_loop = cfg
                 
-                # Default index
                 idx_expr = None
                 if local_loop:
                     l_info = _get_loop_range(local_loop)
@@ -439,14 +421,9 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
                     idx_expr = symbolic.pystr_to_symbolic(info['end']) - itervar_offset
                 
                 if idx_expr is None:
-                    # If we still don't have an index, and we are not in Pattern B, 
-                    # we must be in force mode or Pattern A. Use 0 or skip?
-                    # For Pattern A (loose before loops), we use index 0.
                     idx_expr = sp.Integer(0)
 
                 new_range = sbs.Range([(idx_expr, idx_expr, 1)])
-
-                from dace.sdfg.replace import replace_properties_dict
                 
                 for node, _ in state.all_nodes_recursive():
                     if isinstance(node, nd.AccessNode) and node.data == current_name:
@@ -456,49 +433,42 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None) -> int:
                         replace_properties_dict(node, {current_name: ext_name + f"[{idx_expr}]"})
                     elif isinstance(node, nd.NestedSDFG):
                         if current_name in node.in_connectors:
-                            node.add_in_connector(ext_name)
-                            for e in state.in_edges(node):
-                                if e.dst_conn == current_name: e.dst_conn = ext_name
+                            node.add_in_connector(ext_name); [setattr(e, 'dst_conn', ext_name) for e in state.in_edges(node) if e.dst_conn == current_name]
                             node.remove_in_connector(current_name)
                         if current_name in node.out_connectors:
-                            node.add_out_connector(ext_name)
-                            for e in state.out_edges(node):
-                                if e.src_conn == current_name: e.src_conn = ext_name
+                            node.add_out_connector(ext_name); [setattr(e, 'src_conn', ext_name) for e in state.out_edges(node) if e.src_conn == current_name]
                             node.remove_out_connector(current_name)
                         if current_name in node.sdfg.arrays:
                             node.sdfg.arrays[ext_name] = copy.deepcopy(node.sdfg.arrays[current_name])
-                            del node.sdfg.arrays[current_name]
-                            node.sdfg.replace(current_name, ext_name)
+                            del node.sdfg.arrays[current_name]; node.sdfg.replace(current_name, ext_name)
 
                 for edge, _ in state.all_edges_recursive():
                     if isinstance(edge.data, dace.memlet.Memlet):
+                        if isinstance(edge.src, nd.AccessNode):
+                            if edge.src.data == ext_name:
+                                edge.data.src_subset = new_range
+                        if isinstance(edge.dst, nd.AccessNode):
+                            if edge.dst.data == ext_name:
+                                edge.data.dst_subset = new_range
                         if edge.data.data == current_name:
                             edge.data.data = ext_name
-                            edge.data.subset = new_range
-                            if edge.data.other_subset is not None:
-                                edge.data.other_subset = new_range
                     elif hasattr(edge.data, 'replace'):
                         edge.data.replace(current_name, ext_name + f"[{idx_expr}]")
 
             expanded += 1
 
-    print(f"Scalar expansion: {expanded} scalars expanded"
-          f" ({skipped} skipped)")
+    print(f"Scalar expansion: {expanded} scalars expanded ({skipped} skipped)")
     return expanded
 
 
 if __name__ == "__main__":
     import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Scalar expansion for LoopToMap unblocking")
+    parser = argparse.ArgumentParser(description="Scalar expansion for LoopToMap unblocking")
     parser.add_argument("input", type=str, help="Input SDFG file")
     parser.add_argument("-o", "--output", type=str, default=None)
     args = parser.parse_args()
-
     sdfg = dace.SDFG.from_file(args.input)
     expand_scalars(sdfg)
-
     out_path = args.output or args.input.replace(".sdfgz", "_expanded.sdfgz")
     sdfg.save(out_path)
     print(f"Saved to {out_path}")

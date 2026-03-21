@@ -649,15 +649,21 @@ def ssa_transform(sdfg: dace.SDFG, only: set[str] | None = None) -> dict[str, li
     """Apply SSA renaming to all multi-write transients.
 
     Args:
-        only: If given, restrict SSA to only these variable names (for debugging).
+        only: If given, restrict SSA to ONLY these variable names.
 
     Returns a dict mapping original name → list of SSA versions created.
     """
-    targets = _collect_multi_write_transients(sdfg)
     if only:
-        targets = targets & only
+        targets = {
+            name for name in only 
+            if name in sdfg.arrays 
+            and isinstance(sdfg.arrays[name], dace.data.Scalar)
+        }
+    else:
+        targets = _collect_multi_write_transients(sdfg)
+
     if not targets:
-        print("No multi-write transients found.")
+        print("No SSA targets found.")
         return {}
 
     print(f"SSA candidates: {len(targets)} transient variables with >1 write")
