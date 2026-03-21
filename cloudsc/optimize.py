@@ -13,7 +13,7 @@ from dace import nodes as nd
 from dace.transformation.interstate import LoopToMap
 from dace.transformation.passes.analysis import loop_analysis
 
-from ssa import (ssa_transform, isolate_loop_variables, privatize_scalars,
+from ssa import (ssa_transform, ssa_transform_wtr, isolate_loop_variables, privatize_scalars,
                  expand_scalars, propagate_constants, unroll_loops)
 
 SYMBOL_MAP = {
@@ -45,8 +45,8 @@ def checkpoint(sdfg: dace.SDFG, name: str, out_dir: str):
     """Validate and save a checkpoint SDFG."""
     path = os.path.join(out_dir, f"{name}.sdfgz")
     sdfg.save(path, compress=True)
-    sdfg.validate()
     print(f"  checkpoint: {path}")
+    sdfg.validate()
 
 
 if __name__ == "__main__":
@@ -100,6 +100,7 @@ if __name__ == "__main__":
 
     # 2. SSA — split multi-write scalars into unique versions
     if not args.no_ssa and "ssa" not in skip_steps:
+        # ssa_transform_wtr(sdfg)
         ssa_result = ssa_transform(sdfg, only=only_ssa)
         print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
               f"for {len(ssa_result)} variables")

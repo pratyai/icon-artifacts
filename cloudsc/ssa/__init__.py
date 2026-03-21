@@ -7,11 +7,11 @@
 - unroll: Propagate constant symbols, then unroll matching maps/loops
 """
 
-from ssa.data_ssa import ssa_transform
+from ssa.data_ssa import ssa_transform, ssa_transform_wtr
 from ssa.loop_var_ssa import isolate_loop_variables
 from ssa.scalar_privatization import privatize_scalars
 from ssa.scalar_expansion import expand_scalars
 from ssa.unroll import propagate_constants, unroll_loops, unroll
 
-__all__ = ["ssa_transform", "isolate_loop_variables", "privatize_scalars",
+__all__ = ["ssa_transform", "ssa_transform_wtr", "isolate_loop_variables", "privatize_scalars",
            "expand_scalars", "propagate_constants", "unroll_loops", "unroll"]

@@ -29,7 +29,7 @@ def _loop_states(loop: LoopRegion) -> set:
 
 def _scalars_in_loop(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
     """Scalar transients written inside the loop body."""
-    written = set()
+    written: dict[str, int] = {}
     for state in loop.all_states():
         for node in state.nodes():
             if (isinstance(node, nd.AccessNode)
@@ -37,8 +37,8 @@ def _scalars_in_loop(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
                     and node.data in sdfg.arrays
                     and isinstance(sdfg.arrays[node.data], dace.data.Scalar)
                     and sdfg.arrays[node.data].transient):
-                written.add(node.data)
-    return written
+                written[node.data] = written.get(node.data, 0) + 1
+    return {name for name, count in written.items() if count > 1}
 
 
 def _is_loop_private(sdfg: dace.SDFG, loop: LoopRegion,
@@ -95,6 +95,41 @@ def _is_loop_private(sdfg: dace.SDFG, loop: LoopRegion,
     return True
 
 
+def _create_identifier_dict(sdfg: dace.SDFG) -> set[tuple[str, dace.SDFG]]:
+    """Create a dict of all identifiers used in the SDFG, mapping name → parent SDFG."""
+    identifiers: set[tuple[str, dace.SDFG]] = set()
+    for g in sdfg.all_sdfgs_recursive():
+        for a in g.arrays:
+            identifiers.add((a, g))
+        for s in g.symbols:
+            identifiers.add((s, g))
+        for c in g.constants:
+            identifiers.add((c, g))
+        for edge in g.edges():
+            for sym in edge.data.assignments:
+                identifiers.add((sym, g))
+    return identifiers
+
+
+def _mint_name(sdfg: dace.SDFG, name: str, loop_label: str, counter: dict[str, int]) -> str:
+    """Create a fresh private name and register the descriptor."""
+    base = f"{name}__priv_{loop_label}"
+    counter[base] = counter.get(base, 0) + 1
+    ver = counter[base]
+    new_name = f"{base}_{ver}"
+    while (new_name in sdfg.arrays or 
+           new_name in sdfg.symbols or 
+           new_name in sdfg.constants):
+        ver += 1
+        counter[base] = ver
+        new_name = f"{base}_{ver}"
+    
+    desc = copy.deepcopy(sdfg.arrays[name])
+    desc.transient = True
+    sdfg.add_datadesc(new_name, desc)
+    return new_name
+
+
 def privatize_scalars(sdfg: dace.SDFG) -> int:
     """Replace loop-private scalars with fresh transients.
 
@@ -107,6 +142,11 @@ def privatize_scalars(sdfg: dace.SDFG) -> int:
                 all_loops.append(child)
 
     privatized = 0
+    identifiers = _create_identifier_dict(sdfg)
+    counter_dict = {}
+    for name, _ in identifiers:
+        counter_dict[name] = 0
+
     for loop in tqdm(all_loops, desc="Privatizing scalars", unit="loop"):
         candidates = _scalars_in_loop(sdfg, loop)
         for name in candidates:
@@ -114,11 +154,7 @@ def privatize_scalars(sdfg: dace.SDFG) -> int:
                 continue
 
             # Create fresh transient
-            new_name = f"{name}__priv_{loop.label}"
-            if new_name in sdfg.arrays:
-                continue  # already done
-            desc = copy.deepcopy(sdfg.arrays[name])
-            sdfg.add_datadesc(new_name, desc)
+            new_name = _mint_name(sdfg, name, loop.label, counter_dict)
 
             # Replace ALL references within the loop: AccessNodes, memlets,
             # ConditionalBlock conditions, LoopRegion expressions, interstate edges

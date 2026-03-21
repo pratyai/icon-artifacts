@@ -61,6 +61,41 @@ def _is_read(state: dace.SDFGState, node: nd.AccessNode) -> bool:
     return state.out_degree(node) > 0
 
 
+def _collect_always_write_then_read_transients(sdfg: dace.SDFG) -> set[tuple[str, dace.SDFG]]:
+    """Return names of transient scalars that are always written before read.
+
+    Any access nodes of these transients are always written first before any
+    read happens, in any level of the nestedness.
+    """
+    pure_reads: set[tuple[str, dace.SDFG]] = set()
+    always_wtr: dict[tuple[str, dace.SDFG], int] = dict()
+    for node, state in sdfg.all_nodes_recursive():
+        if not isinstance(node, nd.AccessNode):
+            continue
+        if (node.data, state.sdfg) in pure_reads:
+            continue
+        if state.in_degree(node) == 0:
+            pure_reads.add((node.data, state.sdfg))
+        else:
+            always_wtr[(node.data, state.sdfg)] = always_wtr.get((node.data, state.sdfg), 0) + 1
+    for v, g in always_wtr.keys():
+        if (v, g) in pure_reads:
+            continue
+        for e, st in g.all_edges_recursive():
+            if st.sdfg != g:
+                continue
+            if not isinstance(e.data, dace.InterstateEdge) or not e.data.assignments:
+                continue
+            if v in e.data.read_symbols():
+                pure_reads.add((v, g))
+    for cb, state in sdfg.all_nodes_recursive():
+        if not isinstance(cb, ConditionalBlock):
+            continue
+        for v in cb.free_symbols:
+            pure_reads.add((v, state.sdfg))
+    return {var_sdfg for var_sdfg, count in always_wtr.items() if var_sdfg not in pure_reads and count > 1}
+
+
 def _collect_multi_write_transients(sdfg: dace.SDFG) -> set[str]:
     """Return names of transient scalars written more than once.
 
@@ -88,13 +123,14 @@ def _mint_name(sdfg: dace.SDFG, base: str, counter: dict[str, int]) -> str:
     counter[base] = counter.get(base, 0) + 1
     ver = counter[base]
     new_name = f"{base}__v{ver}"
-    while new_name in sdfg.arrays:
+    while new_name in sdfg.arrays or new_name in sdfg.symbols or new_name in sdfg.constants:
         ver += 1
         counter[base] = ver
         new_name = f"{base}__v{ver}"
     # Clone the descriptor
     orig = sdfg.arrays[base]
     new_desc = copy.deepcopy(orig)
+    new_desc.transient = True
     sdfg.add_datadesc(new_name, new_desc)
     return new_name
 
@@ -550,9 +586,62 @@ def _cleanup_unused_descriptors(sdfg: dace.SDFG):
     return len(to_remove)
 
 
+def _create_identifier_dict(sdfg: dace.SDFG) -> set[tuple[str, dace.SDFG]]:
+    """Create a dict of all identifiers used in the SDFG, mapping name → parent SDFG."""
+    identifiers: set[tuple[str, dace.SDFG]] = set()
+    for g in sdfg.all_sdfgs_recursive():
+        for a in g.arrays:
+            identifiers.add((a, g))
+        for s in g.symbols:
+            identifiers.add((s, g))
+        for c in g.constants:
+            identifiers.add((c, g))
+        for edge in g.edges():
+            for sym in edge.data.assignments:
+                identifiers.add((sym, g))
+    return identifiers
+
+
+
+
 # ---------------------------------------------------------------------------
 # public API
 # ---------------------------------------------------------------------------
+
+def ssa_transform_wtr(sdfg: dace.SDFG):
+    """SSA transform for write-then-read variables (always written before read).
+
+    This is a simpler version of SSA that only handles the special case of
+    variables that are always written before read It does not do reaching-def
+    analysis or handle loops/conditionals — it just renames each write to a
+    unique version, and then renames all reads to the last version.
+
+    This is useful as a simpler alternative to full SSA for debugging, and can
+    still enable some optimizations.
+    """
+    targets = _collect_always_write_then_read_transients(sdfg)
+    if not targets:
+        print("No always-write-then-read transient scalars found.")
+        return
+    print(f"SSA candidates: {len(targets)} transient scalars always written before read")
+    identifiers = _create_identifier_dict(sdfg)
+    counter: dict[str, int] = {}
+    for name, sdfg in identifiers:
+        counter[name] = 0
+    for node, state in sdfg.all_nodes_recursive():
+        if not isinstance(node, nd.AccessNode):
+            continue
+        if (node.data, state.sdfg) not in targets:
+            continue
+        orig_name = node.data
+        new_name = _mint_name(state.sdfg, orig_name, counter)
+        _rename_access_node(state, node, orig_name, new_name)
+        for cb in state.sdfg.all_control_flow_regions():
+            if not isinstance(cb, ConditionalBlock) or cb.sdfg is not state.sdfg:
+                continue
+            cb.replace_dict({orig_name: new_name})
+        print(f"Renamed {orig_name} to {new_name} in state {state.label}")
+
 
 def ssa_transform(sdfg: dace.SDFG, only: set[str] | None = None) -> dict[str, list[str]]:
     """Apply SSA renaming to all multi-write transients.
