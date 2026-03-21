@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     # 2. SSA — split multi-write scalars into unique versions
     if not args.no_ssa and "ssa" not in skip_steps:
-        # ssa_transform_wtr(sdfg)
+        ssa_transform_wtr(sdfg)
         ssa_result = ssa_transform(sdfg, only=only_ssa)
         print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
               f"for {len(ssa_result)} variables")

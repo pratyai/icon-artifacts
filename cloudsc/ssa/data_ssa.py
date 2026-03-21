@@ -72,6 +72,10 @@ def _collect_always_write_then_read_transients(sdfg: dace.SDFG) -> set[tuple[str
     for node, state in sdfg.all_nodes_recursive():
         if not isinstance(node, nd.AccessNode):
             continue
+        if not isinstance(state.sdfg.arrays[node.data], dace.data.Scalar):
+            continue
+        if not state.sdfg.arrays[node.data].transient:
+            continue
         if (node.data, state.sdfg) in pure_reads:
             continue
         if state.in_degree(node) == 0:
@@ -120,13 +124,14 @@ def _collect_multi_write_transients(sdfg: dace.SDFG) -> set[str]:
 
 def _mint_name(sdfg: dace.SDFG, base: str, counter: dict[str, int]) -> str:
     """Create a fresh SSA name like ``base__v2`` and register the descriptor."""
-    counter[base] = counter.get(base, 0) + 1
-    ver = counter[base]
-    new_name = f"{base}__v{ver}"
+    new_base = base.split('__')[0]  # in case base is already an SSA name
+    counter[new_base] = counter.get(new_base, 0) + 1
+    ver = counter[new_base]
+    new_name = f"{new_base}__v{ver}"
     while new_name in sdfg.arrays or new_name in sdfg.symbols or new_name in sdfg.constants:
         ver += 1
-        counter[base] = ver
-        new_name = f"{base}__v{ver}"
+        counter[new_base] = ver
+        new_name = f"{new_base}__v{ver}"
     # Clone the descriptor
     orig = sdfg.arrays[base]
     new_desc = copy.deepcopy(orig)
@@ -626,16 +631,13 @@ def ssa_transform_wtr(sdfg: dace.SDFG):
     print(f"SSA candidates: {len(targets)} transient scalars always written before read")
     identifiers = _create_identifier_dict(sdfg)
     counter: dict[str, int] = {}
-    for name, sdfg in identifiers:
+    for name, _ in identifiers:
         counter[name] = 0
-    for node, state in sdfg.all_nodes_recursive():
-        if not isinstance(node, nd.AccessNode):
-            continue
-        if (node.data, state.sdfg) not in targets:
-            continue
-        orig_name = node.data
+    accs = [(acc, state) for acc, state in sdfg.all_nodes_recursive() if isinstance(acc, nd.AccessNode) and (acc.data, state.sdfg) in targets]
+    for acc, state in accs:
+        orig_name = acc.data
         new_name = _mint_name(state.sdfg, orig_name, counter)
-        _rename_access_node(state, node, orig_name, new_name)
+        _rename_access_node(state, acc, orig_name, new_name)
         for cb in state.sdfg.all_control_flow_regions():
             if not isinstance(cb, ConditionalBlock) or cb.sdfg is not state.sdfg:
                 continue
