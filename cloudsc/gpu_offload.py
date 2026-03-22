@@ -169,7 +169,8 @@ def _add_h2d_state(sdfg: dace.SDFG, array_names: list[str]):
     to_copy = [n for n in array_names if n in gpu_accessed]
 
     prev_start = sdfg.start_block
-    h2d_state = sdfg.add_state("copy_in_h2d", is_start_state=True)
+    h2d_state = sdfg.add_state("copy_in_h2d")
+    sdfg.start_block = sdfg.node_id(h2d_state)
     sdfg.add_edge(h2d_state, prev_start, dace.InterstateEdge())
 
     for name in to_copy:

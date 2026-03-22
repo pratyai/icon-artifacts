@@ -11,6 +11,7 @@ from dace.sdfg import infer_types
 
 dace.config.Config.set("compiler", "default_data_types", value="C")
 dace.config.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
+dace.config.Config.set("compiler", "cuda", "max_concurrent_streams", value="1")
 
 # --- Source Management ---
 
@@ -152,7 +153,9 @@ def main():
     if codegen_dir.exists():
         shutil.rmtree(codegen_dir)
     codegen_dir.mkdir()
+    print(f"Created codegen directory: {codegen_dir.absolute()}")
     sdfg.build_folder = str(codegen_dir / sdfg.name)
+    print(f"SDFG build folder set to: {sdfg.build_folder}")
 
     # 1. GPU Offloading (Your custom logic)
     print("Applying GPU offloading...")
@@ -164,8 +167,9 @@ def main():
     from lowprec import apply_lowprec
     apply_lowprec(sdfg, args.lowprec)
 
-    sdfg.save("cloudsc_lowered_gpu.sdfgz", compress=True)
-    print("Saved lowered GPU SDFG to cloudsc_lowered_gpu.sdfgz")
+    lowered_sdfg_path = os.path.abspath("cloudsc_lowered_gpu.sdfgz")
+    sdfg.save(lowered_sdfg_path, compress=True)
+    print(f"Saved lowered GPU SDFG to: {lowered_sdfg_path}")
 
     # 3. Codegen
     print("Generating GPU code...")
@@ -283,6 +287,8 @@ def main():
     with open("recompile.sh", "w") as f:
         f.write(recompile_script)
     os.chmod("recompile.sh", 0o755)
+    print(f"Build script written to: {os.path.abspath('recompile.sh')}")
+    print(f"Binary will be output to: {os.path.abspath('cloudsc_gpu_bin')}")
     print(f"GPU Pipeline ready. Build command in recompile.sh (Release={args.release}, Precision={args.lowprec})")
 
 

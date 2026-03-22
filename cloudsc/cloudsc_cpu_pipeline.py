@@ -8,6 +8,7 @@ from dace.codegen import codegen, compiler
 from dace.sdfg import infer_types
 
 dace.config.Config.set("compiler", "default_data_types", value="C")
+dace.config.Config.set("compiler", "cpu", "openmp_sections", value=True)
 
 
 # --- Source Management (matches velocity/utils/compile_if_propagated_sdfgs.py) ---
@@ -219,16 +220,26 @@ def main():
         except Exception:
             pass
 
+    # Detect OpenMP
+    omp_cflags = ""
+    omp_libs = "-lomp"
+    try:
+        omp_prefix = subprocess.check_output(["brew", "--prefix", "libomp"], text=True).strip()
+        omp_cflags = f"-I{omp_prefix}/include"
+        omp_libs = f"-L{omp_prefix}/lib -lomp"
+    except Exception:
+        pass
+
     if args.release:
-        cpp_flags = "-O3 -g -std=c++20 -DNDEBUG -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas"
+        cpp_flags = "-O3 -g -std=c++20 -DNDEBUG -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas -Xpreprocessor -fopenmp"
     else:
-        cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas"
+        cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas -Xpreprocessor -fopenmp"
 
     cmd = (
-        f"c++ {cpp_flags} \\\n"
+        f"c++ {cpp_flags} {omp_cflags} \\\n"
         f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
         "    cloudsc_main.cpp codegen/*.cpp \\\n"
-        f"    -o cloudsc_cpu_bin -lpthread {h5_libs}"
+        f"    -o cloudsc_cpu_bin -lpthread {omp_libs} {h5_libs}"
     )
 
     recompile_script = f"""#!/bin/bash
