@@ -15,6 +15,7 @@ from dace.transformation.passes.analysis import loop_analysis
 
 from ssa import (ssa_transform, ssa_transform_wtr, isolate_loop_variables, privatize_scalars,
                  expand_scalars, propagate_constants, unroll_loops)
+from ssa.graph_utils import lift_data_refs_in_conditions
 
 SYMBOL_MAP = {
     "nclv": 5,
@@ -70,6 +71,8 @@ if __name__ == "__main__":
                         help="Skip unroll")
     parser.add_argument("--no-propagate", action="store_true",
                         help="Skip constant propagation")
+    parser.add_argument("--no-liftcond", action="store_true",
+                        help="Skip loop-conditional data-ref lifting")
     parser.add_argument("--start-from", type=str, default=None,
                         help="Start from a checkpoint (e.g. after_l2m)")
     args = parser.parse_args()
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     start_from = args.start_from
     skip_steps = set()
     if start_from:
-        step_order = ["propagate", "ssa", "isolate", "privatize", "expand", "l2m"]
+        step_order = ["liftcond", "propagate", "unroll", "ssa", "isolate", "privatize", "expand", "l2m", "simplify"]
         for step in step_order:
             skip_steps.add(step)
             if step == start_from.replace("after_", ""):
@@ -92,79 +95,51 @@ if __name__ == "__main__":
             print(f"Loading checkpoint: {ckpt}")
             sdfg = dace.SDFG.from_file(ckpt)
 
-    # 1. Constant propagation — nclv and related indices become concrete
+    # 1. Lift data refs in conditional metadata to symbols
+    if not args.no_liftcond and "liftcond" not in skip_steps:
+        lift_data_refs_in_conditions(sdfg)
+        checkpoint(sdfg, "after_liftcond", out_dir)
+
+    # 2. Constant propagation — nclv and related indices become concrete
     if not args.no_propagate and "propagate" not in skip_steps:
         propagate_constants(sdfg, SYMBOL_MAP)
         fix_missing_nsdfg_symbols(sdfg)
         checkpoint(sdfg, "after_propagate", out_dir)
 
-    # 2. SSA — split multi-write scalars into unique versions
+    # 3. Unroll — unroll maps/loops with nclv-sized extents
+    if not args.no_unroll and "unroll" not in skip_steps:
+        unroll_loops(sdfg)
+        checkpoint(sdfg, "after_unroll", out_dir)
+
+    # 4. SSA — split multi-write scalars into unique versions
     if not args.no_ssa and "ssa" not in skip_steps:
-        ssa_transform_wtr(sdfg)
         ssa_result = ssa_transform(sdfg, only=only_ssa)
         print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
               f"for {len(ssa_result)} variables")
         checkpoint(sdfg, "after_ssa", out_dir)
 
-    # 3. Loop variable isolation — unique itervar per LoopRegion
+    # 5. Loop variable isolation — unique itervar per LoopRegion
     if not args.no_isolate and "isolate" not in skip_steps:
         isolate_loop_variables(sdfg)
         checkpoint(sdfg, "after_isolate", out_dir)
 
-    # 4. Scalar privatization — fresh transients for loop-private scalars
+    # 6. Scalar privatization — fresh transients for loop-private scalars
     if not args.no_privatize and "privatize" not in skip_steps:
         privatize_scalars(sdfg)
         checkpoint(sdfg, "after_privatize", out_dir)
 
-    # 5. Scalar expansion — promote blocking scalars to arrays
+    # 7. Scalar expansion — promote blocking scalars to arrays
     if not args.no_expand and "expand" not in skip_steps:
         expand_scalars(sdfg)
         checkpoint(sdfg, "after_expand", out_dir)
 
-    # 6. LoopToMap — convert eligible control-flow loops into dataflow maps
+    # 8. LoopToMap — convert eligible control-flow loops into dataflow maps
     if not args.no_l2m and "l2m" not in skip_steps:
         n = sdfg.apply_transformations_repeated(LoopToMap, validate=False)
         print(f"LoopToMap: converted {n} loops to maps")
         checkpoint(sdfg, "after_l2m", out_dir)
 
-    # 7. Unroll — unroll maps/loops with nclv-sized extents
-    if not args.no_unroll:
-        unroll_loops(sdfg, SYMBOL_MAP)
-        checkpoint(sdfg, "after_unroll", out_dir)
-
-    # # 2. SSA — split multi-write scalars into unique versions
-    # ssa_result = ssa_transform(sdfg, only=only_ssa)
-    # print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
-    #         f"for {len(ssa_result)} variables")
-    # checkpoint(sdfg, "after_ssa_p2", out_dir)
-
-    # # 3. Loop variable isolation — unique itervar per LoopRegion
-    # isolate_loop_variables(sdfg)
-    # checkpoint(sdfg, "after_isolate_p2", out_dir)
-
-    # # 4. Scalar privatization — fresh transients for loop-private scalars
-    # privatize_scalars(sdfg)
-    # checkpoint(sdfg, "after_privatize_p2", out_dir)
-
-    # # 5. Scalar expansion — promote blocking scalars to arrays
-    # expand_scalars(sdfg)
-    # checkpoint(sdfg, "after_expand_p2", out_dir)
-
-    # # 6. LoopToMap — convert eligible control-flow loops into dataflow maps
-    # n = sdfg.apply_transformations_repeated(LoopToMap, validate=False)
-    # print(f"LoopToMap: converted {n} loops to maps")
-    # checkpoint(sdfg, "after_l2m_p2", out_dir)
-
-    # for node, _ in sdfg.all_nodes_recursive():
-    #     if isinstance(node, dace.sdfg.state.LoopRegion):
-    #         start = loop_analysis.get_init_assignment(node)
-    #         end = loop_analysis.get_loop_end(node)
-    #         if str(start) == 'kidia':
-    #             raise AssertionError(f"Horizontal LoopRegion {node.label} ({start} to {end}) "
-    #                                     "was not converted to a Map. This usually means "
-    #                                     "there is a data dependency blocking LoopToMap.")
-
-    # 8. Fix missing NestedSDFG symbols, then simplify
+    # 9. Fix missing NestedSDFG symbols, then simplify
     fix_missing_nsdfg_symbols(sdfg)
     sdfg.simplify()
     checkpoint(sdfg, "after_simplify", out_dir)

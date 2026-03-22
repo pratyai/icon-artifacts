@@ -161,7 +161,7 @@ def update_node_content(node: nd.Node, repl: Dict[str, str]):
                 for orig, new in repl.items():
                     new_expr = re.sub(r'\b' + re.escape(orig) + r'\b', new, new_expr)
                 new_mapping[sym] = new_expr
-            elif hasattr(expr, 'subs'): # sympy expression
+            elif isinstance(expr, symbolic.sympy.Basic):  # sympy expression
                 subs_map = {symbolic.pystr_to_symbolic(orig): symbolic.pystr_to_symbolic(new) 
                             for orig, new in repl.items()}
                 new_mapping[sym] = expr.subs(subs_map)
@@ -333,6 +333,130 @@ def topological_sort(graph: Union[ControlFlowRegion, SDFGState, dace.SDFG, Condi
         return [branch for _, branch in graph.branches]
     
     raise TypeError(f"Cannot perform topological sort on unknown type: {type(graph)}")
+
+
+def collect_all_loops(sdfg: dace.SDFG) -> List[LoopRegion]:
+    """Return all LoopRegions in the SDFG (including nested ones)."""
+    return [child for cfg in sdfg.all_control_flow_regions()
+            for child in cfg.nodes() if isinstance(child, LoopRegion)]
+
+
+def loop_interior(loop: LoopRegion):
+    """Return (states, blocks, edges) sets for everything inside the loop."""
+    states = set(loop.all_states())
+    blocks = set(loop.all_control_flow_blocks())
+    edges = {e.data for e, _ in loop.all_edges_recursive()
+             if isinstance(e.data, dace.InterstateEdge)}
+    return states, blocks, edges
+
+
+def written_transient_scalars(sdfg: dace.SDFG, states) -> Set[str]:
+    """Return transient scalar names written (in_degree > 0) in the given states.
+
+    `states` can be any iterable of SDFGState (e.g. from loop.all_states()
+    or a list of copied blocks' states).
+    """
+    from dace import data as dt
+
+    written = set()
+    for state in states:
+        for node in state.nodes():
+            if isinstance(node, nd.AccessNode) and is_write(state, node):
+                name = node.data
+                if (name in sdfg.arrays and
+                    isinstance(sdfg.arrays[name], dt.Scalar) and
+                    sdfg.arrays[name].transient):
+                    written.add(name)
+    return written
+
+
+def writeonly_transient_scalars(sdfg: dace.SDFG, states) -> Set[str]:
+    """Return transient scalars that are written but NOT read in the given states.
+
+    These are safe to rename per-copy during unrolling because they have no
+    inter-iteration data flow (no read depends on a previous iteration's write).
+    """
+    from dace import data as dt
+
+    written = set()
+    read = set()
+    for state in states:
+        for node in state.nodes():
+            if not isinstance(node, nd.AccessNode):
+                continue
+            name = node.data
+            if not (name in sdfg.arrays and
+                    isinstance(sdfg.arrays[name], dt.Scalar) and
+                    sdfg.arrays[name].transient):
+                continue
+            if is_write(state, node):
+                written.add(name)
+            if is_read(state, node):
+                read.add(name)
+    return written - read
+
+
+def all_nodes_in_block(block):
+    """Yield (node, state) for all dataflow nodes in a block.
+
+    Works for SDFGState (yields nodes directly), ControlFlowRegion
+    (recurses into all_states), and ConditionalBlock (recurses into branches).
+    """
+    if isinstance(block, SDFGState):
+        for node in block.nodes():
+            yield node, block
+    elif isinstance(block, (ControlFlowRegion, ConditionalBlock)):
+        for state in block.all_states():
+            for node in state.nodes():
+                yield node, state
+
+
+def rename_local_scalars(sdfg: dace.SDFG, blocks, suffix: str,
+                         only: Set[str] | None = None) -> Dict[str, str]:
+    """Rename transient scalars written in `blocks` so each copy is unique.
+
+    Creates new descriptors named ``<original><suffix>`` and applies
+    ``replace_dict`` within the given blocks only.
+
+    If `only` is provided, only scalars in that set are renamed.
+
+    Returns the replacement dict (old_name -> new_name), empty if nothing renamed.
+    """
+    import copy
+
+    all_states = []
+    for block in blocks:
+        if isinstance(block, SDFGState):
+            all_states.append(block)
+        elif isinstance(block, (ControlFlowRegion, ConditionalBlock)):
+            all_states.extend(block.all_states())
+    written = written_transient_scalars(sdfg, all_states)
+    if only is not None:
+        written &= only
+
+    if not written:
+        return {}
+
+    repl = {}
+    for name in written:
+        new_name = name + suffix
+        # Ensure uniqueness — find a free name if there's a collision
+        counter = 0
+        while new_name in sdfg.arrays or new_name in sdfg.symbols:
+            counter += 1
+            new_name = f"{name}{suffix}_ls{counter}"
+        new_desc = copy.deepcopy(sdfg.arrays[name])
+        new_desc.transient = True
+        sdfg.add_datadesc(new_name, new_desc)
+        repl[name] = new_name
+
+    if not repl:
+        return {}
+
+    for block in blocks:
+        block.replace_dict(repl)
+
+    return repl
 
 
 def lift_data_refs_in_conditions(sdfg: dace.SDFG):

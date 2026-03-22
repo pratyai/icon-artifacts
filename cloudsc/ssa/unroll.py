@@ -6,10 +6,8 @@ Two public functions:
   values while preserving the external interface (non-transient array shapes
   and SDFG symbols).
 
-- ``unroll_loops(sdfg, symbol_map)`` — find loops whose extent matches
-  a propagated value and unroll them one at a time.
-
-The legacy ``unroll(sdfg, symbol_map)`` combines both steps.
+- ``unroll_loops(sdfg, max_iterations)`` — unroll loops with concrete
+  iteration count <= max_iterations (default 10).
 
 Usage (standalone):
     python -m ssa.unroll input.sdfgz -o output.sdfgz --symbols nclv=5
@@ -17,7 +15,6 @@ Usage (standalone):
 
 from __future__ import annotations
 
-import ast
 import copy
 from collections import deque
 from typing import Dict
@@ -29,7 +26,104 @@ from dace.sdfg import InterstateEdge
 from dace.sdfg.nodes import NestedSDFG
 from dace.sdfg.state import LoopRegion
 from dace.transformation.passes.analysis import loop_analysis
-from dace.frontend.python.astutils import ASTFindReplace
+from ssa.graph_utils import rename_local_scalars, all_nodes_in_block
+
+_ur_counter = 0
+
+def _next_ur_suffix() -> str:
+    """Return a globally unique unroll suffix like __ur1, __ur2, ..."""
+    global _ur_counter
+    _ur_counter += 1
+    return f"__ur{_ur_counter}"
+
+
+def _compute_iter_values(loop: LoopRegion, sdfg: dace.SDFG):
+    """Return (itervar, iter_values) or raise ValueError."""
+    start = loop_analysis.get_init_assignment(loop)
+    end = loop_analysis.get_loop_end(loop)
+    stride = loop_analysis.get_loop_stride(loop)
+    itervar = loop.loop_variable
+
+    if start is None or end is None or stride is None or itervar is None:
+        raise ValueError(f"Cannot determine bounds for loop {loop.label}")
+
+    stride_val = int(symbolic.evaluate(stride, sdfg.constants))
+    if stride_val > 0:
+        iter_values = list(range(int(start), int(end) + 1, stride_val))
+    else:
+        iter_values = list(range(int(start), int(end) - 1, stride_val))
+
+    if not iter_values:
+        raise ValueError(
+            f"Loop {loop.label} has 0 iterations "
+            f"(start={start}, end={end}, stride={stride_val})"
+        )
+    return itervar, iter_values
+
+
+def _find_private_scalars(sdfg: dace.SDFG, loop: LoopRegion):
+    """Return set of transient scalar names that are write-only and loop-private.
+
+    These are safe to rename per unrolled copy.
+    """
+    from ssa.graph_utils import loop_interior, writeonly_transient_scalars
+
+    loop_states, _, loop_edge_data = loop_interior(loop)
+    candidates = writeonly_transient_scalars(sdfg, loop_states)
+    if not candidates:
+        return set()
+
+    external_states = set(sdfg.all_states()) - loop_states
+    private = set()
+    for name in candidates:
+        if _is_externally_referenced(sdfg, name, external_states, loop_edge_data):
+            continue
+        private.add(name)
+    return private
+
+
+def _is_externally_referenced(sdfg, name, external_states, loop_edge_data):
+    """Check if `name` is referenced in states or edges outside the loop."""
+    for state in external_states:
+        for node in state.nodes():
+            if isinstance(node, NestedSDFG):
+                if name in node.in_connectors or name in node.out_connectors:
+                    return True
+            elif isinstance(node, dace.nodes.AccessNode) and node.data == name:
+                return True
+    for edge, _ in sdfg.all_edges_recursive():
+        if not isinstance(edge.data, InterstateEdge):
+            continue
+        if edge.data in loop_edge_data:
+            continue
+        syms = {str(s) for s in edge.data.free_symbols}
+        if name in syms or name in edge.data.assignments:
+            return True
+    return False
+
+
+def _replace_in_interstate_edges(parent_cfg, copied_set, repl: dict):
+    """Apply whole-word replacements in interstate edges between copied blocks."""
+    import re
+    for edge in list(parent_cfg.edges()):
+        if edge.src not in copied_set or edge.dst not in copied_set:
+            continue
+        data = edge.data
+        if not isinstance(data, InterstateEdge):
+            continue
+        if not data.is_unconditional():
+            cond_str = data.condition.as_string
+            for old, new in repl.items():
+                cond_str = re.sub(rf"\b{re.escape(old)}\b", new, cond_str)
+            data.condition = dace.properties.CodeBlock(cond_str)
+        if data.assignments:
+            new_asgn = {}
+            for k, v in data.assignments.items():
+                for old, new in repl.items():
+                    k = re.sub(rf"\b{re.escape(old)}\b", new, k)
+                    v = re.sub(rf"\b{re.escape(old)}\b", new, v)
+                new_asgn[k] = v
+            data.assignments = new_asgn
 
 
 def propagate_constants(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
@@ -80,9 +174,10 @@ def propagate_constants(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
     print(f"Propagate constants: {symbol_map}")
 
 
-def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
-    """Unroll loops whose iteration count matches a value in the symbol_map.
+def unroll_loops(sdfg: dace.SDFG, max_iterations: int = 10):
+    """Unroll loops with concrete iteration count <= `max_iterations`.
 
+    All symbolic bounds must already be resolved (call propagate_constants first).
     Each unroll mutates the graph and invalidates node references, so we
     find-and-unroll one target at a time.
 
@@ -91,12 +186,6 @@ def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
     """
     import time
 
-    # CRITICAL: We must propagate constants before collecting targets
-    # so that symbolic extents like 'N' can be evaluated.
-    propagate_constants(sdfg, symbol_map)
-
-    potential_ranges = set(symbol_map.values())
-
     unrolled = 0
     skipped = 0
     round_num = 0
@@ -104,23 +193,18 @@ def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
 
     while True:
         t0 = time.time()
-        batch = _collect_unroll_targets(sdfg, potential_ranges)
+        batch = _collect_unroll_targets(sdfg, max_iterations)
         t_collect = time.time() - t0
         if not batch:
             break
         round_num += 1
         pbar.total = (pbar.n or 0) + len(batch)
         pbar.refresh()
-        pbar.write(
-            f"  Round {round_num}: {len(batch)} targets (collect: {t_collect:.1f}s)"
-        )
-        for node, parent in batch:
-            pbar.write(f"    loop: {node.label} [{node.loop_variable}]")
 
         applied_any = False
         for node, parent in batch:
             label = node.label
-            pbar.set_postfix_str(label)
+            pbar.set_postfix_str(f"round {round_num}: {label}")
             t0 = time.time()
             try:
                 _manual_loop_unroll(sdfg, node, parent)
@@ -132,9 +216,8 @@ def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
             applied_any = True
             dt = time.time() - t0
             if dt > 2.0:
-                pbar.write(f"    slow: {label} took {dt:.1f}s")
+                pbar.write(f"    slow: {label} took {dt:.1f}s (collect: {t_collect:.1f}s)")
             pbar.update(1)
-            pbar.write(f"    === unrolled #{unrolled}: {label} ===")
             break  # Re-collect — graph references are stale
 
         if not applied_any:
@@ -151,27 +234,7 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
     Unlike DaCe's LoopUnroll, this avoids the intermediate ControlFlowRegion +
     .inline() pattern which corrupts certain loop bodies.
     """
-    start = loop_analysis.get_init_assignment(loop)
-    end = loop_analysis.get_loop_end(loop)
-    stride = loop_analysis.get_loop_stride(loop)
-    itervar = loop.loop_variable
-
-    if start is None or end is None or stride is None or itervar is None:
-        raise ValueError(f"Cannot determine bounds for loop {loop.label}")
-
-    stride_val = int(symbolic.evaluate(stride, sdfg.constants))
-
-    # Compute iteration values: handle both upward and downward loops
-    if stride_val > 0:
-        iter_values = list(range(int(start), int(end) + 1, stride_val))
-    else:
-        iter_values = list(range(int(start), int(end) - 1, stride_val))
-
-    if not iter_values:
-        raise ValueError(
-            f"Loop {loop.label} has 0 iterations "
-            f"(start={start}, end={end}, stride={stride_val})"
-        )
+    itervar, iter_values = _compute_iter_values(loop, sdfg)
 
     # ── Phase 1: snapshot everything we need from the loop ────────────
     predecessors = [(e.src, copy.deepcopy(e.data)) for e in parent_cfg.in_edges(loop)]
@@ -183,13 +246,14 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
     loop_blocks = list(loop.nodes())
     loop_edges = [(e.src, e.dst, e.data) for e in loop.edges()]
     loop_start = loop.start_block
+    private_scalars = _find_private_scalars(sdfg, loop)
 
     # ── Phase 2: create iteration copies (loop still in graph) ─────────
     iteration_first = []
     iteration_last = []
 
     for current_val in iter_values:
-        suffix = f"_{itervar}_{current_val}"
+        suffix = _next_ur_suffix()
         block_map = {}
 
         for block in loop_blocks:
@@ -212,37 +276,25 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
         for new_block in block_map.values():
             new_block.replace_dict({itervar: current_val})
 
-        # Replace loop variable in interstate edges within this iteration
-        for edge in list(parent_cfg.edges()):
-            if edge.src not in copied_set or edge.dst not in copied_set:
-                continue
-            data = edge.data
-            if not isinstance(data, InterstateEdge):
-                continue
-            if not data.is_unconditional():
-                # We must replace in the string/CodeBlock and re-assign
-                import re
+        # Rename loop-private transient scalars so unrolled iterations
+        # don't share the same intermediate names.
+        if private_scalars:
+            scalar_repl = rename_local_scalars(sdfg, block_map.values(), suffix,
+                                               only=private_scalars)
+            if scalar_repl:
+                _replace_in_interstate_edges(parent_cfg, copied_set, scalar_repl)
 
-                cond_str = data.condition.as_string
-                # Replace only whole word matches of itervar
-                new_cond_str = re.sub(rf"\b{itervar}\b", str(current_val), cond_str)
-                data.condition = dace.properties.CodeBlock(new_cond_str)
-            if data.assignments:
-                new_asgn = {}
-                for k, v in data.assignments.items():
-                    k_ast = ast.parse(k)
-                    v_ast = ast.parse(v)
-                    ASTFindReplace({itervar: str(current_val)}).visit(k_ast)
-                    ASTFindReplace({itervar: str(current_val)}).visit(v_ast)
-                    new_asgn[ast.unparse(k_ast)] = ast.unparse(v_ast)
-                data.assignments = new_asgn
+        # Replace loop variable in interstate edges within this iteration
+        _replace_in_interstate_edges(
+            parent_cfg, copied_set, {itervar: str(current_val)}
+        )
 
         # Replace in nested SDFGs' symbol mappings
         for new_block in block_map.values():
-            for node, _ in _all_nodes_in_block(new_block):
+            for node, _ in all_nodes_in_block(new_block):
                 if isinstance(node, NestedSDFG):
                     for sym, mapping in node.symbol_mapping.items():
-                        if hasattr(mapping, "subs"):
+                        if isinstance(mapping, symbolic.sympy.Basic):
                             node.symbol_mapping[sym] = mapping.subs(
                                 {symbolic.symbol(itervar): current_val}
                             )
@@ -304,28 +356,11 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
         )
 
 
-def _all_nodes_in_block(block):
-    """Yield (node, state) for all dataflow nodes in a block (state or nested CFR)."""
-    if hasattr(block, "all_states"):
-        for state in block.all_states():
-            for node in state.nodes():
-                yield node, state
-    elif hasattr(block, "nodes"):
-        for node in block.nodes():
-            yield node, block
-
-
-def unroll(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
-    """Propagate constants then unroll (legacy combined interface)."""
-    propagate_constants(sdfg, symbol_map)
-    unroll_loops(sdfg, symbol_map)
-
-
 # ── Internal helpers ──────────────────────────────────────────────────────
 
 
-def _collect_unroll_targets(sdfg, potential_ranges):
-    """Collect LoopRegions whose extent matches a target range.
+def _collect_unroll_targets(sdfg, max_iterations: int):
+    """Collect LoopRegions with concrete iteration count <= max_iterations.
 
     Returns a list of (node, parent_cfg) tuples.
     """
@@ -340,16 +375,14 @@ def _collect_unroll_targets(sdfg, potential_ranges):
             if beg is None or end is None or step is None:
                 continue
 
-            # Use symbolic evaluation to resolve any remaining symbols
             try:
                 b_val = int(symbolic.evaluate(beg, sdfg.constants))
                 e_val = int(symbolic.evaluate(end, sdfg.constants))
                 s_val = int(symbolic.evaluate(step, sdfg.constants))
 
-                # Robust iteration count calculation
                 val = (e_val - b_val) // s_val + 1
 
-                if val > 0 and val in potential_ranges:
+                if 0 < val <= max_iterations:
                     loops.append((child, cfg))
             except (TypeError, ValueError):
                 continue
@@ -376,7 +409,8 @@ if __name__ == "__main__":
         sym_map[k.strip()] = int(v.strip())
 
     sdfg = dace.SDFG.from_file(args.input)
-    unroll(sdfg, sym_map)
+    propagate_constants(sdfg, sym_map)
+    unroll_loops(sdfg)
 
     out_path = args.output or args.input.replace(".sdfgz", "_unrolled.sdfgz")
     sdfg.save(out_path, compress=True)

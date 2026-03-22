@@ -6,6 +6,8 @@ from ssa.graph_utils import (
     update_metadata, collect_memlet_tree_edges, is_write, is_read, get_enclosing_loop,
     rename_map_connectors, rename_nested_sdfg_connectors, rename_memlet_data,
     topological_sort, get_direct_child, update_conditional_metadata, update_loop_metadata,
+    collect_all_loops, loop_interior, written_transient_scalars, writeonly_transient_scalars,
+    rename_local_scalars, all_nodes_in_block,
     lift_data_refs_in_conditions
 )
 
@@ -277,6 +279,226 @@ def test_update_interstate_edge_lhs():
     assert "s_v1" in edge.assignments
     assert "s" not in edge.assignments
 
+def test_collect_all_loops():
+    sdfg = dace.SDFG("test_collect")
+    s1 = sdfg.add_state("s1")
+
+    outer = dace.sdfg.state.LoopRegion("outer", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(outer)
+    sdfg.add_edge(s1, outer, dace.InterstateEdge())
+
+    inner = dace.sdfg.state.LoopRegion("inner", "j < 5", "j", "j=0", "j=j+1")
+    outer.add_node(inner, is_start_block=True)
+    inner.add_state("body")
+
+    loops = collect_all_loops(sdfg)
+    labels = {l.label for l in loops}
+    assert labels == {"outer", "inner"}
+
+
+def test_collect_all_loops_empty():
+    sdfg = dace.SDFG("test_no_loops")
+    sdfg.add_state("s1")
+    assert collect_all_loops(sdfg) == []
+
+
+def test_loop_interior():
+    sdfg = dace.SDFG("test_interior")
+    loop = dace.sdfg.state.LoopRegion("l", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(loop)
+    s1 = loop.add_state("s1")
+    s2 = loop.add_state("s2")
+    loop.add_edge(s1, s2, dace.InterstateEdge())
+
+    states, blocks, edges = loop_interior(loop)
+    assert s1 in states
+    assert s2 in states
+    assert len(edges) == 1  # the interstate edge between s1 and s2
+
+
+def test_loop_interior_nested():
+    sdfg = dace.SDFG("test_interior_nested")
+    outer = dace.sdfg.state.LoopRegion("outer", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(outer)
+    inner = dace.sdfg.state.LoopRegion("inner", "j < 5", "j", "j=0", "j=j+1")
+    outer.add_node(inner, is_start_block=True)
+    body = inner.add_state("body")
+
+    states, blocks, edges = loop_interior(outer)
+    # Inner loop's state should be included in outer's interior
+    assert body in states
+    assert inner in blocks
+
+
+def test_written_transient_scalars_basic():
+    sdfg = dace.SDFG("test_written")
+    sdfg.add_scalar("s", dace.float64, transient=True)
+    sdfg.add_scalar("r", dace.float64, transient=True)
+    sdfg.add_array("A", [10], dace.float64, transient=True)
+
+    state = sdfg.add_state("s1")
+    t = state.add_tasklet("t", {}, {"o"}, "o = 1")
+    state.add_edge(t, "o", state.add_write("s"), None, dace.Memlet("s"))
+    state.add_read("r")  # read-only
+
+    written = written_transient_scalars(sdfg, [state])
+    assert "s" in written
+    assert "r" not in written
+    assert "A" not in written  # arrays excluded
+
+
+def test_written_transient_scalars_non_transient():
+    sdfg = dace.SDFG("test_non_trans")
+    sdfg.add_scalar("s", dace.float64, transient=False)
+
+    state = sdfg.add_state("s1")
+    t = state.add_tasklet("t", {}, {"o"}, "o = 1")
+    state.add_edge(t, "o", state.add_write("s"), None, dace.Memlet("s"))
+
+    written = written_transient_scalars(sdfg, [state])
+    assert "s" not in written  # non-transient excluded
+
+
+def test_writeonly_transient_scalars_basic():
+    """Write-only scalars are returned; read+write scalars are excluded."""
+    sdfg = dace.SDFG("test_writeonly")
+    sdfg.add_scalar("wo", dace.float64, transient=True)
+    sdfg.add_scalar("rw", dace.float64, transient=True)
+
+    state = sdfg.add_state("s1")
+    # wo: write-only
+    t1 = state.add_tasklet("t1", {}, {"o"}, "o = 1")
+    state.add_edge(t1, "o", state.add_write("wo"), None, dace.Memlet("wo"))
+    # rw: read + write (loop-carried pattern)
+    t2 = state.add_tasklet("t2", {"inp"}, {"out"}, "out = inp + 1")
+    state.add_edge(state.add_read("rw"), None, t2, "inp", dace.Memlet("rw"))
+    state.add_edge(t2, "out", state.add_write("rw"), None, dace.Memlet("rw"))
+
+    result = writeonly_transient_scalars(sdfg, [state])
+    assert "wo" in result
+    assert "rw" not in result
+
+
+def test_writeonly_transient_scalars_excludes_arrays():
+    """Arrays should never appear in writeonly_transient_scalars."""
+    sdfg = dace.SDFG("test_writeonly_arr")
+    sdfg.add_array("A", [10], dace.float64, transient=True)
+
+    state = sdfg.add_state("s1")
+    t = state.add_tasklet("t", {}, {"o"}, "o = 1")
+    state.add_edge(t, "o", state.add_write("A"), None, dace.Memlet("A[0]"))
+
+    result = writeonly_transient_scalars(sdfg, [state])
+    assert "A" not in result
+
+
+def test_all_nodes_in_block_state():
+    sdfg = dace.SDFG("test_anib_state")
+    s = sdfg.add_state("s")
+    t = s.add_tasklet("t", {}, {}, "x = 1")
+
+    nodes = list(all_nodes_in_block(s))
+    assert len(nodes) == 1
+    assert nodes[0] == (t, s)
+
+
+def test_all_nodes_in_block_loop():
+    sdfg = dace.SDFG("test_anib_loop")
+    loop = dace.sdfg.state.LoopRegion("l", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(loop)
+    s1 = loop.add_state("s1")
+    t1 = s1.add_tasklet("t1", {}, {}, "x = 1")
+    s2 = loop.add_state("s2")
+    t2 = s2.add_tasklet("t2", {}, {}, "y = 2")
+
+    nodes = list(all_nodes_in_block(loop))
+    assert (t1, s1) in nodes
+    assert (t2, s2) in nodes
+
+
+def test_all_nodes_in_block_conditional():
+    sdfg = dace.SDFG("test_anib_cond")
+    cb = dace.sdfg.state.ConditionalBlock("cb")
+    branch = dace.sdfg.state.ControlFlowRegion("br", sdfg=sdfg)
+    bs = branch.add_state("bs")
+    t = bs.add_tasklet("t", {}, {}, "x = 1")
+    cb.add_branch("True", branch)
+
+    nodes = list(all_nodes_in_block(cb))
+    assert len(nodes) == 1
+    assert nodes[0] == (t, bs)
+
+
+def test_rename_local_scalars():
+    sdfg = dace.SDFG("test_rename_local")
+    sdfg.add_scalar("tmp", dace.float64, transient=True)
+
+    s1 = sdfg.add_state("s1")
+    t = s1.add_tasklet("t", {}, {"o"}, "o = 1")
+    s1.add_edge(t, "o", s1.add_write("tmp"), None, dace.Memlet("tmp"))
+
+    rename_local_scalars(sdfg, [s1], "_copy0")
+
+    # AccessNode should now reference tmp_copy0
+    an = [n for n in s1.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
+    assert an.data == "tmp_copy0"
+    assert "tmp_copy0" in sdfg.arrays
+
+
+def test_rename_local_scalars_collision():
+    sdfg = dace.SDFG("test_rename_collision")
+    sdfg.add_scalar("tmp", dace.float64, transient=True)
+    # Pre-register the expected name to force a collision
+    sdfg.add_scalar("tmp_copy0", dace.float64, transient=True)
+
+    s1 = sdfg.add_state("s1")
+    t = s1.add_tasklet("t", {}, {"o"}, "o = 1")
+    s1.add_edge(t, "o", s1.add_write("tmp"), None, dace.Memlet("tmp"))
+
+    rename_local_scalars(sdfg, [s1], "_copy0")
+
+    an = [n for n in s1.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
+    # Should NOT be "tmp" (unchanged) or "tmp_copy0" (collision)
+    assert an.data != "tmp"
+    assert an.data != "tmp_copy0"
+    assert an.data.startswith("tmp_copy0_ls")
+    assert an.data in sdfg.arrays
+
+
+def test_rename_local_scalars_conditional_block():
+    """Scalars written inside a ConditionalBlock branch must be renamed."""
+    sdfg = dace.SDFG("test_rename_cond")
+    sdfg.add_scalar("tmp", dace.float64, transient=True)
+
+    cb = dace.sdfg.state.ConditionalBlock("cb")
+    branch = dace.sdfg.state.ControlFlowRegion("br", sdfg=sdfg)
+    bs = branch.add_state("bs")
+    t = bs.add_tasklet("t", {}, {"o"}, "o = 1")
+    bs.add_edge(t, "o", bs.add_write("tmp"), None, dace.Memlet("tmp"))
+    cb.add_branch("True", branch)
+
+    rename_local_scalars(sdfg, [cb], "_copy0")
+
+    an = [n for n in bs.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
+    assert an.data != "tmp", "Scalar inside ConditionalBlock was not renamed"
+    assert an.data in sdfg.arrays
+
+
+def test_rename_local_scalars_skips_reads():
+    sdfg = dace.SDFG("test_rename_skip")
+    sdfg.add_scalar("r", dace.float64, transient=True)
+
+    s1 = sdfg.add_state("s1")
+    s1.add_read("r")  # read-only, not written
+
+    rename_local_scalars(sdfg, [s1], "_copy0")
+
+    # Name should be unchanged — read-only scalars are not renamed
+    an = [n for n in s1.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
+    assert an.data == "r"
+    assert "r_copy0" not in sdfg.arrays
+
+
 def test_lift_data_refs_basic():
     """Scalar data ref in condition gets lifted to a symbol with incoming edge assignment."""
     sdfg = dace.SDFG("test_lift")
@@ -425,6 +647,21 @@ if __name__ == "__main__":
     test_get_direct_child()
     test_topological_sort_cyclic()
     test_topological_sort_error()
+    test_collect_all_loops()
+    test_collect_all_loops_empty()
+    test_loop_interior()
+    test_loop_interior_nested()
+    test_written_transient_scalars_basic()
+    test_written_transient_scalars_non_transient()
+    test_writeonly_transient_scalars_basic()
+    test_writeonly_transient_scalars_excludes_arrays()
+    test_all_nodes_in_block_state()
+    test_all_nodes_in_block_loop()
+    test_all_nodes_in_block_conditional()
+    test_rename_local_scalars()
+    test_rename_local_scalars_collision()
+    test_rename_local_scalars_conditional_block()
+    test_rename_local_scalars_skips_reads()
     test_lift_data_refs_basic()
     test_lift_data_refs_no_incoming_edge()
     test_lift_data_refs_ignores_symbols()

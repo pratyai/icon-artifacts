@@ -12,6 +12,7 @@ import re
 from collections import defaultdict
 from typing import Set, List, Dict, Optional, Tuple, Any, Union
 
+from tqdm import tqdm
 import dace
 from dace import nodes as nd, symbolic
 from dace.sdfg.state import ConditionalBlock, LoopRegion, ControlFlowRegion, SDFGState, ControlFlowBlock
@@ -81,7 +82,7 @@ def _create_identifier_dict(sdfg: dace.SDFG) -> set[tuple[str, dace.SDFG]]:
 def _apply_plan(sdfg: dace.SDFG, plan: SSAPlan, counter: dict[str, int]):
     """Apply a planned set of renames to the SDFG hierarchy."""
     
-    for ver in plan.versions:
+    for ver in tqdm(plan.versions, desc="Applying SSA plan", leave=False):
         new_name = _mint_name(sdfg, ver.base_name, counter)
         
         # 2. Rename all AccessNodes

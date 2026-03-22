@@ -3,30 +3,31 @@ import dace
 import pytest
 from ssa.scalar_privatization import (
     privatize_scalars, _collect_refs, build_plan,
-    _loop_sites, _is_private, _written_scalars
+    _is_private,
 )
+from ssa.graph_utils import loop_interior, written_transient_scalars
 
 def test_privatize_sequential_loops():
     sdfg = dace.SDFG("test_priv")
     sdfg.add_scalar("s1", dace.float64, transient=True)
     sdfg.add_scalar("s2", dace.float64, transient=True)
-    
+
     # Loop 1: writes s1
     l1 = dace.sdfg.state.LoopRegion("l1", "i < 10", "i", "i=0", "i=i+1")
     sdfg.add_node(l1)
     st1 = l1.add_state("st1")
     st1.add_edge(st1.add_tasklet("t1", {}, {"o"}, "o=1"), "o", st1.add_write("s1"), None, dace.Memlet("s1"))
-    
+
     # Loop 2: writes s2
     l2 = dace.sdfg.state.LoopRegion("l2", "j < 10", "j", "j=0", "j=j+1")
     sdfg.add_node(l2)
     sdfg.add_edge(l1, l2, dace.InterstateEdge())
     st2 = l2.add_state("st2")
     st2.add_edge(st2.add_tasklet("t2", {}, {"o"}, "o=2"), "o", st2.add_write("s2"), None, dace.Memlet("s2"))
-    
+
     count = privatize_scalars(sdfg)
     assert count == 2
-    
+
     # Check that AccessNodes use privatized names
     an1 = [n for n in st1.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
     an2 = [n for n in st2.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
@@ -96,7 +97,7 @@ def test_is_private():
     ls.add_edge(ls.add_tasklet("t", {}, {"o"}, "o=1"), "o", ls.add_write("s"), None, dace.Memlet("s"))
 
     refs = _collect_refs(sdfg)
-    loop_states, loop_blocks, loop_edges = _loop_sites(loop)
+    loop_states, loop_blocks, loop_edges = loop_interior(loop)
     assert _is_private(refs, "s", loop_states, loop_blocks, loop_edges)
 
     # Add external read -> no longer private
@@ -108,7 +109,7 @@ def test_is_private():
     assert not _is_private(refs, "s", loop_states, loop_blocks, loop_edges)
 
 
-def test_written_scalars():
+def test_written_transient_scalars():
     sdfg = dace.SDFG("test_written")
     sdfg.add_scalar("s", dace.float64, transient=True)
     sdfg.add_scalar("r", dace.float64, transient=True)
@@ -119,7 +120,7 @@ def test_written_scalars():
     ls.add_edge(ls.add_tasklet("t", {}, {"o"}, "o=1"), "o", ls.add_write("s"), None, dace.Memlet("s"))
     ls.add_read("r")  # read-only, not written
 
-    written = _written_scalars(sdfg, loop)
+    written = written_transient_scalars(sdfg, loop.all_states())
     assert "s" in written
     assert "r" not in written
 
@@ -180,13 +181,41 @@ def test_build_plan_interstate_edge_ref():
     assert all("s" not in repl for _, repl in plan)
 
 
+def test_privatize_not_skipped_when_written_outside():
+    """Scalar written both inside a loop and outside should NOT be privatized
+    (caught by _is_private, not the write_counts check)."""
+    sdfg = dace.SDFG("test_outside_write")
+    sdfg.add_scalar("s", dace.float64, transient=True)
+
+    # Write s outside any loop
+    init = sdfg.add_state("init", is_start_block=True)
+    init.add_edge(init.add_tasklet("t0", {}, {"o"}, "o=0"), "o",
+                  init.add_write("s"), None, dace.Memlet("s"))
+
+    # Loop also writes s
+    l1 = dace.sdfg.state.LoopRegion("l1", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(l1)
+    sdfg.add_edge(init, l1, dace.InterstateEdge())
+    st1 = l1.add_state("st1")
+    st1.add_edge(st1.add_tasklet("t1", {}, {"o"}, "o=1"), "o",
+                 st1.add_write("s"), None, dace.Memlet("s"))
+
+    count = privatize_scalars(sdfg)
+    assert count == 0
+
+    # Name unchanged — not private because of the outside write
+    an1 = [n for n in st1.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
+    assert an1.data == "s"
+
+
 if __name__ == "__main__":
     test_privatize_sequential_loops()
+    test_privatize_not_skipped_when_written_outside()
     test_privatize_shared_scalar()
     test_privatize_not_private()
     test_collect_refs()
     test_is_private()
-    test_written_scalars()
+    test_written_transient_scalars()
     test_build_plan_inner_first()
     test_build_plan_metadata_ref()
     test_build_plan_interstate_edge_ref()

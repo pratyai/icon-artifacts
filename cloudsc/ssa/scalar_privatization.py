@@ -16,10 +16,10 @@ from collections import defaultdict
 from typing import Set, Dict, List, Tuple, Any
 
 import dace
-from dace import nodes as nd, data
+from dace import nodes as nd
 from dace.sdfg.state import SDFGState, LoopRegion, ControlFlowBlock
 
-from ssa.graph_utils import is_write
+from ssa.graph_utils import collect_all_loops, loop_interior, written_transient_scalars
 
 
 def _collect_refs(sdfg: dace.SDFG) -> Dict[str, Set[Any]]:
@@ -48,15 +48,6 @@ def _collect_refs(sdfg: dace.SDFG) -> Dict[str, Set[Any]]:
     return refs
 
 
-def _loop_sites(loop: LoopRegion):
-    """Return (states, blocks, edges) sets for everything inside the loop."""
-    states = set(loop.all_states())
-    blocks = set(loop.all_control_flow_blocks())
-    edges = {e.data for e, _ in loop.all_edges_recursive()
-             if isinstance(e.data, dace.InterstateEdge)}
-    return states, blocks, edges
-
-
 def _is_private(refs, name, loop_states, loop_blocks, loop_edges) -> bool:
     """True if all references to `name` are inside the loop."""
     if name not in refs:
@@ -71,20 +62,6 @@ def _is_private(refs, name, loop_states, loop_blocks, loop_edges) -> bool:
         else:
             return False
     return True
-
-
-def _written_scalars(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
-    """Return transient scalar names written inside the loop."""
-    written = set()
-    for state in loop.all_states():
-        for node in state.nodes():
-            if isinstance(node, nd.AccessNode) and is_write(state, node):
-                name = node.data
-                if (name in sdfg.arrays and
-                    isinstance(sdfg.arrays[name], data.Scalar) and
-                    sdfg.arrays[name].transient):
-                    written.add(name)
-    return written
 
 
 def _mint_name(sdfg: dace.SDFG, base: str, counter: dict[str, int]) -> str:
@@ -122,11 +99,7 @@ def build_plan(sdfg: dace.SDFG) -> List[Tuple[LoopRegion, Dict[str, str]]]:
     """Phase 1: Identify all privatization renames (inner-loops-first)."""
     refs = _collect_refs(sdfg)
 
-    loops: List[LoopRegion] = []
-    for sd in sdfg.all_sdfgs_recursive():
-        for block in sd.all_control_flow_blocks():
-            if isinstance(block, LoopRegion):
-                loops.append(block)
+    loops = collect_all_loops(sdfg)
     if not loops:
         return []
 
@@ -135,9 +108,9 @@ def build_plan(sdfg: dace.SDFG) -> List[Tuple[LoopRegion, Dict[str, str]]]:
     plan = []
     counter = defaultdict(int)
     for loop in loops:
-        ls, lb, le = _loop_sites(loop)
+        ls, lb, le = loop_interior(loop)
         repl = {}
-        for name in _written_scalars(sdfg, loop):
+        for name in written_transient_scalars(sdfg, ls):
             if _is_private(refs, name, ls, lb, le):
                 repl[name] = _mint_name(sdfg, name, counter)
         if repl:
