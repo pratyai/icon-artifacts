@@ -38,37 +38,63 @@ def propagate_constants(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
     Non-transient array shapes are snapshotted before replacement and restored
     afterwards so the external data interface stays symbolic.  Symbols that
     remain referenced (e.g. in restored shapes) are re-added to the symbol table.
+
+    Note: Always run unit tests in tests/test_propagate_constants.py after
+    modifying this function.
     """
     orig_shapes: dict[str, list] = {}
     for name, desc in sdfg.arrays.items():
         if not desc.transient:
             orig_shapes[name] = copy.deepcopy(list(desc.shape))
 
-    sdfg.replace_dict(symbol_map)
+    # Convert values to strings for replacement
+    repl = {k: str(v) for k, v in symbol_map.items()}
 
+    # replace_keys=False is CRITICAL: we want to replace OCCURRENCES of symbols
+    # in expressions with the constant value, NOT rename the symbol in the table.
+    # We must do this recursively for all nested SDFGs.
+    for g in sdfg.all_sdfgs_recursive():
+        g.replace_dict(repl, replace_keys=False)
+
+    # After replacement, symbols in symbol_map are now constants. Remove them from symbols.
+    for name in symbol_map:
+        if name in sdfg.symbols:
+            sdfg.remove_symbol(name)
+
+    # Restore external shapes
     for name, shape in orig_shapes.items():
         if name in sdfg.arrays:
             sdfg.arrays[name].shape = shape
 
+    # Re-add symbols that are still needed for the external symbolic interface
     for name, shape in orig_shapes.items():
         if name not in sdfg.arrays:
             continue
         for s in shape:
-            for fs in getattr(s, 'free_symbols', set()):
-                sym_name = str(fs)
-                if sym_name not in sdfg.symbols:
-                    sdfg.add_symbol(sym_name, dace.int32)
+            if symbolic.issymbolic(s):
+                for fs in s.free_symbols:
+                    sym_name = str(fs)
+                    if sym_name not in sdfg.symbols:
+                        sdfg.add_symbol(sym_name, dace.int32)
 
     print(f"Propagate constants: {symbol_map}")
 
 
 def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
-    """Unroll loops whose iteration count matches a propagated value.
+    """Unroll loops whose iteration count matches a value in the symbol_map.
 
     Each unroll mutates the graph and invalidates node references, so we
     find-and-unroll one target at a time.
+
+    Note: Always run unit tests in tests/test_unroll_loops.py after
+    modifying this function.
     """
     import time
+
+    # CRITICAL: We must propagate constants before collecting targets
+    # so that symbolic extents like 'N' can be evaluated.
+    propagate_constants(sdfg, symbol_map)
+
     potential_ranges = set(symbol_map.values())
 
     unrolled = 0
@@ -85,8 +111,9 @@ def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
         round_num += 1
         pbar.total = (pbar.n or 0) + len(batch)
         pbar.refresh()
-        pbar.write(f"  Round {round_num}: {len(batch)} targets "
-                   f"(collect: {t_collect:.1f}s)")
+        pbar.write(
+            f"  Round {round_num}: {len(batch)} targets (collect: {t_collect:.1f}s)"
+        )
         for node, parent in batch:
             pbar.write(f"    loop: {node.label} [{node.loop_variable}]")
 
@@ -115,8 +142,7 @@ def unroll_loops(sdfg: dace.SDFG, symbol_map: Dict[str, int]):
 
     pbar.close()
 
-    print(f"Unroll: {unrolled} loops"
-          f"{f', {skipped} skipped' if skipped else ''}")
+    print(f"Unroll: {unrolled} loops{f', {skipped} skipped' if skipped else ''}")
 
 
 def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
@@ -142,8 +168,10 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
         iter_values = list(range(int(start), int(end) - 1, stride_val))
 
     if not iter_values:
-        raise ValueError(f"Loop {loop.label} has 0 iterations "
-                         f"(start={start}, end={end}, stride={stride_val})")
+        raise ValueError(
+            f"Loop {loop.label} has 0 iterations "
+            f"(start={start}, end={end}, stride={stride_val})"
+        )
 
     # ── Phase 1: snapshot everything we need from the loop ────────────
     predecessors = [(e.src, copy.deepcopy(e.data)) for e in parent_cfg.in_edges(loop)]
@@ -167,7 +195,7 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
         for block in loop_blocks:
             new_block = serialize.from_json(
                 serialize.to_json(block),
-                context={'sdfg': sdfg},
+                context={"sdfg": sdfg},
             )
             new_block.label = new_block.label + suffix
             parent_cfg.add_node(new_block, ensure_unique_name=True)
@@ -192,7 +220,13 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
             if not isinstance(data, InterstateEdge):
                 continue
             if not data.is_unconditional():
-                ASTFindReplace({itervar: str(current_val)}).visit(data.condition)
+                # We must replace in the string/CodeBlock and re-assign
+                import re
+
+                cond_str = data.condition.as_string
+                # Replace only whole word matches of itervar
+                new_cond_str = re.sub(rf"\b{itervar}\b", str(current_val), cond_str)
+                data.condition = dace.properties.CodeBlock(new_cond_str)
             if data.assignments:
                 new_asgn = {}
                 for k, v in data.assignments.items():
@@ -206,20 +240,28 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
         # Replace in nested SDFGs' symbol mappings
         for new_block in block_map.values():
             for node, _ in _all_nodes_in_block(new_block):
-                if isinstance(node, NestedSDFG) and itervar in node.symbol_mapping:
-                    sm = node.symbol_mapping[itervar]
-                    if hasattr(sm, 'subs'):
-                        node.symbol_mapping[itervar] = sm.subs(
-                            {symbolic.symbol(itervar): current_val}
-                        )
-                    else:
-                        node.symbol_mapping[itervar] = current_val
+                if isinstance(node, NestedSDFG):
+                    for sym, mapping in node.symbol_mapping.items():
+                        if hasattr(mapping, "subs"):
+                            node.symbol_mapping[sym] = mapping.subs(
+                                {symbolic.symbol(itervar): current_val}
+                            )
+                        elif isinstance(mapping, str):
+                            # Replace in string expressions
+                            node.symbol_mapping[sym] = mapping.replace(
+                                itervar, str(current_val)
+                            )
+                        elif mapping == symbolic.symbol(itervar):
+                            node.symbol_mapping[sym] = current_val
 
         first = block_map[id(loop_start)]
         iteration_first.append(first)
 
-        last = [b for b in copied_set
-                if not any(e.dst in copied_set for e in parent_cfg.out_edges(b))]
+        last = [
+            b
+            for b in copied_set
+            if not any(e.dst in copied_set for e in parent_cfg.out_edges(b))
+        ]
         iteration_last.append(last)
 
     # ── Phase 3: wire and remove ──────────────────────────────────────
@@ -264,11 +306,11 @@ def _manual_loop_unroll(sdfg: dace.SDFG, loop: LoopRegion, parent_cfg):
 
 def _all_nodes_in_block(block):
     """Yield (node, state) for all dataflow nodes in a block (state or nested CFR)."""
-    if hasattr(block, 'all_states'):
+    if hasattr(block, "all_states"):
         for state in block.all_states():
             for node in state.nodes():
                 yield node, state
-    elif hasattr(block, 'nodes'):
+    elif hasattr(block, "nodes"):
         for node in block.nodes():
             yield node, block
 
@@ -297,27 +339,35 @@ def _collect_unroll_targets(sdfg, potential_ranges):
             step = loop_analysis.get_loop_stride(child)
             if beg is None or end is None or step is None:
                 continue
-            extent = ((end + 1) - beg) // step
-            if extent.free_symbols:
-                continue
+
+            # Use symbolic evaluation to resolve any remaining symbols
             try:
-                val = int(extent)
+                b_val = int(symbolic.evaluate(beg, sdfg.constants))
+                e_val = int(symbolic.evaluate(end, sdfg.constants))
+                s_val = int(symbolic.evaluate(step, sdfg.constants))
+
+                # Robust iteration count calculation
+                val = (e_val - b_val) // s_val + 1
+
+                if val > 0 and val in potential_ranges:
+                    loops.append((child, cfg))
             except (TypeError, ValueError):
                 continue
-            if val in potential_ranges:
-                loops.append((child, cfg))
     return loops
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Constant propagation + unroll")
+    parser = argparse.ArgumentParser(description="Constant propagation + unroll")
     parser.add_argument("input", type=str, help="Input SDFG file")
     parser.add_argument("-o", "--output", type=str, default=None)
-    parser.add_argument("--symbols", type=str, required=True,
-                        help="Comma-separated key=val pairs, e.g. nclv=5")
+    parser.add_argument(
+        "--symbols",
+        type=str,
+        required=True,
+        help="Comma-separated key=val pairs, e.g. nclv=5",
+    )
     args = parser.parse_args()
 
     sym_map = {}
