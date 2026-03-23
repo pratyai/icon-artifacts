@@ -776,6 +776,33 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
 
     external_dtype = LOWPREC_MAP[lowprec]
 
+    import os
+    if os.environ.get("LOWER_NOTHING"):
+        print("LOWER_NOTHING=1 — skipping all precision lowering")
+        return
+
+    # Bisect mode: lower only ONE array to target dtype, everything else stays fp64.
+    # Usage: LOWER_ONLY=zqx python cloudsc_cpu_pipeline.py --lowprec fp16
+    _lower_only = os.environ.get("LOWER_ONLY")
+    if _lower_only:
+        print(f"LOWER_ONLY={_lower_only} — only lowering this one array")
+        _single_target = _lower_only.strip()
+        # Find it and lower just that one
+        if _single_target in sdfg.arrays:
+            arr = sdfg.arrays[_single_target]
+            if not arr.transient:
+                # Non-transient: needs boundary cast
+                if f"gpu_{_single_target}" in sdfg.arrays:
+                    inject_gpu_boundary_cast(sdfg, [_single_target], external_dtype)
+                else:
+                    inject_cpu_boundary_cast(sdfg, [_single_target], external_dtype)
+            else:
+                _propagate_dtype(sdfg, _single_target, external_dtype)
+            print(f"  Lowered {_single_target} ({arr.dtype}) to {external_dtype}")
+        else:
+            print(f"  WARNING: {_single_target} not found in SDFG")
+        return
+
     # TODO: BFP mode — separate path like velocity's inject_bfp_packing
     # if lowprec.startswith("bfp"):
     #     ...
