@@ -44,8 +44,54 @@ def _find_host_accessed_arrays(sdfg: dace.SDFG) -> Set[str]:
     return host_accessed
 
 
+def _collect_map_arrays(state, map_entry) -> Set[str]:
+    """Collect all array names accessed by a single map scope (including boundary)."""
+    sdfg = state.parent
+    arrays = set()
+    map_exit = state.exit_node(map_entry)
+    for n in state.all_nodes_between(map_entry, map_exit):
+        if isinstance(n, nodes.AccessNode) and n.data in sdfg.arrays:
+            arrays.add(n.data)
+    for e in state.in_edges(map_entry):
+        if isinstance(e.src, nodes.AccessNode) and e.src.data in sdfg.arrays:
+            arrays.add(e.src.data)
+    for e in state.out_edges(map_exit):
+        if isinstance(e.dst, nodes.AccessNode) and e.dst.data in sdfg.arrays:
+            arrays.add(e.dst.data)
+    return arrays
+
+
+def _find_gpu_read_arrays(sdfg: dace.SDFG) -> Set[str]:
+    """Find arrays that are READ inside top-level map scopes."""
+    gpu_read = set()
+    for state in sdfg.all_states():
+        scope = state.scope_dict()
+        for node in state.nodes():
+            if not isinstance(node, nodes.MapEntry):
+                continue
+            if scope[node] is not None:
+                continue
+            # Inputs feeding into the map entry
+            for e in state.in_edges(node):
+                if isinstance(e.src, nodes.AccessNode) and e.src.data in sdfg.arrays:
+                    gpu_read.add(e.src.data)
+            # AccessNodes read inside the map (have outgoing edges)
+            map_exit = state.exit_node(node)
+            for n in state.all_nodes_between(node, map_exit):
+                if isinstance(n, nodes.AccessNode) and n.data in sdfg.arrays:
+                    if any(not e.data.is_empty() for e in state.out_edges(n)):
+                        gpu_read.add(n.data)
+    return gpu_read
+
+
 def _find_gpu_accessed_arrays(sdfg: dace.SDFG) -> Set[str]:
-    """Find all array names accessed by GPU map scopes (top-level SDFG)."""
+    """Find arrays accessed by GPU-worthy maps.
+
+    A map is GPU-worthy if it touches at least one array that is READ inside
+    some top-level map.  Pure init maps (write-only to host-only arrays like
+    llfall) are excluded, keeping those arrays CPU-only.
+    """
+    gpu_read = _find_gpu_read_arrays(sdfg)
     gpu_accessed = set()
     for state in sdfg.all_states():
         scope = state.scope_dict()
@@ -54,19 +100,10 @@ def _find_gpu_accessed_arrays(sdfg: dace.SDFG) -> Set[str]:
                 continue
             if scope[node] is not None:
                 continue
-            # We check both those already scheduled and those intended to be
-            # (In Step 1 they aren't scheduled yet, so we look at outermost maps)
-            
-            map_exit = state.exit_node(node)
-            for n in state.all_nodes_between(node, map_exit):
-                if isinstance(n, nodes.AccessNode) and n.data in sdfg.arrays:
-                    gpu_accessed.add(n.data)
-            for e in state.in_edges(node):
-                if isinstance(e.src, nodes.AccessNode) and e.src.data in sdfg.arrays:
-                    gpu_accessed.add(e.src.data)
-            for e in state.out_edges(map_exit):
-                if isinstance(e.dst, nodes.AccessNode) and e.dst.data in sdfg.arrays:
-                    gpu_accessed.add(e.dst.data)
+            map_arrays = _collect_map_arrays(state, node)
+            # Only include if this map touches at least one gpu_read array
+            if map_arrays & gpu_read:
+                gpu_accessed |= map_arrays
     return gpu_accessed
 
 
@@ -164,9 +201,11 @@ def _create_gpu_descriptors(sdfg: dace.SDFG, array_names: list[str], verbose: bo
 
 def _add_h2d_state(sdfg: dace.SDFG, array_names: list[str]):
     """Add a start state that copies non-transient arrays to GPU if used in GPU maps."""
-    # We copy IF it is accessed by a GPU map
+    # We copy IF it is accessed by a GPU map AND is not a transient
+    # (transients are computed inside the SDFG — copying before computation gives garbage)
     gpu_accessed = _find_gpu_accessed_arrays(sdfg)
-    to_copy = [n for n in array_names if n in gpu_accessed]
+    to_copy = [n for n in array_names
+               if n in gpu_accessed and not sdfg.arrays[n].transient]
 
     prev_start = sdfg.start_block
     h2d_state = sdfg.add_state("copy_in_h2d")
@@ -228,15 +267,23 @@ def _add_d2h_state(sdfg: dace.SDFG, written_arrays: list[str]):
 # Step 5: Set GPU schedules
 # ---------------------------------------------------------------------------
 
-def _set_gpu_schedules(sdfg: dace.SDFG, verbose: bool):
-    """Set outermost Maps to GPU_Device schedule."""
+def _set_gpu_schedules(sdfg: dace.SDFG, gpu_arrays: Set[str], verbose: bool):
+    """Set outermost Maps to GPU_Device schedule if they touch GPU arrays."""
     count = 0
+    skipped = []
     for state in sdfg.all_states():
         scope = state.scope_dict()
         for node in state.nodes():
-            if isinstance(node, nodes.MapEntry) and scope[node] is None:
+            if not isinstance(node, nodes.MapEntry) or scope[node] is not None:
+                continue
+            map_arrays = _collect_map_arrays(state, node)
+            if map_arrays & gpu_arrays:
                 node.map.schedule = dtypes.ScheduleType.GPU_Device
                 count += 1
+            else:
+                skipped.append(node.map.label)
+    if skipped:
+        print(f"  Kept {len(skipped)} maps on CPU (no GPU arrays): {skipped}")
     print(f"  GPU-scheduled {count} outermost maps")
 
 
@@ -379,6 +426,187 @@ def _rename_in_nested_sdfg(nsdfg, gpu_arrays):
 
 
 # ---------------------------------------------------------------------------
+# Step 6b: Redirect loose tasklet writes of dual-access transients
+# ---------------------------------------------------------------------------
+
+def _is_map_boundary(state, nd):
+    """Check if an AccessNode is a boundary node feeding into/out of a map."""
+    for e in state.out_edges(nd):
+        if isinstance(e.dst, nodes.MapEntry):
+            return True
+    for e in state.in_edges(nd):
+        if isinstance(e.src, nodes.MapExit):
+            return True
+    return False
+
+
+def _find_loose_nodes(state):
+    """Find all nodes at top scope that are NOT part of any map scope."""
+    scope = state.scope_dict()
+    loose = set()
+    for nd in state.nodes():
+        if scope[nd] is not None:
+            continue  # Inside a map
+        if isinstance(nd, (nodes.MapEntry, nodes.MapExit)):
+            continue
+        if isinstance(nd, nodes.AccessNode) and _is_map_boundary(state, nd):
+            continue
+        loose.add(nd)
+    return loose
+
+
+def _extract_loose_into(state, target_state):
+    """Move all loose nodes (and their inter-edges) from state into target_state.
+
+    Returns the set of moved nodes, or empty set if nothing moved.
+    """
+    loose = _find_loose_nodes(state)
+    if not loose:
+        return set()
+
+    # Collect edges between loose nodes before removing anything
+    loose_edges = []
+    for e in state.edges():
+        if e.src in loose and e.dst in loose:
+            loose_edges.append((e.src, e.src_conn, e.dst, e.dst_conn,
+                                copy.deepcopy(e.data)))
+
+    # Add to target
+    for nd in loose:
+        target_state.add_node(nd)
+    for src, sc, dst, dc, data in loose_edges:
+        target_state.add_edge(src, sc, dst, dc, data)
+
+    # Remove from original
+    for nd in loose:
+        state.remove_node(nd)
+
+    return loose
+
+
+def _add_deferred_h2d_copies(sdfg: dace.SDFG, gpu_arrays: set, verbose: bool):
+    """Float ALL host-side scalar/array computations into ONE dedicated
+    precompute state at the very beginning, then add a single H2D copy state.
+
+    1. Create one precompute state.
+    2. For every top-level state, extract loose tasklets into the precompute
+       state (removing them from their original mixed states).
+    3. Place precompute right after copy_in_h2d.
+    4. Add a consolidated H2D copy state after precompute.
+    5. For writes inside nested CFGs (ConditionalBlocks, LoopRegions),
+       add per-state H2D copies.
+
+    Only processes TRANSIENT arrays — non-transients are handled by the
+    initial H2D + D2H states.
+    """
+    # --- Part A: Consolidate all loose tasklets into one precompute state ---
+    all_deferred_top = set()
+    # Create a standalone state (not yet wired into the SDFG)
+    from dace.sdfg.state import SDFGState
+    precompute = SDFGState("host_precompute", sdfg)
+    moved_any = False
+
+    # Only process DIRECT children of the top-level SDFG (not inside
+    # ConditionalBlocks or LoopRegions — those are handled by Part C).
+    for state in [n for n in sdfg.nodes() if isinstance(n, SDFGState)]:
+        scope_fn = getattr(state, 'scope_dict', None)
+        if scope_fn is None:
+            continue
+        scope = scope_fn()
+
+        # Check if this state has loose writes to dual-access transients
+        has_deferred = False
+        for nd in state.nodes():
+            if not isinstance(nd, nodes.AccessNode):
+                continue
+            if nd.data not in gpu_arrays:
+                continue
+            if nd.data not in sdfg.arrays or not sdfg.arrays[nd.data].transient:
+                continue
+            if scope[nd] is not None:
+                continue
+            if _is_map_boundary(state, nd):
+                continue
+            if any(not e.data.is_empty() for e in state.in_edges(nd)):
+                all_deferred_top.add(nd.data)
+                has_deferred = True
+
+        if not has_deferred:
+            continue
+
+        # Extract loose nodes from this state into the precompute state
+        moved = _extract_loose_into(state, precompute)
+        if moved:
+            moved_any = True
+
+    if not moved_any:
+        # Nothing was extracted — discard the standalone state
+        pass  # precompute was never added to the SDFG
+    else:
+        # Add precompute BEFORE copy_in_h2d (precompute becomes new start)
+        sdfg.add_node(precompute)
+        h2d_state = sdfg.start_block  # copy_in_h2d
+        sdfg.add_edge(precompute, h2d_state, dace.InterstateEdge())
+        sdfg.start_block = sdfg.node_id(precompute)
+
+    # --- Part B: Merge scalar H2D copies into the existing copy_in_h2d ---
+    if all_deferred_top and moved_any:
+        h2d_state = [s for s in sdfg.states() if s.label == "copy_in_h2d"][0]
+        for name in sorted(all_deferred_top):
+            gpu_name = f"gpu_{name}"
+            if gpu_name not in sdfg.arrays:
+                continue
+            desc = sdfg.arrays[gpu_name]
+            src = h2d_state.add_access(name)
+            dst = h2d_state.add_access(gpu_name)
+            h2d_state.add_edge(src, None, dst, None,
+                               dace.Memlet.from_array(name, desc))
+
+    # --- Part C: Per-state H2D for writes inside nested CFGs ---
+    nested_count = 0
+    for sd in sdfg.all_sdfgs_recursive():
+        for cfg in sd.all_control_flow_regions():
+            if cfg is sdfg:
+                continue  # Top-level handled above
+            for state in cfg.nodes():
+                if not hasattr(state, 'scope_dict'):
+                    continue
+                scope = state.scope_dict()
+                written = set()
+                for nd in state.nodes():
+                    if not (isinstance(nd, nodes.AccessNode) and nd.data in gpu_arrays):
+                        continue
+                    if not sdfg.arrays[nd.data].transient:
+                        continue
+                    if scope[nd] is None and any(
+                            not e.data.is_empty() for e in state.in_edges(nd)):
+                        written.add(nd.data)
+                if written:
+                    h2d = cfg.add_state(f"{state.label}_h2d")
+                    for name in written:
+                        gpu_name = f"gpu_{name}"
+                        if gpu_name not in sdfg.arrays:
+                            continue
+                        desc = sdfg.arrays[gpu_name]
+                        src = h2d.add_access(name)
+                        dst = h2d.add_access(gpu_name)
+                        h2d.add_edge(src, None, dst, None,
+                                     dace.Memlet.from_array(name, desc))
+                        nested_count += 1
+                    for out_edge in list(cfg.out_edges(state)):
+                        cfg.remove_edge(out_edge)
+                        cfg.add_edge(h2d, out_edge.dst, out_edge.data)
+                    cfg.add_edge(state, h2d, dace.InterstateEdge())
+
+    if verbose or moved_any or all_deferred_top or nested_count:
+        if moved_any:
+            print(f"  Floated all host computes into 1 precompute state")
+        print(f"  Consolidated H2D: {len(all_deferred_top)} top-level transients")
+        if nested_count:
+            print(f"  Nested H2D: {nested_count} copies in nested CFGs")
+
+
+# ---------------------------------------------------------------------------
 # Step 7: Set GPU storage for transient arrays
 # ---------------------------------------------------------------------------
 
@@ -509,8 +737,9 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False):
     # 2. Create GPU descriptors for non-transient and dual-access arrays
     _create_gpu_descriptors(sdfg, non_trans, verbose)
 
-    # 3. GPU schedules (Must be before H2D/D2H state creation to allow filtering)
-    _set_gpu_schedules(sdfg, verbose)
+    # 3. GPU schedules — only for maps that touch GPU arrays
+    gpu_array_set = set(non_trans) | set(trans)
+    _set_gpu_schedules(sdfg, gpu_array_set, verbose)
 
     # 4. H2D copy-in state
     _add_h2d_state(sdfg, non_trans)
@@ -521,6 +750,9 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False):
     # 6. Rename non-transient references inside GPU map scopes
     gpu_arrays = _get_gpu_rename_set(sdfg)
     _rename_in_gpu_maps(sdfg, gpu_arrays, verbose)
+
+    # 6b. Add deferred H2D copies for transients computed on host
+    _add_deferred_h2d_copies(sdfg, gpu_arrays, verbose)
 
     # 7. Move transient arrays to GPU storage
     _set_transient_storage(sdfg, trans, verbose)

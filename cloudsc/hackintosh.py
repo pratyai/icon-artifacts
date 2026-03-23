@@ -19,26 +19,20 @@ ZVQX_HACK_LOOPS = {
 
 
 def fix_symbol_array_clashes(sdfg: dace.SDFG):
-    """Rewrite ISE assignments whose RHS is a bare array name to use array[0].
-
-    The GPU pipeline's symbol propagation replaces `sym = val` by substituting
-    `sym` with `val` everywhere. When `val` is an array name, this creates
-    symbol/array name clashes that break codegen. Adding `[0]` makes the RHS
-    a data access, which the propagation step already skips.
-    """
+    """Remove symbols that share a name with arrays, and clean up their ISE assignments."""
     fixed = 0
     for sd in sdfg.all_sdfgs_recursive():
-        arrays = sd.arrays
+        for name in list(sd.symbols):
+            if name in sd.arrays:
+                del sd.symbols[name]
+                fixed += 1
         for edge in sd.all_interstate_edges():
-            if not edge.data.assignments:
-                continue
-            for k, v in edge.data.assignments.items():
-                sv = str(v)
-                if sv in arrays:
-                    edge.data.assignments[k] = f"{sv}[0]"
-                    fixed += 1
+            if edge.data.assignments:
+                for k in list(edge.data.assignments.keys()):
+                    if str(k) in sd.arrays:
+                        del edge.data.assignments[k]
     if fixed:
-        print(f"  Rewrote {fixed} ISE assignments (bare array name -> array[0])")
+        print(f"  Fixed {fixed} symbol/array name clashes")
 
 
 def replace_zvqx_with_scalar(sdfg: dace.SDFG):

@@ -202,6 +202,134 @@ def inject_cpu_boundary_cast(
     sdfg.reset_cfg_list()
 
 
+def inject_gpu_boundary_cast(
+    sdfg: dace.SDFG,
+    array_names: list[str],
+    external_dtype: dace.typeclass,
+):
+    """Insert cast maps at H2D/D2H boundaries for non-transient arrays with gpu_ siblings.
+
+    For each array (e.g. plude):
+    1. Create {name}_lowered (fp32, CPU transient)
+    2. Lower gpu_{name} to external_dtype
+    3. Replace H2D edge: AN(cpu,fp64) → AN(gpu,fp32)
+       with: AN(cpu,fp64) → [cast Map] → AN(lowered,fp32) → AN(gpu,fp32)
+    4. Replace D2H edge: AN(gpu,fp32) → AN(cpu,fp64)
+       with: AN(gpu,fp32) → AN(lowered,fp32) → [cast Map] → AN(cpu,fp64)
+
+    Ported from velocity/utils/boundary_cast.py inject_boundary_cast.
+    """
+
+    for name in array_names:
+        cpu_name = name
+        gpu_name = f"gpu_{name}"
+
+        if cpu_name not in sdfg.arrays or gpu_name not in sdfg.arrays:
+            print(f"  gpu_boundary_cast: {cpu_name} or {gpu_name} not in SDFG, skipping.")
+            continue
+
+        cpu_arr = sdfg.arrays[cpu_name]
+        lowered_name = f"{cpu_name}_lowered"
+
+        # Create lowered CPU transient with same shape, lowered dtype
+        sdfg.add_array(
+            lowered_name,
+            shape=cpu_arr.shape,
+            dtype=external_dtype,
+            transient=True,
+            storage=dtypes.StorageType.CPU_Heap,
+        )
+
+        # Lower the gpu_ array dtype
+        _propagate_dtype(sdfg, gpu_name, external_dtype)
+
+        # Match lowered strides to gpu array for raw memcpy compatibility
+        sdfg.arrays[lowered_name].strides = sdfg.arrays[gpu_name].strides
+
+        print(
+            f"  gpu_boundary_cast: {cpu_name} ({cpu_arr.dtype}) → "
+            f"{lowered_name} ({external_dtype}) → {gpu_name} ({external_dtype})"
+        )
+
+        # Find and replace H2D/D2H edges in all states
+        for state in sdfg.states():
+            edges_to_process = []
+            for edge in state.edges():
+                src, dst = edge.src, edge.dst
+                if not (isinstance(src, nodes.AccessNode) and isinstance(dst, nodes.AccessNode)):
+                    continue
+                if src.data == cpu_name and dst.data == gpu_name:
+                    edges_to_process.append(("h2d", edge))
+                elif src.data == gpu_name and dst.data == cpu_name:
+                    edges_to_process.append(("d2h", edge))
+
+            for direction, edge in edges_to_process:
+                if direction == "h2d":
+                    _insert_gpu_h2d_cast(
+                        sdfg, state, edge, cpu_name, gpu_name,
+                        lowered_name, external_dtype,
+                    )
+                else:
+                    _insert_gpu_d2h_cast(
+                        sdfg, state, edge, cpu_name, gpu_name,
+                        lowered_name, cpu_arr.dtype,
+                    )
+
+
+def _insert_gpu_h2d_cast(sdfg, state, edge, cpu_name, gpu_name, lowered_name, external_dtype):
+    """Replace AN(cpu,fp64) → AN(gpu,fp32) with cast map + same-type memcpy.
+
+    After: AN(cpu,fp64) → [cast Map fp64→fp32] → AN(lowered,fp32) → AN(gpu,fp32)
+    """
+    cpu_an = edge.src
+    gpu_an = edge.dst
+    state.remove_edge(edge)
+
+    lowered_an = state.add_access(lowered_name)
+    cpu_arr = sdfg.arrays[cpu_name]
+
+    # Cast map: cpu (fp64) → lowered (fp32)
+    _add_cast_map(
+        sdfg, state, cpu_an, cpu_name, lowered_an, lowered_name,
+        cpu_arr.shape, external_dtype, f"gpu_h2d_cast_{cpu_name}",
+    )
+
+    # Same-type memcpy: lowered (fp32) → gpu (fp32)
+    lowered_arr = sdfg.arrays[lowered_name]
+    state.add_edge(
+        lowered_an, None, gpu_an, None,
+        dace.Memlet.from_array(lowered_name, lowered_arr),
+    )
+    print(f"    Inserted GPU H2D cast for {cpu_name}")
+
+
+def _insert_gpu_d2h_cast(sdfg, state, edge, cpu_name, gpu_name, lowered_name, orig_dtype):
+    """Replace AN(gpu,fp32) → AN(cpu,fp64) with same-type memcpy + cast map.
+
+    After: AN(gpu,fp32) → AN(lowered,fp32) → [cast Map fp32→fp64] → AN(cpu,fp64)
+    """
+    gpu_an = edge.src
+    cpu_an = edge.dst
+    state.remove_edge(edge)
+
+    lowered_an = state.add_access(lowered_name)
+    cpu_arr = sdfg.arrays[cpu_name]
+
+    # Same-type memcpy: gpu (fp32) → lowered (fp32)
+    lowered_arr = sdfg.arrays[lowered_name]
+    state.add_edge(
+        gpu_an, None, lowered_an, None,
+        dace.Memlet.from_array(lowered_name, lowered_arr),
+    )
+
+    # Cast map: lowered (fp32) → cpu (fp64)
+    _add_cast_map(
+        sdfg, state, lowered_an, lowered_name, cpu_an, cpu_name,
+        cpu_arr.shape, orig_dtype, f"gpu_d2h_cast_{cpu_name}",
+    )
+    print(f"    Inserted GPU D2H cast for {cpu_name}")
+
+
 def _rename_array_references(sdfg: dace.SDFG, old_name: str, new_name: str):
     """Rename all AccessNodes, memlets, and ConditionalBlock conditions
     from old_name to new_name across the full CFG tree."""
@@ -1112,24 +1240,35 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
 
     # --- Apply: lower everything not excluded ---
 
-    # 1. Non-transient arrays + scalar params: boundary cast
-    # Only boundary cast things that ARE NOT already being offloaded to GPU.
-    # Offloaded things (with gpu_ siblings) are handled by gpu_offload.py logic.
+    # 1a. Non-transient arrays + scalar params WITHOUT gpu_ siblings: CPU boundary cast
     bc_targets = [n for n in all_non_transient if not is_excluded(n) and f"gpu_{n}" not in sdfg.arrays]
     ps_targets = [n for n in all_param_scalars if not is_excluded(n) and f"gpu_{n}" not in sdfg.arrays]
     if bc_targets or ps_targets:
-        print(f"Boundary cast: {len(bc_targets)} non-transient arrays, {len(ps_targets)} scalar params")
+        print(f"CPU boundary cast: {len(bc_targets)} non-transient arrays, {len(ps_targets)} scalar params")
         inject_cpu_boundary_cast(sdfg, bc_targets, external_dtype, scalar_names=ps_targets)
 
+    # 1b. Non-transient arrays WITH gpu_ siblings: GPU boundary cast
+    # These need cast maps at H2D/D2H boundaries (cpu fp64 ↔ gpu fp32).
+    gpu_bc_targets = [n for n in all_non_transient if not is_excluded(n) and f"gpu_{n}" in sdfg.arrays]
+    if gpu_bc_targets:
+        print(f"GPU boundary cast: {len(gpu_bc_targets)} non-transient arrays with gpu_ siblings")
+        inject_gpu_boundary_cast(sdfg, gpu_bc_targets, external_dtype)
+
     # 2. Transient arrays: lower directly
-    ta_targets = [n for n in all_transient_arrays if not is_excluded(n)]
+    # Exclude:
+    #  - gpu_ arrays handled by inject_gpu_boundary_cast (dtype already set)
+    #  - gpu_ arrays whose host counterpart is excluded (must stay fp64 for raw memcpy)
+    _gpu_bc_set = set(f"gpu_{n}" for n in gpu_bc_targets) if gpu_bc_targets else set()
+    _gpu_excluded = set(f"gpu_{n}" for n in _LOWERING_EXCLUDE if f"gpu_{n}" in sdfg.arrays)
+    ta_targets = [n for n in all_transient_arrays
+                  if not is_excluded(n) and n not in _gpu_bc_set and n not in _gpu_excluded]
     if ta_targets:
         print(f"Lowering {len(ta_targets)} transient arrays to {external_dtype}")
         for name in ta_targets:
             _propagate_dtype(sdfg, name, external_dtype)
 
     # Build set of all lowered array names (for scalar matching)
-    _lowered_arrays = set(bc_targets) | set(ta_targets)
+    _lowered_arrays = set(bc_targets) | set(ta_targets) | set(gpu_bc_targets)
 
     def is_derived_from_lowered(name):
         """A scalar should only be lowered if its parent array was lowered."""

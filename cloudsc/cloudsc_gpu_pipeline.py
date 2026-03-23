@@ -293,7 +293,12 @@ def main():
     os.chmod("recompile.sh", 0o755)
     print(f"Build script written to: {os.path.abspath('recompile.sh')}")
     print(f"Binary will be output to: {os.path.abspath('cloudsc_gpu_bin')}")
-    print(f"GPU Pipeline ready. Build command in recompile.sh (Release={args.release}, Precision={args.lowprec})")
+    print(f"\nGPU Pipeline ready. Build command in recompile.sh (Release={args.release}, Precision={args.lowprec})")
+    print(f"  Input SDFG:    {os.path.abspath(args.sdfg)}")
+    print(f"  Lowered SDFG:  {lowered_sdfg_path}")
+    print(f"  Codegen dir:   {codegen_dir.absolute()}")
+    print(f"  Build script:  {os.path.abspath('recompile.sh')}")
+    print(f"  Binary output: {os.path.abspath('cloudsc_gpu_bin')}")
 
 
 if __name__ == "__main__":
