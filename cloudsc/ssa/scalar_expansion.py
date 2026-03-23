@@ -9,6 +9,25 @@ Two-phase design:
   Phase 1 (analyze): Walk the entire SDFG to find every reference to the
       scalar and compute the correct array index for each site.
   Phase 2 (apply):   Create the array, rewrite every site, remove the scalar.
+
+Known-bad expansions (must NOT expand — causes numerical errors):
+  - zqxfg_slice__p1              : reads zqx[*, jk-1, *] (outer-carried)
+  - zqx_index_51__p1             : reads zqx[*, jk-1, *]
+  - zqx_index_52__p1             : reads zqx[*, jk-1, *]
+  - zqx_index_53__p1             : reads zqx[*, jk-1, *]
+  - zqx_index_54__p1             : reads zqx[*, jk-1, *]
+  - zqx_index_55__p1             : reads zqx[*, jk-1, *]
+  - tendency_loc_cld_index__p1   : reads tendency_loc_cld[*, jk-1, *]
+  - zqx0_index__p1               : reads zqx0[*, jk-1, *]
+  - zpfplsx_index__p1            : reads zpfplsx[*, jk-1, *]
+  - tendency_loc_t_index_3__p1   : reads tendency_loc_t[jk-1, *]
+  - tendency_loc_t_index_4__p1   : reads tendency_loc_t[jk-1, *]
+  - zmf_index_0__p1              : TBD (was bad in previous bisection)
+
+Known-good expansions (must expand — verified numerically correct):
+  - zcor__v3__p1
+  - zlcust_slice__p1
+  - zdtdp__p1
 """
 
 import re
@@ -16,6 +35,7 @@ import sympy as sp
 from enum import Enum, auto
 from typing import Set, List, Any
 
+from tqdm import tqdm
 import dace
 from dace import nodes as nd, symbolic, subsets as sbs
 from dace.sdfg.state import LoopRegion, ControlFlowRegion, ConditionalBlock, SDFGState, ControlFlowBlock
@@ -26,7 +46,8 @@ from ssa.graph_utils import (
     topological_sort, rename_access_node_and_tree, update_metadata,
     update_interstate_edge, update_node_content, is_write, is_read,
     collect_memlet_tree_edges, get_enclosing_loop, get_direct_child,
-    collect_all_loops, loop_interior
+    collect_all_loops, loop_interior, loop_carried_scalars,
+    all_identifiers, fresh_name
 )
 
 
@@ -52,18 +73,24 @@ def _get_loop_range(loop: LoopRegion):
     return itervar, start, end, step
 
 
-def _blocked_scalars(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
+def _blocked_scalars(sdfg: dace.SDFG, loop: LoopRegion,
+                     log=None) -> set[str]:
     """Return set of scalar names that block this loop from LoopToMap."""
     info = _get_loop_range(loop)
     if info is None:
+        if log: log.write(f"  {loop.label}: no range info, skip\n")
         return set()
     itervar, start, end, step = info
 
     _, write_set = loop.read_and_write_sets()
+    loop_carried = loop_carried_scalars(sdfg, loop)
     loop_states = set(loop.all_states())
 
+    # Mirror LoopToMap's other_access_nodes: only check scalars that are
+    # visible outside the loop (transient accessed elsewhere, or non-transient).
+    # Loop-private transients are ignored by LoopToMap so no need to expand.
     other_access_nodes = set()
-    for state in sdfg.states():
+    for state in sdfg.all_states():
         if state in loop_states:
             continue
         other_access_nodes |= {
@@ -80,25 +107,62 @@ def _blocked_scalars(sdfg: dace.SDFG, loop: LoopRegion) -> set[str]:
     a = sp.Wild('a', exclude=[itersym])
     b = sp.Wild('b', exclude=[itersym])
 
+    # Track rejection reasons per scalar
+    rejected: dict[str, str] = {}  # name -> reason
+
     blocked = set()
+    seen = set()
     for state in loop_states:
         for dn in state.data_nodes():
-            if dn.data not in other_access_nodes:
+            name = dn.data
+            if name in seen:
                 continue
-            if dn.data not in write_set:
+            if name not in sdfg.arrays:
                 continue
-            if dn.data not in sdfg.arrays:
-                continue
-            desc = sdfg.arrays[dn.data]
+            desc = sdfg.arrays[name]
             if not isinstance(desc, dace.data.Scalar) or not desc.transient:
                 continue
-            for e in state.in_edges(dn):
-                if e.data.wcr is not None:
-                    continue
-                dst_subset = e.data.get_dst_subset(e, state)
-                if not (dst_subset and _check_range(dst_subset, a, itersym,
-                                                     b, step)):
-                    blocked.add(dn.data)
+            seen.add(name)
+            if name not in other_access_nodes:
+                rejected[name] = "no external access"
+                continue
+            if name not in write_set:
+                rejected[name] = "not in write_set"
+                continue
+            # Check write edges
+            has_blocking_write = False
+            for st in loop_states:
+                for node in st.data_nodes():
+                    if node.data != name:
+                        continue
+                    for e in st.in_edges(node):
+                        if e.data.wcr is not None:
+                            continue
+                        dst_subset = e.data.get_dst_subset(e, st)
+                        if not (dst_subset and _check_range(dst_subset, a, itersym,
+                                                             b, step)):
+                            has_blocking_write = True
+                            break
+                    if has_blocking_write:
+                        break
+                if has_blocking_write:
+                    break
+            if not has_blocking_write:
+                rejected[name] = "writes indexed by itervar"
+                continue
+            if name in loop_carried:
+                rejected[name] = "loop-carried"
+                continue
+            blocked.add(name)
+
+    if log:
+        log.write(f"  {loop.label} (itervar={itervar}): "
+                  f"{len(blocked)} blocked, {len(rejected)} rejected\n")
+        for name in sorted(blocked):
+            log.write(f"    BLOCKED: {name}\n")
+        for name, reason in sorted(rejected.items()):
+            log.write(f"    skip {name}: {reason}\n")
+
     return blocked
 
 
@@ -176,9 +240,10 @@ def _analyze_external_accesses(sdfg: dace.SDFG, name: str, loops: Set[LoopRegion
             elif i > last_loop_idx: access_after = True
             else: access_inter = True
 
-    if access_inter: return ExpansionStrategy.SKIP
-
-    return ExpansionStrategy.REDIRECT if (access_before or access_after) else ExpansionStrategy.INTERNAL_ONLY
+    # Inter-loop accesses are still inside the parent loop's iteration scope,
+    # so they can be safely redirected to array[itervar - offset].
+    has_external = access_before or access_after or access_inter
+    return ExpansionStrategy.REDIRECT if has_external else ExpansionStrategy.INTERNAL_ONLY
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +291,15 @@ def _build_expansion_plan(sdfg: dace.SDFG, scalar_name: str, info: dict,
     topo_idx = {node: i for i, node in enumerate(topo)}
     loops_in_topo = [lp for lp in loops if lp in topo_idx]
     first_loop_idx = min(topo_idx[lp] for lp in loops_in_topo) if loops_in_topo else 0
+    last_loop_idx = max(topo_idx[lp] for lp in loops_in_topo) if loops_in_topo else 0
+
+    # The itervar-based index (e.g. jl - kidia) for accesses at the same scope as target loops
+    itervar_idx = None
+    for lp in loops:
+        l_info = _get_loop_range(lp)
+        if l_info:
+            itervar_idx = symbolic.pystr_to_symbolic(l_info[0]) - symbolic.pystr_to_symbolic(l_info[1])
+            break
 
     def resolve_idx(obj):
         """Determine the array index for a site based on its loop context."""
@@ -236,8 +310,12 @@ def _build_expansion_plan(sdfg: dace.SDFG, scalar_name: str, info: dict,
                 return symbolic.pystr_to_symbolic(l_info[0]) - symbolic.pystr_to_symbolic(l_info[1])
         # Not inside any target loop — check topo position in parent
         child = get_direct_child(parent, obj)
-        if child is not None and child in topo_idx and topo_idx[child] < first_loop_idx:
-            return sp.Integer(0)
+        if child is not None and child in topo_idx:
+            if topo_idx[child] < first_loop_idx:
+                return sp.Integer(0)
+            if topo_idx[child] <= last_loop_idx and itervar_idx is not None:
+                # Inter-loop: same scope as target loops, use itervar index
+                return itervar_idx
         return last_idx
 
     pattern = re.compile(r'\b' + re.escape(scalar_name) + r'\b')
@@ -339,6 +417,7 @@ def _apply_expansion_plan(sdfg: dace.SDFG, scalar_name: str, ext_name: str,
             rename_access_node_and_tree(state, node, scalar_name, ext_name)
             for e in edges_to_rename:
                 if e.data.data == ext_name:
+                    e.data.try_initialize(sdfg, state, e)
                     e.data.subset = sbs.Range([(idx, idx, 1)])
 
         elif site_type == "node_content":
@@ -358,7 +437,8 @@ def _apply_expansion_plan(sdfg: dace.SDFG, scalar_name: str, ext_name: str,
 # target discovery + public API
 # ---------------------------------------------------------------------------
 
-def find_expansion_targets(sdfg: dace.SDFG, force: set[str] | None = None) -> dict[str, list[dict]]:
+def find_expansion_targets(sdfg: dace.SDFG, force: set[str] | None = None,
+                           log=None) -> dict[str, list[dict]]:
     """Identify scalars and loops that are candidates for expansion."""
     all_loops = collect_all_loops(sdfg)
     expansion_targets: dict[str, list[dict]] = {}
@@ -400,7 +480,7 @@ def find_expansion_targets(sdfg: dace.SDFG, force: set[str] | None = None) -> di
             for rw in (read_set | write_set):
                 if rw in force: blocked.add(rw)
         else:
-            blocked = _blocked_scalars(sdfg, loop)
+            blocked = _blocked_scalars(sdfg, loop, log=log)
 
         if not blocked: continue
         info = _get_loop_range(loop)
@@ -409,6 +489,8 @@ def find_expansion_targets(sdfg: dace.SDFG, force: set[str] | None = None) -> di
         parent = _find_enclosing_region(sdfg, loop) or sdfg
         siblings = _loops_sharing_range(parent, start, end, step)
         if loop not in siblings: siblings.append(loop)
+
+        if not blocked: continue
 
         itervar_base = itervar.split("__")[0]
         if itervar_base == "jl": dim_size = symbolic.pystr_to_symbolic("klon")
@@ -429,56 +511,104 @@ def find_expansion_targets(sdfg: dace.SDFG, force: set[str] | None = None) -> di
                     "start": start, "end": end, "dim_size": dim_size,
                     "offset": start, "loops": set(siblings), "parent": parent,
                 })
+    # Filter out scalars whose write sources reference an enclosing loop's
+    # itervar with an offset (e.g. zqx[jk-1, jl]). These read from a previous
+    # outer-loop iteration; expanding along the inner loop doesn't help and
+    # can break correctness when the inner loop becomes a parallel Map.
+    _outer_carried = set()
+    for name in list(expansion_targets):
+        for state in sdfg.all_states():
+            for node in state.nodes():
+                if not (isinstance(node, nd.AccessNode) and node.data == name):
+                    continue
+                for e in state.in_edges(node):
+                    if not isinstance(e.src, nd.AccessNode):
+                        continue
+                    subset_str = str(e.data.subset) if e.data.subset else ''
+                    # Check for "itervar - N" pattern in any dimension
+                    for part in subset_str.split(','):
+                        part = part.strip()
+                        if '- 1' in part or '+ 1' in part:
+                            # Check if it references an enclosing loop itervar
+                            for sym_str in [str(s) for s in e.data.subset.free_symbols]:
+                                if sym_str.startswith('jk'):
+                                    _outer_carried.add(name)
+    for name in _outer_carried:
+        del expansion_targets[name]
+    if _outer_carried:
+        print(f"  Filtered {len(_outer_carried)} outer-carried scalars: "
+              f"{sorted(_outer_carried)}")
+
+    # Assert all multi-target scalars share the same dim/offset
+    for name, tlist in expansion_targets.items():
+        if len(tlist) > 1:
+            dim0, off0 = str(tlist[0]["dim_size"]), str(tlist[0]["offset"])
+            for t in tlist[1:]:
+                assert str(t["dim_size"]) == dim0 and str(t["offset"]) == off0, \
+                    f"BUG: {name} has targets with different dim/offset"
+
+    # Log known-good base names — after privatization they may no longer
+    # need expansion (each loop got its own copy), so this is informational.
+    _KNOWN_GOOD_BASES = {"zcor__v3", "zlcust_slice", "zdtdp"}
+    target_bases = {name.rsplit('__p', 1)[0] if '__p' in name else name
+                    for name in expansion_targets}
+    for base in _KNOWN_GOOD_BASES:
+        if base not in target_bases:
+            print(f"  Note: '{base}' not in expansion targets (likely privatized)")
+
     return expansion_targets
 
 
 def apply_scalar_expansion(sdfg: dace.SDFG, name: str, targets: list[dict], force: set[str] | None = None):
-    """Apply expansion(s) for a single scalar."""
+    """Apply expansion for a single scalar — in-place promotion.
+
+    All targets must share the same dim_size and offset (verified by assertion).
+    The scalar descriptor is promoted to a 1-D array with the same name.
+    """
     if name not in sdfg.arrays or not isinstance(sdfg.arrays[name], dace.data.Scalar): return 0
 
-    # Collect all target loop sets so each plan can exclude the others
-    all_target_loops: list[Set[LoopRegion]] = [info["loops"] for info in targets]
+    # Merge all target loops into a single unified info (same dim/offset guaranteed)
+    dim_size = targets[0]["dim_size"]
+    offset = targets[0]["offset"]
+    all_loops: Set[LoopRegion] = set()
+    # Use the first target's parent as representative (all share same dim)
+    for t in targets:
+        assert str(t["dim_size"]) == str(dim_size) and str(t["offset"]) == str(offset), \
+            f"BUG: {name} has targets with different dim/offset"
+        all_loops |= t["loops"]
 
-    applied = 0
-    skipped = False
-    for i, info in enumerate(targets):
-        loops, parent = info["loops"], info["parent"]
-        strategy = _analyze_external_accesses(sdfg, name, loops, parent)
+    # Use the first target as representative info for plan building
+    unified_info = {
+        "start": targets[0]["start"],
+        "end": targets[0]["end"],
+        "dim_size": dim_size,
+        "offset": offset,
+        "loops": all_loops,
+        "parent": targets[0]["parent"],
+    }
 
-        if strategy == ExpansionStrategy.SKIP:
-            print(f"Skipping expansion for {name} due to complex external accesses.")
-            skipped = True
-            continue
+    # Build a single plan covering all target loops (no exclusions)
+    plan = _build_expansion_plan(sdfg, name, unified_info, exclude_loops=None)
 
-        # Loops belonging to other targets — exclude from this plan
-        exclude = set()
-        for j, other_loops in enumerate(all_target_loops):
-            if j != i:
-                exclude |= other_loops
+    if not plan:
+        print(f"Skipping expansion for {name}: empty plan")
+        return 0
 
-        # Phase 1: collect mutation sites (excluding other targets' loops)
-        plan = _build_expansion_plan(sdfg, name, info, exclude_loops=exclude or None)
+    # Create a single _ext array shared across all targets
+    old_desc = sdfg.arrays[name]
+    shape = [symbolic.pystr_to_symbolic(str(dim_size)).subs(sdfg.constants)]
+    ext_name = fresh_name(sdfg, name, "_ext")
+    sdfg.add_transient(ext_name, shape=shape, dtype=old_desc.dtype,
+                       storage=old_desc.storage)
 
-        if not plan:
-            print(f"Warning: expansion plan for '{name}' is empty, skipping target.")
-            skipped = True
-            continue
+    # Apply mutations (rewrite all sites to use ext_name[idx])
+    _apply_expansion_plan(sdfg, name, ext_name, plan)
 
-        # Create the expansion array (only after confirming non-empty plan)
-        shape = [symbolic.pystr_to_symbolic(str(info["dim_size"])).subs(sdfg.constants)]
-        ext_name = sdfg.add_transient(name + "_ext", shape=shape, dtype=sdfg.arrays[name].dtype,
-                                      storage=sdfg.arrays[name].storage, find_new_name=True)[0]
-
-        # Phase 2: apply mutations
-        _apply_expansion_plan(sdfg, name, ext_name, plan)
-
-        applied += 1
-
-    # Only remove the original scalar if ALL targets were handled (none skipped)
-    if applied > 0 and not skipped and name in sdfg.arrays:
+    # Remove the original scalar
+    if name in sdfg.arrays:
         sdfg.remove_data(name, validate=False)
 
-    return applied
+    return 1
 
 
 def _assert_no_data_in_conditions(sdfg: dace.SDFG):
@@ -510,25 +640,47 @@ def expand_scalars(sdfg: dace.SDFG, force: set[str] | None = None,
     so you can bisect which one breaks numerical correctness.
     """
     _assert_no_data_in_conditions(sdfg)
-    expansion_targets = find_expansion_targets(sdfg, force)
 
-    if diagnose:
-        import os
-        print(f"Expansion targets ({len(expansion_targets)}):")
+    log_path = "expand_log.txt"
+    log = open(log_path, "w") if diagnose else None
+    expansion_targets = find_expansion_targets(sdfg, force, log=log)
+
+    if log:
+        log.write(f"\nExpansion targets ({len(expansion_targets)}):\n")
         for name, targets in expansion_targets.items():
             for t in targets:
                 loops_str = ", ".join(l.label for l in t["loops"])
-                print(f"  {name}: dim={t['dim_size']} offset={t['offset']} "
-                      f"loops=[{loops_str}]")
+                log.write(f"  {name}: dim={t['dim_size']} offset={t['offset']} "
+                          f"loops=[{loops_str}]\n")
+        log.write("\n")
+        log.flush()
 
     total_expanded = 0
-    for name, targets in expansion_targets.items():
+    pbar = tqdm(expansion_targets.items(), desc="Scalar expansion", unit="scalar")
+    for name, targets in pbar:
+        pbar.set_postfix_str(name)
+        if log:
+            for i, info in enumerate(targets):
+                loops = info["loops"]
+                strategy = _analyze_external_accesses(sdfg, name, loops, info["parent"])
+                log.write(f"  {name} target {i}: strategy={strategy.name}\n")
+            log.flush()
         n = apply_scalar_expansion(sdfg, name, targets, force)
         total_expanded += n
-        if diagnose and n > 0:
-            path = f"after_expand_{name}.sdfgz"
-            sdfg.save(path, compress=True)
-            print(f"  checkpoint: {path}")
+        if log:
+            status = f"expanded ({n} targets)" if n > 0 else "skipped"
+            log.write(f"{name}: {status}\n")
+            log.flush()
+            if n > 0:
+                path = f"after_expand_{name}.sdfgz"
+                sdfg.save(path, compress=True)
+                log.write(f"  checkpoint: {path}\n")
+                log.flush()
+    pbar.close()
+
+    if log:
+        log.close()
+        print(f"  Expansion log: {log_path}")
 
     print(f"Scalar expansion: {total_expanded} scalars expanded")
     return total_expanded

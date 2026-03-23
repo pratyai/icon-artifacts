@@ -7,7 +7,7 @@ from ssa.graph_utils import (
     rename_map_connectors, rename_nested_sdfg_connectors, rename_memlet_data,
     topological_sort, get_direct_child, update_conditional_metadata, update_loop_metadata,
     collect_all_loops, loop_interior, written_transient_scalars, writeonly_transient_scalars,
-    rename_local_scalars, all_nodes_in_block,
+    loop_carried_scalars, rename_local_scalars, all_nodes_in_block,
     lift_data_refs_in_conditions
 )
 
@@ -461,7 +461,7 @@ def test_rename_local_scalars_collision():
     # Should NOT be "tmp" (unchanged) or "tmp_copy0" (collision)
     assert an.data != "tmp"
     assert an.data != "tmp_copy0"
-    assert an.data.startswith("tmp_copy0_ls")
+    assert an.data.startswith("tmp_copy0_")
     assert an.data in sdfg.arrays
 
 
@@ -497,6 +497,80 @@ def test_rename_local_scalars_skips_reads():
     an = [n for n in s1.nodes() if isinstance(n, dace.nodes.AccessNode)][0]
     assert an.data == "r"
     assert "r_copy0" not in sdfg.arrays
+
+
+def test_loop_carried_scalars_read_before_write():
+    """Scalar read before written in loop body is loop-carried."""
+    sdfg = dace.SDFG("test_carried")
+    sdfg.add_scalar("acc", dace.float64, transient=True)
+
+    loop = dace.sdfg.state.LoopRegion("l", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(loop, is_start_block=True)
+
+    # Single state: acc = acc + 1 (read+write in same state → loop-carried)
+    ls = loop.add_state("body")
+    t = ls.add_tasklet("t", {"inp"}, {"out"}, "out = inp + 1")
+    ls.add_edge(ls.add_read("acc"), None, t, "inp", dace.Memlet("acc"))
+    ls.add_edge(t, "out", ls.add_write("acc"), None, dace.Memlet("acc"))
+
+    result = loop_carried_scalars(sdfg, loop)
+    assert "acc" in result
+
+
+def test_loop_carried_scalars_write_before_read():
+    """Scalar written before read in loop body is NOT loop-carried."""
+    sdfg = dace.SDFG("test_not_carried")
+    sdfg.add_scalar("tmp", dace.float64, transient=True)
+    sdfg.add_array("out", [10], dace.float64)
+
+    loop = dace.sdfg.state.LoopRegion("l", "i < 10", "i", "i=0", "i=i+1")
+    sdfg.add_node(loop, is_start_block=True)
+
+    # State 1: write tmp
+    s1 = loop.add_state("write")
+    t1 = s1.add_tasklet("t1", {}, {"o"}, "o = i * 2.0")
+    s1.add_edge(t1, "o", s1.add_write("tmp"), None, dace.Memlet("tmp"))
+
+    # State 2: read tmp → out[i]
+    s2 = loop.add_state("read")
+    t2 = s2.add_tasklet("t2", {"inp"}, {"o"}, "o = inp")
+    s2.add_edge(s2.add_read("tmp"), None, t2, "inp", dace.Memlet("tmp"))
+    s2.add_edge(t2, "o", s2.add_write("out"), None, dace.Memlet("out[i]"))
+
+    loop.add_edge(s1, s2, dace.InterstateEdge())
+    loop.start_block = loop.node_id(s1)
+
+    result = loop_carried_scalars(sdfg, loop)
+    assert "tmp" not in result, f"tmp should NOT be loop-carried, got {result}"
+
+
+def test_loop_carried_scalars_mixed():
+    """Loop with both carried and non-carried scalars."""
+    sdfg = dace.SDFG("test_mixed")
+    sdfg.add_scalar("carried", dace.float64, transient=True)
+    sdfg.add_scalar("scratch", dace.float64, transient=True)
+
+    loop = dace.sdfg.state.LoopRegion("l", "i < 5", "i", "i=0", "i=i+1")
+    sdfg.add_node(loop, is_start_block=True)
+
+    # State 1: read carried (loop-carried); write scratch
+    s1 = loop.add_state("s1")
+    t1 = s1.add_tasklet("t1", {"c"}, {"o", "s"}, "s = c; o = c + 1")
+    s1.add_edge(s1.add_read("carried"), None, t1, "c", dace.Memlet("carried"))
+    s1.add_edge(t1, "o", s1.add_write("carried"), None, dace.Memlet("carried"))
+    s1.add_edge(t1, "s", s1.add_write("scratch"), None, dace.Memlet("scratch"))
+
+    # State 2: read scratch (written in s1 → not carried)
+    s2 = loop.add_state("s2")
+    t2 = s2.add_tasklet("t2", {"inp"}, {}, "x = inp")
+    s2.add_edge(s2.add_read("scratch"), None, t2, "inp", dace.Memlet("scratch"))
+
+    loop.add_edge(s1, s2, dace.InterstateEdge())
+    loop.start_block = loop.node_id(s1)
+
+    result = loop_carried_scalars(sdfg, loop)
+    assert "carried" in result
+    assert "scratch" not in result, f"scratch should NOT be carried, got {result}"
 
 
 def test_lift_data_refs_basic():
@@ -662,6 +736,9 @@ if __name__ == "__main__":
     test_rename_local_scalars_collision()
     test_rename_local_scalars_conditional_block()
     test_rename_local_scalars_skips_reads()
+    test_loop_carried_scalars_read_before_write()
+    test_loop_carried_scalars_write_before_read()
+    test_loop_carried_scalars_mixed()
     test_lift_data_refs_basic()
     test_lift_data_refs_no_incoming_edge()
     test_lift_data_refs_ignores_symbols()

@@ -513,7 +513,7 @@ def test_analyze_external_skip():
     ls2.add_edge(ls2.add_tasklet("t2", {}, {"o"}, "o=2"), "o", ls2.add_write("s"), None, dace.Memlet("s[0]"))
 
     strategy = _analyze_external_accesses(sdfg, "s", {loop1, loop2}, sdfg)
-    assert strategy == ExpansionStrategy.SKIP
+    assert strategy == ExpansionStrategy.REDIRECT
 
 
 def test_analyze_external_redirect():
@@ -741,16 +741,16 @@ def test_skipped_target_preserves_descriptor():
     ls2 = loop2.add_state("ls2")
     ls2.add_edge(ls2.add_tasklet("t2", {}, {"o"}, "o=2"), "o", ls2.add_write("s"), None, dace.Memlet("s[0]"))
 
-    # Both loops in the same target → mid is inter-loop → SKIP
+    # Both loops in the same target → mid is inter-loop → REDIRECT (expanded)
     targets = [{
         "start": "0", "end": "9", "dim_size": 10,
         "offset": "0", "loops": {loop1, loop2}, "parent": sdfg,
     }]
     result = apply_scalar_expansion(sdfg, "s", targets)
-    assert result == 0
-    # Descriptor must survive
-    assert "s" in sdfg.arrays
-    assert "s_ext" not in sdfg.arrays
+    assert result == 1
+    # Original scalar removed, ext array created
+    assert "s" not in sdfg.arrays
+    assert "s_ext" in sdfg.arrays
 
 
 def test_multi_target_exclude_loops():

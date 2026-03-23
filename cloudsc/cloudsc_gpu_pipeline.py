@@ -180,6 +180,9 @@ def main():
     infer_types.infer_connector_types(sdfg)
     infer_types.set_default_schedule_and_storage_types(sdfg, None)
     # 4. Symbol Propagation (Fixes mangled names by replacing symbols with their RHS)
+    all_array_names = set()
+    for s in sdfg.all_sdfgs_recursive():
+        all_array_names.update(s.arrays.keys())
     for s in sdfg.all_sdfgs_recursive():
         # Find all assignments 'K = V' across all interstate edges
         defines = {}
@@ -187,10 +190,11 @@ def main():
             if edge.data.assignments:
                 for k, v in edge.data.assignments.items():
                     # Only propagate "Pure" symbols (math expressions).
-                    # If the RHS contains a data access (like imelt[0]), 
+                    # If the RHS contains a data access (like imelt[0]),
                     # replacing it into symbolic math breaks DaCe's C++ codegen.
+                    # Also skip if RHS is an array name (creates symbol/array clash).
                     str_v = str(v)
-                    if "[" not in str_v and "]" not in str_v:
+                    if "[" not in str_v and "]" not in str_v and str_v not in all_array_names:
                         defines[str(k)] = str_v
         
         if defines:

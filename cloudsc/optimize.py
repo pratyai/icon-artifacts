@@ -11,11 +11,12 @@ import os
 import dace
 from dace import nodes as nd
 from dace.transformation.interstate import LoopToMap
-from dace.transformation.passes.analysis import loop_analysis
+
 
 from ssa import (ssa_transform, ssa_transform_wtr, isolate_loop_variables, privatize_scalars,
                  expand_scalars, propagate_constants, unroll_loops)
-from ssa.graph_utils import lift_data_refs_in_conditions
+from ssa.condition_fusion import fuse_all_conditions, hoist_invariant_conditions
+from ssa.graph_utils import lift_data_refs_in_conditions, scalarize_small_arrays
 
 SYMBOL_MAP = {
     "nclv": 5,
@@ -25,6 +26,71 @@ SYMBOL_MAP = {
     "ncldqs": 4,
     "ncldqv": 5,
 }
+
+
+def loop_to_map(sdfg: dace.SDFG) -> int:
+    """Apply LoopToMap directly to each LoopRegion, one at a time."""
+    from dace.sdfg.state import LoopRegion
+    from tqdm import tqdm
+
+    expr = LoopToMap.expressions()[0]
+    pattern_node = list(expr.nodes())[0]
+
+    converted = 0
+    skipped = []
+    pbar = tqdm(desc="LoopToMap", unit="loop")
+
+    while True:
+        # Re-collect after each conversion (graph references go stale)
+        sdfg.reset_cfg_list()
+        candidates = []
+        for sd in sdfg.all_sdfgs_recursive():
+            for cfg in sd.all_control_flow_regions():
+                for child in cfg.nodes():
+                    if isinstance(child, LoopRegion):
+                        candidates.append((child, cfg, sd))
+
+        if not candidates:
+            break
+
+        pbar.total = (pbar.n or 0) + len(candidates)
+        pbar.refresh()
+
+        applied_any = False
+        for loop, parent_cfg, sub_sdfg in candidates:
+            if loop.label in skipped:
+                continue
+            pbar.set_postfix_str(loop.label)
+
+            xform = LoopToMap()
+            try:
+                node_id = parent_cfg.node_id(loop)
+                xform.setup_match(sub_sdfg, parent_cfg.cfg_id, -1,
+                                  {pattern_node: node_id}, 0)
+                if not xform.can_be_applied(parent_cfg, 0, sub_sdfg):
+                    skipped.append(loop.label)
+                    continue
+                xform.apply(parent_cfg, sub_sdfg)
+            except Exception as e:
+                pbar.write(f"  SKIP {loop.label}: {e}")
+                skipped.append(loop.label)
+                continue
+
+            converted += 1
+            applied_any = True
+            pbar.update(1)
+            break  # Re-collect
+
+        if not applied_any:
+            break
+
+    pbar.close()
+    return converted
+
+
+def condition_fusion(sdfg: dace.SDFG) -> int:
+    """Fuse ConditionalBlocks inside LoopRegions into single giant CBs."""
+    return fuse_all_conditions(sdfg)
 
 
 def fix_missing_nsdfg_symbols(sdfg: dace.SDFG):
@@ -73,6 +139,8 @@ if __name__ == "__main__":
                         help="Skip constant propagation")
     parser.add_argument("--no-liftcond", action="store_true",
                         help="Skip loop-conditional data-ref lifting")
+    parser.add_argument("--no-condfuse", action="store_true",
+                        help="Skip condition fusion/hoist")
     parser.add_argument("--start-from", type=str, default=None,
                         help="Start from a checkpoint (e.g. after_l2m)")
     args = parser.parse_args()
@@ -85,7 +153,7 @@ if __name__ == "__main__":
     start_from = args.start_from
     skip_steps = set()
     if start_from:
-        step_order = ["liftcond", "propagate", "unroll", "ssa", "isolate", "privatize", "expand", "l2m", "simplify"]
+        step_order = ["liftcond", "propagate", "unroll", "simplify1", "ssa", "isolate", "privatize", "expand", "l2m", "condfuse", "condhoist", "ssa2", "isolate2", "privatize2", "l2m2", "simplify"]
         for step in step_order:
             skip_steps.add(step)
             if step == start_from.replace("after_", ""):
@@ -111,6 +179,12 @@ if __name__ == "__main__":
         unroll_loops(sdfg)
         checkpoint(sdfg, "after_unroll", out_dir)
 
+    # 3b. Simplify after unroll (state fusion, dead code, etc.)
+    if "simplify1" not in skip_steps:
+        fix_missing_nsdfg_symbols(sdfg)
+        sdfg.simplify()
+        checkpoint(sdfg, "after_simplify1", out_dir)
+
     # 4. SSA — split multi-write scalars into unique versions
     if not args.no_ssa and "ssa" not in skip_steps:
         ssa_result = ssa_transform(sdfg, only=only_ssa)
@@ -130,16 +204,45 @@ if __name__ == "__main__":
 
     # 7. Scalar expansion — promote blocking scalars to arrays
     if not args.no_expand and "expand" not in skip_steps:
-        expand_scalars(sdfg)
+        expand_scalars(sdfg, diagnose=True)
         checkpoint(sdfg, "after_expand", out_dir)
 
     # 8. LoopToMap — convert eligible control-flow loops into dataflow maps
     if not args.no_l2m and "l2m" not in skip_steps:
-        n = sdfg.apply_transformations_repeated(LoopToMap, validate=False)
+        n = loop_to_map(sdfg)
+        n += loop_to_map(sdfg)
         print(f"LoopToMap: converted {n} loops to maps")
         checkpoint(sdfg, "after_l2m", out_dir)
 
-    # 9. Fix missing NestedSDFG symbols, then simplify
+    # 9. Condition fusion + hoist + second SSA/privatize round
+    if not args.no_condfuse:
+        # 9. Condition fusion — merge consecutive/nested ConditionalBlocks
+        # TODO: move condition fusion before LoopToMap once we confirm it helps
+        n_fused = condition_fusion(sdfg)
+        if n_fused:
+            print(f"ConditionFusion: fused {n_fused} conditional blocks")
+        checkpoint(sdfg, "after_condfuse", out_dir)
+
+        # 9a. Condition hoist — move loop-invariant conditions above loops
+        n_hoisted = hoist_invariant_conditions(sdfg)
+        checkpoint(sdfg, "after_condhoist", out_dir)
+
+        # 9b. Isolate + privatize on cloned loops from hoist
+        # NOTE: skip SSA round 2 — it breaks memlet refs inside nested SDFGs
+        if not args.no_isolate:
+            isolate_loop_variables(sdfg)
+        if not args.no_privatize:
+            privatize_scalars(sdfg)
+        checkpoint(sdfg, "after_privatize2", out_dir)
+
+    # 9c. Another round of LoopToMap after condition fusion/hoist
+    if not args.no_l2m:
+        n2 = loop_to_map(sdfg)
+        if n2:
+            print(f"LoopToMap (post-condfuse): converted {n2} more loops to maps")
+        checkpoint(sdfg, "after_l2m2", out_dir)
+
+    # 10. Fix missing NestedSDFG symbols, then simplify
     fix_missing_nsdfg_symbols(sdfg)
     sdfg.simplify()
     checkpoint(sdfg, "after_simplify", out_dir)

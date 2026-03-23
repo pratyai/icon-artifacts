@@ -396,6 +396,104 @@ def writeonly_transient_scalars(sdfg: dace.SDFG, states) -> Set[str]:
     return written - read
 
 
+def loop_carried_scalars(sdfg: dace.SDFG, loop) -> Set[str]:
+    """Return transient scalars that are loop-carried in `loop`.
+
+    A scalar is loop-carried if, walking the loop body in topological order,
+    we encounter a read before any write. This means the first read sees a
+    value from a previous iteration.
+    """
+    from dace import data as dt
+
+    # Collect per-state read/write info for transient scalars
+    candidates = set()
+    state_reads: Dict[SDFGState, Set[str]] = {}
+    state_writes: Dict[SDFGState, Set[str]] = {}
+    for state in loop.all_states():
+        reads: Set[str] = set()
+        writes: Set[str] = set()
+        for node in state.nodes():
+            if not isinstance(node, nd.AccessNode):
+                continue
+            name = node.data
+            if name not in sdfg.arrays:
+                continue
+            desc = sdfg.arrays[name]
+            if not isinstance(desc, dt.Scalar) or not desc.transient:
+                continue
+            if is_read(state, node):
+                reads.add(name)
+            if is_write(state, node):
+                writes.add(name)
+            candidates.add(name)
+        state_reads[state] = reads
+        state_writes[state] = writes
+
+    if not candidates:
+        return set()
+
+    def _is_read_before_write(name: str, region) -> bool:
+        """Return True if `name` is read before written in `region`'s topo order.
+
+        Recurses into compound blocks (ConditionalBlock, ControlFlowRegion)
+        to determine the actual ordering within them.
+        """
+        try:
+            topo = topological_sort(region)
+        except Exception:
+            topo = list(region.nodes())
+
+        for block in topo:
+            block_states = [block] if isinstance(block, SDFGState) else list(block.all_states())
+            has_read = any(name in state_reads.get(s, set()) for s in block_states)
+            has_write = any(name in state_writes.get(s, set()) for s in block_states)
+
+            if not has_read and not has_write:
+                continue
+            if has_read and not has_write:
+                return True  # read-only at this point, no prior write
+            if has_write and not has_read:
+                return False  # written before any read
+            # Both read and write in same block — recurse
+            if isinstance(block, SDFGState):
+                # Check if any AccessNode for this scalar is read-only
+                # (no incoming write edge). If so, that read uses the old value
+                # from a prior state → read-before-write.
+                # If all AccessNodes have incoming writes (pipeline pattern:
+                # write → node → read), it's write-before-read.
+                has_readonly_node = False
+                for node in block.nodes():
+                    if isinstance(node, nd.AccessNode) and node.data == name:
+                        if is_read(block, node) and not is_write(block, node):
+                            has_readonly_node = True
+                            break
+                return has_readonly_node
+            if isinstance(block, LoopRegion):
+                # A child LoopRegion that reads a scalar does so across its
+                # own iterations — the first iteration reads the value from
+                # the parent's previous iteration. Don't recurse into loops;
+                # conservatively treat R+W in a child loop as carried.
+                return True
+            if isinstance(block, ConditionalBlock):
+                # Check each branch; if ANY branch reads before writing, it's carried
+                for _, branch in block.branches:
+                    if _is_read_before_write(name, branch):
+                        return True
+                return False
+            if isinstance(block, ControlFlowRegion):
+                return _is_read_before_write(name, block)
+            # Unknown block type — conservative
+            return True
+        return False  # no access found
+
+    carried = set()
+    for name in candidates:
+        if _is_read_before_write(name, loop):
+            carried.add(name)
+
+    return carried
+
+
 def all_nodes_in_block(block):
     """Yield (node, state) for all dataflow nodes in a block.
 
@@ -437,14 +535,11 @@ def rename_local_scalars(sdfg: dace.SDFG, blocks, suffix: str,
     if not written:
         return {}
 
+    taken = all_identifiers(sdfg)
     repl = {}
     for name in written:
-        new_name = name + suffix
-        # Ensure uniqueness — find a free name if there's a collision
-        counter = 0
-        while new_name in sdfg.arrays or new_name in sdfg.symbols:
-            counter += 1
-            new_name = f"{name}{suffix}_ls{counter}"
+        new_name = fresh_name(sdfg, name, suffix, _taken=taken)
+        taken.add(new_name)
         new_desc = copy.deepcopy(sdfg.arrays[name])
         new_desc.transient = True
         sdfg.add_datadesc(new_name, new_desc)
@@ -520,3 +615,178 @@ def lift_data_refs_in_conditions(sdfg: dace.SDFG):
                 for orig, replacement in repl.items():
                     cond_str = re.sub(r'\b' + re.escape(orig) + r'\b', replacement, cond_str)
                 block.branches[i] = (CodeBlock(cond_str), branch)
+
+
+def condition_free_symbols(cond_code) -> Set[str]:
+    """Extract free symbols from a ConditionalBlock condition CodeBlock."""
+    expr = symbolic.pystr_to_symbolic(cond_code.as_string)
+    return {str(s) for s in expr.free_symbols}
+
+
+def loop_private_transients(sdfg: dace.SDFG, loop: LoopRegion) -> Set[str]:
+    """Return transient names that are written in ``loop`` but NOT accessed outside it."""
+    _, write_set = loop.read_and_write_sets()
+    loop_states = set(loop.all_states())
+
+    outside_accessed = set()
+    for state in sdfg.states():
+        if state in loop_states:
+            continue
+        for dn in state.data_nodes():
+            if dn.data in write_set:
+                outside_accessed.add(dn.data)
+
+    return {w for w in write_set
+            if w in sdfg.arrays and sdfg.arrays[w].transient and w not in outside_accessed}
+
+
+def interstate_assigned_symbols(region: ControlFlowRegion) -> Set[str]:
+    """Return all symbols assigned by interstate edges in ``region``."""
+    assigned = set()
+    for e in region.edges():
+        assigned.update(e.data.assignments.keys())
+    return assigned
+
+
+def scalarize_small_arrays(sdfg: dace.SDFG, max_elements: int = 32) -> int:
+    """Replace small constant-indexed transient arrays with individual scalars.
+
+    For each transient array with constant literal shape and all constant-literal
+    indexed accesses, replace ``arr[i]`` with ``arr_i`` scalars.
+
+    Returns count of arrays scalarized.
+    """
+    from dace import data as dt
+
+    scalarized = 0
+
+    for sd in sdfg.all_sdfgs_recursive():
+        candidates = []
+        for name, desc in list(sd.arrays.items()):
+            if not desc.transient:
+                continue
+            if isinstance(desc, dt.Scalar):
+                continue
+            # Must have small constant shape
+            try:
+                shape = tuple(int(s) for s in desc.shape)
+            except (TypeError, ValueError):
+                continue
+            total = 1
+            for s in shape:
+                total *= s
+            if total > max_elements or total == 0:
+                continue
+            candidates.append((name, desc, shape, total))
+
+        for name, desc, shape, total in candidates:
+            # Verify ALL accesses use constant literal indices
+            all_constant = True
+            for state in sd.states():
+                for node in state.data_nodes():
+                    if node.data != name:
+                        continue
+                    for e in state.all_edges(node):
+                        if e.data.data != name:
+                            continue
+                        # Check the subset that indexes into this array
+                        subset = e.data.dst_subset if e in state.in_edges(node) else e.data.src_subset
+                        if subset is None:
+                            # Full-range access like [0:5] — check if it's a full copy
+                            all_constant = False
+                            break
+                        for rng in subset:
+                            # Each range element is (start, end, step)
+                            start, end, step = rng
+                            try:
+                                s, e_val = int(start), int(end)
+                                if s != e_val:
+                                    # Range access, not point access
+                                    all_constant = False
+                                    break
+                            except (TypeError, ValueError):
+                                all_constant = False
+                                break
+                        if not all_constant:
+                            break
+                    if not all_constant:
+                        break
+                if not all_constant:
+                    break
+
+            if not all_constant:
+                continue
+
+            # Create scalar replacements
+            taken = set(sd.arrays) | set(sd.symbols)
+            scalar_names = {}  # flat_index -> scalar_name
+            import numpy as np
+            for flat_idx in range(total):
+                multi_idx = np.unravel_index(flat_idx, shape)
+                suffix = "_" + "_".join(str(i) for i in multi_idx)
+                sname = name + suffix
+                i = 1
+                while sname in taken:
+                    sname = f"{name}{suffix}_{i}"
+                    i += 1
+                taken.add(sname)
+                scalar_names[multi_idx] = sname
+                sd.add_scalar(sname, desc.dtype, transient=True, storage=desc.storage)
+
+            # Replace all accesses
+            for state in sd.states():
+                for node in list(state.data_nodes()):
+                    if node.data != name:
+                        continue
+                    # Determine the constant index from any edge
+                    for e in list(state.all_edges(node)):
+                        if e.data.data != name:
+                            continue
+                        subset = e.data.dst_subset if e in state.in_edges(node) else e.data.src_subset
+                        if subset is None:
+                            continue
+                        idx = tuple(int(r[0]) for r in subset)
+                        sname = scalar_names[idx]
+                        # Update the access node
+                        node.data = sname
+                        # Update the memlet
+                        e.data.data = sname
+                        e.data.subset = dace.subsets.Range([(0, 0, 1)])
+                        if e in state.in_edges(node):
+                            e.data.dst_subset = dace.subsets.Range([(0, 0, 1)])
+                            if e.data.other_subset is not None:
+                                pass  # keep other_subset as-is
+                        else:
+                            e.data.src_subset = dace.subsets.Range([(0, 0, 1)])
+
+            # Remove original array
+            sd.remove_data(name)
+            scalarized += 1
+
+    if scalarized:
+        print(f"Scalarized {scalarized} small arrays into registers")
+    return scalarized
+
+
+def all_identifiers(sdfg: dace.SDFG) -> Set[str]:
+    """Return every name that is already taken in the SDFG (arrays, symbols, constants)."""
+    return set(sdfg.arrays) | set(sdfg.symbols) | set(sdfg.constants)
+
+
+def fresh_name(sdfg: dace.SDFG, base: str, suffix: str = "",
+               _taken: Set[str] | None = None) -> str:
+    """Mint a name that doesn't collide with any existing SDFG identifier.
+
+    Tries ``base + suffix`` first, then ``base + suffix + _1``, ``_2``, etc.
+    Pass ``_taken`` to avoid repeated ``all_identifiers()`` calls in a loop.
+    """
+    taken = _taken if _taken is not None else all_identifiers(sdfg)
+    candidate = base + suffix
+    if candidate not in taken:
+        return candidate
+    i = 1
+    while True:
+        candidate = f"{base}{suffix}_{i}"
+        if candidate not in taken:
+            return candidate
+        i += 1
