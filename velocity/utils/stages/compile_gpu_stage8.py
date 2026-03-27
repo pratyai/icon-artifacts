@@ -1,6 +1,7 @@
 import threading
 import argparse
 import os
+from pathlib import Path
 import dace
 import re
 from utils.permute_array_dimensions import inverse_strides
@@ -39,6 +40,7 @@ from utils.boundary_cast import inject_boundary_cast, _propagate_dtype
 from utils.bfp_compression import inject_bfp_packing
 
 STAGE_ID = 8
+WORKLOG_FILE = "stage8_lowering.log"
 
 # Categorized arrays for FP32 conversion
 GRID_METRICS = [
@@ -299,6 +301,293 @@ SENSITIVITY_RULED_OUT: list[str] = [
 ]
 
 
+def downcast_to_minimal_bitwidth(sdfg: dace.SDFG):
+    """
+    Downcasts large integer arrays to 16-bit where possible based on
+    domain-specific knowledge (nproma/nblocks).
+    """
+    # nproma dependent ones
+    sdfg = decrease_bitwidth_of_const_arrays(
+        sdfg,
+        array_names={
+            "gpu___CG_p_patch__CG_cells__m_edge_idx",
+            "gpu___CG_p_patch__CG_cells__m_neighbor_idx",
+            "gpu___CG_p_patch__CG_edges__m_cell_idx",
+            "gpu___CG_p_patch__CG_edges__m_quad_idx",
+            "gpu___CG_p_patch__CG_edges__m_vertex_idx",
+            "gpu___CG_p_patch__CG_verts__m_cell_idx",
+            "gpu___CG_p_patch__CG_verts__m_edge_idx",
+        },
+        nproma_name="__CG_global_data__m_nproma",
+    )
+    # nlock dependent ones
+    sdfg = force_decrease_bitwidth_of_nblk_arrays(
+        sdfg,
+        multi_val_array_names={
+            "gpu___CG_p_patch__CG_cells__m_edge_blk",
+            "gpu___CG_p_patch__CG_edges__m_quad_blk",
+            "gpu___CG_p_patch__CG_edges__m_neighbor_blk",
+            "gpu___CG_p_patch__CG_verts__m_edge_blk",
+        },
+        single_val_array_names={
+            "gpu___CG_p_patch__CG_cells__m_neighbor_blk",
+            "gpu___CG_p_patch__CG_edges__m_cell_blk",
+            "gpu___CG_p_patch__CG_edges__m_vertex_blk",
+            "gpu___CG_p_patch__CG_verts__m_cell_blk",
+            "gpu___CG_p_patch__CG_edges__m_neighbor_blk",
+        },
+    )
+    return sdfg
+
+
+def coarsen_coalescable_dim(sdfg: dace.SDFG, factor: int = 2):
+    """Thread coarsening: for each multi-dim map, find the coalescable
+    dimension (the loop var that indexes the first array dim
+    most often), tile it by `factor`, and unroll the inner map."""
+    tile_targets = []
+    for entry, state in sdfg.all_nodes_recursive():
+        if not isinstance(entry, nodes.MapEntry) or len(entry.map.params) < 2:
+            continue
+
+        # Rule 1: skip already coarsened (has 'tile_' in params)
+        if any(p.startswith("tile_") for p in entry.map.params):
+            continue
+
+        # Rule 2: innermost only
+        is_innermost = True
+        for node in state.scope_children()[entry]:
+            if isinstance(node, nodes.MapEntry):
+                is_innermost = False
+                break
+        if not is_innermost:
+            continue
+
+        # Rule 3: winner selection
+        first_counts = {p: 0 for p in entry.map.params}
+        any_counts = {p: 0 for p in entry.map.params}
+
+        # Count occurrences in first and any dimension
+        scope_subgraph = state.scope_subgraph(entry)
+        for edge in scope_subgraph.edges():
+            if (
+                not isinstance(edge.data, dace.Memlet)
+                or edge.data.is_empty()
+                or edge.data.subset is None
+            ):
+                continue
+
+            subset = edge.data.subset
+            # Check first component
+            try:
+                first_dim = subset[0]
+                first_idx = (
+                    first_dim[0] if isinstance(first_dim, (list, tuple)) else first_dim
+                )
+                f_syms = {str(s) for s in first_idx.free_symbols}
+                for p in entry.map.params:
+                    if p in f_syms:
+                        first_counts[p] += 1
+            except (AttributeError, IndexError, TypeError):
+                pass
+
+            # Count any component
+            try:
+                all_syms = {str(s) for s in subset.free_symbols}
+                for p in entry.map.params:
+                    if p in all_syms:
+                        any_counts[p] += 1
+            except AttributeError:
+                pass
+
+        # Selection logic: priority to first dimension
+        if any(c > 0 for c in first_counts.values()):
+            winner = max(first_counts, key=lambda p: first_counts[p])
+        elif any(c > 0 for c in any_counts.values()):
+            winner = max(any_counts, key=lambda p: any_counts[p])
+        else:
+            # Fallback: pick the first parameter if no usage is detected
+            winner = entry.map.params[0]
+
+        winner_idx = list(entry.map.params).index(winner)
+        tile_sizes = [1] * len(entry.map.params)
+        tile_sizes[winner_idx] = factor
+        tile_targets.append((state.parent, state, entry, tuple(tile_sizes), winner))
+
+    print(f"Thread coarsening (×{factor} + unroll) on {len(tile_targets)} maps")
+    for nsdfg, state, entry, tile_sizes, winner in tile_targets:
+        print(f"  {entry.map.label}: coarsen '{winner}', tile_sizes={tile_sizes}")
+        MapTiling.apply_to(
+            nsdfg,
+            map_entry=entry,
+            options={"tile_sizes": tile_sizes},
+        )
+
+    # Mark inner tiled maps as Sequential + unroll so CUDA codegen
+    # emits them as #pragma unroll loops inside the kernel.
+    for nsdfg in sdfg.all_sdfgs_recursive():
+        for state in nsdfg.states():
+            for node in state.nodes():
+                if not isinstance(node, nodes.MapEntry):
+                    continue
+                if any(p.startswith("tile_") for p in node.map.params):
+                    continue
+                if node.map.unroll:
+                    continue
+                for s, e, st in node.map.range:
+                    range_syms = set()
+                    for expr in (s, e, st):
+                        try:
+                            range_syms |= {str(x) for x in expr.free_symbols}
+                        except AttributeError:
+                            pass
+                    if any(x.startswith("tile_") for x in range_syms):
+                        node.map.schedule = dace.ScheduleType.Sequential
+                        node.map.unroll = True
+                        break
+
+
+def _write_worklog(
+    sdfg_name: str,
+    options: dict,
+    external_dtype,
+    boundary_cast_targets: list[str],
+    gpu_transient: list[str],
+    pure_transient: list[str],
+    gpu_only: list[str],
+    gpu_sibling: list[str],
+    bfp_targets: list[str],
+    scalars_lowered: list[str],
+    scalars_excluded: list[str],
+    nested_scalars_lowered: int,
+    nested_scalars_to_int32: int,
+    nested_scalars_excluded: list[str],
+    arrays_not_lowered: list[tuple[str, str]] | None = None,
+    scalars_not_lowered: list[tuple[str, str]] | None = None,
+    fp64_expected: list[tuple[str, str, str]] | None = None,
+    fp64_unexpected: list[tuple[str, str]] | None = None,
+):
+    """Append lowering report for one SDFG variant to the worklog file."""
+    import fcntl
+
+    path = Path(WORKLOG_FILE)
+    mode = "a" if path.exists() else "w"
+
+    with open(path, mode) as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+
+        if f.tell() == 0:
+            f.write("=" * 72 + "\n")
+            f.write(f"Stage 8 Lowering Report\n")
+            f.write(f"lowprec={options['lowprec']}  lower_all={options.get('lower_all')}"
+                    f"  reduce_bitwidth={options.get('reduce_bitwidth')}"
+                    f"  permute={options.get('permute_dimensions')}\n")
+            f.write("=" * 72 + "\n\n")
+
+        f.write("-" * 72 + "\n")
+        f.write(f"SDFG: {sdfg_name}  ->  {external_dtype}\n")
+        f.write("-" * 72 + "\n")
+
+        total_lowered = (len(boundary_cast_targets) + len(gpu_transient)
+                         + len(pure_transient) + len(gpu_only))
+        f.write(f"\nArrays lowered: {total_lowered}\n")
+
+        if boundary_cast_targets:
+            f.write(f"\n  Boundary-cast ({len(boundary_cast_targets)}):\n")
+            for n in sorted(boundary_cast_targets):
+                f.write(f"    {n}\n")
+        if gpu_transient:
+            f.write(f"\n  GPU transient ({len(gpu_transient)}):\n")
+            for n in sorted(gpu_transient):
+                f.write(f"    {n}\n")
+        if pure_transient:
+            f.write(f"\n  Pure transient ({len(pure_transient)}):\n")
+            for n in sorted(pure_transient):
+                f.write(f"    {n}\n")
+        if gpu_only:
+            f.write(f"\n  GPU-only ({len(gpu_only)}):\n")
+            for n in sorted(gpu_only):
+                f.write(f"    {n}\n")
+
+        if gpu_sibling:
+            f.write(f"\n  GPU sibling (handled via boundary-cast, {len(gpu_sibling)}):\n")
+            for n in sorted(gpu_sibling):
+                f.write(f"    {n}\n")
+
+        if bfp_targets:
+            f.write(f"\n  BFP-packed ({len(bfp_targets)}):\n")
+            for n in sorted(bfp_targets):
+                f.write(f"    {n}\n")
+
+        f.write(f"\nScalars lowered: {len(scalars_lowered)}\n")
+        if scalars_lowered:
+            for n in sorted(scalars_lowered):
+                f.write(f"    {n}\n")
+        if scalars_excluded:
+            f.write(f"\n  Scalars excluded (CFL): {len(scalars_excluded)}\n")
+            for n in sorted(scalars_excluded):
+                f.write(f"    {n}\n")
+
+        if nested_scalars_lowered or nested_scalars_to_int32:
+            f.write(f"\nNested SDFG scalars: {nested_scalars_lowered} lowered,"
+                    f" {nested_scalars_to_int32} -> int32 (comparison)\n")
+        if nested_scalars_excluded:
+            f.write(f"  Nested excluded (CFL): {', '.join(sorted(nested_scalars_excluded))}\n")
+
+        if arrays_not_lowered:
+            f.write(f"\nArrays NOT lowered ({len(arrays_not_lowered)}):\n")
+            # Group by reason
+            by_reason: dict[str, list[str]] = {}
+            for name, reason in arrays_not_lowered:
+                by_reason.setdefault(reason, []).append(name)
+            for reason in sorted(by_reason):
+                names = sorted(by_reason[reason])
+                f.write(f"\n  [{reason}] ({len(names)}):\n")
+                for n in names:
+                    f.write(f"    {n}\n")
+
+        if scalars_not_lowered:
+            f.write(f"\nScalars NOT lowered ({len(scalars_not_lowered)}):\n")
+            by_reason: dict[str, list[str]] = {}
+            for name, reason in scalars_not_lowered:
+                by_reason.setdefault(reason, []).append(name)
+            for reason in sorted(by_reason):
+                names = sorted(by_reason[reason])
+                f.write(f"\n  [{reason}] ({len(names)}):\n")
+                for n in names:
+                    f.write(f"    {n}\n")
+
+        n_expected = len(fp64_expected) if fp64_expected else 0
+        n_unexpected = len(fp64_unexpected) if fp64_unexpected else 0
+        if n_expected or n_unexpected:
+            f.write(f"\nPost-lowering fp64 audit: "
+                    f"{n_expected} expected, {n_unexpected} UNEXPECTED\n")
+
+        if fp64_unexpected:
+            f.write(f"\n  *** UNEXPECTED fp64 ({n_unexpected}) ***\n")
+            by_loc: dict[str, list[str]] = {}
+            for loc, entry in fp64_unexpected:
+                by_loc.setdefault(loc, []).append(entry)
+            for loc in sorted(by_loc):
+                items = sorted(set(by_loc[loc]))
+                f.write(f"\n    {loc} ({len(items)}):\n")
+                for item in items:
+                    f.write(f"      {item}\n")
+
+        if fp64_expected:
+            f.write(f"\n  Expected fp64 ({n_expected}):\n")
+            by_reason: dict[str, list[str]] = {}
+            for loc, entry, reason in fp64_expected:
+                by_reason.setdefault(reason, []).append(f"{entry}  [{loc}]")
+            for reason in sorted(by_reason):
+                items = sorted(set(by_reason[reason]))
+                f.write(f"\n    [{reason}] ({len(items)}):\n")
+                for item in items:
+                    f.write(f"      {item}\n")
+
+        f.write("\n")
+        fcntl.flock(f, fcntl.LOCK_UN)
+
+
 def optimization_action(sdfg):
     """DEFINE THE OPTIMIZATION ACTION HERE"""
     # Pointwise decompression shim for inv_dual_edge_length
@@ -497,6 +786,8 @@ def optimization_action(sdfg):
         "tmp_call_1",
         "tmp_call_18",
     }
+    scalars_to_lower: list[str] = []
+    scalars_excluded = sorted(_CFL_SCALARS)
     if options.get("lower_all"):
         scalars_to_lower = [
             name
@@ -533,6 +824,8 @@ def optimization_action(sdfg):
     # Scalars that are comparison results (e.g. _if_cond_*) get int32
     # instead — they're logically boolean, not floating-point.
     _CFL_NESTED_SCALARS = {"maxvcfl", "tmp_call_1"}
+    _nested_lowered = 0
+    _nested_to_int32 = 0
     if options.get("lower_all"):
         # First pass: find scalars that are comparison outputs
         _comparison_scalars: set[str] = set()
@@ -570,8 +863,10 @@ def optimization_action(sdfg):
                 ):
                     if name in _comparison_scalars:
                         arr.dtype = dace.int32
+                        _nested_to_int32 += 1
                     else:
                         arr.dtype = external_dtype
+                        _nested_lowered += 1
 
     # BFP packing: change GPU arrays to uint8[packed_size], insert CPU-side
     # pack Map, replace H2D edge with packed version.
@@ -631,10 +926,38 @@ def optimization_action(sdfg):
     if options["profile"]:
         create_profile_sdfg(sdfg)
 
-    # Floatify: replace double literals and math functions in tasklets with
-    # float equivalents to prevent FP64 promotion on GPU.
+    # Floatify: replace double literals and math functions in tasklets and
+    # interstate edge conditions to prevent FP64 promotion on GPU.
     # Done last so it sees final tasklet code after tiling/coarsening.
+    _FLOATIFY_CONSTANTS = ["0.5", "0.85", "1.0", "0.0", "0.05", "0.65", "1.15"]
+
     if options["lowprec"] != "fp64":
+        # Pass 1: Interstate edge conditions (if-conditions in generated CUDA).
+        # These use Python-syntax code blocks; wrap literals with float().
+        for nsdfg in sdfg.all_sdfgs_recursive():
+            for edge in nsdfg.edges():
+                cond = edge.data.condition
+                if cond is None:
+                    continue
+                code = cond.as_string
+                if not code or code.strip() in ("1", "true", "True"):
+                    continue
+                new_code = code
+                for val in _FLOATIFY_CONSTANTS:
+                    new_code = re.sub(
+                        rf"(?<![0-9fF]){re.escape(val)}(?![0-9fF])",
+                        f"float({val})",
+                        new_code,
+                    )
+                    new_code = re.sub(
+                        rf"(?<![0-9fF])\-{re.escape(val)}(?![0-9fF])",
+                        f"float(-{val})",
+                        new_code,
+                    )
+                if new_code != code:
+                    edge.data.condition = dace.properties.CodeBlock(new_code)
+
+        # Pass 2: Tasklet code.
         for node, state in sdfg.all_nodes_recursive():
             if not isinstance(node, nodes.Tasklet):
                 continue
@@ -643,7 +966,7 @@ def optimization_action(sdfg):
             new_code = code
 
             # Target constants
-            constants = ["0.5", "0.85", "1.0", "0.0", "0.05", "0.65", "1.15"]
+            constants = _FLOATIFY_CONSTANTS
 
             if node.language == dace.Language.CPP:
                 # For C++, use the 'f' suffix (e.g., 0.5f)
@@ -694,13 +1017,158 @@ def optimization_action(sdfg):
             if new_code != code:
                 node.code = dace.properties.CodeBlock(new_code, node.language)
 
-    coarsen_coalescable_dim(sdfg, factor=2)
+    # Disabled for now. Performance actually degrades.
+    # coarsen_coalescable_dim(sdfg, factor=2)
 
-    return sdfg
+    # --- Integration transforms (stage 9 equivalent) ---
+    # When building for integration into ICON's solve_nonhydrostatic,
+    # the generated library must operate in-place on OpenACC-managed GPU
+    # memory instead of allocating its own buffers.
+    allocation_names_to_comment_out = set()
+    if options["build_for_integration"]:
+        shallow_copy_used_structs = ["p_prog", "p_int", "p_metrics", "p_patch", "p_diag"]
+        deflatten_used_structs = ["p_diag"]
+        allocation_names_to_comment_out = change_flatten_lib_to_shallow_copy(
+            sdfg, shallow_copy_used_structs, deflatten_used_structs
+        )
+        sdfg.validate()
+
+        input_to_gpu(sdfg, "z_w_concorr_me")
+        input_to_gpu(sdfg, "z_kin_hor_e")
+        input_to_gpu(sdfg, "z_vt_ie")
+        sdfg.validate()
+
+        _make_flat_gpu_input(sdfg)
+        sdfg.validate()
+
+        remove_profiling_states(sdfg)
+        remove_sync_states(sdfg)
+        insert_program_entry_exit_syncs(sdfg)
+        rm_redundant_copies(sdfg)
+
+        # GPU→GPU boundary cast: all data is now GPU-resident at fp64.
+        # Cast to lower precision for computation, reverse-cast outputs back.
+        if external_dtype != dace.float64:
+            # z_* arrays are scratch pads — overwritten by solve_nonhydro after VT.
+            # No boundary cast needed (no input to cast in, no output to cast back).
+            # Struct fields: gpu___CG_* arrays that survived integration transforms
+            _OUTPUT_PREFIXES = ("gpu___CG_p_prog__", "gpu___CG_p_diag__")
+            gpu_cast_targets = [
+                f"gpu_{n}" for n in boundary_cast_targets
+                if f"gpu_{n}" in sdfg.arrays
+            ]
+            gpu_output_names = [
+                n for n in gpu_cast_targets
+                if any(n.startswith(p) for p in _OUTPUT_PREFIXES)
+            ]
+            if gpu_cast_targets:
+                inject_gpu_boundary_cast(
+                    sdfg,
+                    gpu_cast_targets,
+                    external_dtype,
+                    output_names=gpu_output_names,
+                )
+            sdfg.validate()
+
+    # --- Collect arrays/scalars NOT lowered and why ---
+    all_lowered_arrays = set(boundary_cast_targets) | set(gpu_transient) | set(pure_transient) | set(gpu_only) | set(gpu_sibling) | set(bfp_targets)
+    sensitivity_ruled_out_set = set(SENSITIVITY_RULED_OUT)
+    sensitivity_borderline_set = set(SENSITIVITY_BORDERLINE)
+    sensitivity_candidates_set = set(SENSITIVITY_CANDIDATES)
+    _CFL_EXCLUDE_SET = {"maxvcfl"}
+
+    arrays_not_lowered: list[tuple[str, str]] = []
+    for name, arr in sdfg.arrays.items():
+        if not isinstance(arr, dace.data.Array) or arr.total_size == 1:
+            continue
+        if arr.dtype != dace.float64:
+            continue
+        if name in all_lowered_arrays or f"gpu_{name}" in all_lowered_arrays or name.replace("gpu_", "", 1) in all_lowered_arrays:
+            continue
+        # Determine reason
+        bare = name.replace("gpu_", "", 1) if name.startswith("gpu_") else name
+        if bare in _CFL_EXCLUDE_SET:
+            reason = "CFL exclusion"
+        elif bare in sensitivity_ruled_out_set:
+            reason = "sensitivity too high"
+        elif bare in sensitivity_borderline_set:
+            reason = "sensitivity borderline — held for staged testing"
+        elif not options.get("lower_all") and bare not in sensitivity_candidates_set:
+            reason = "not in sensitivity candidate list"
+        else:
+            reason = "not a candidate (gpu_ sibling or other)"
+        arrays_not_lowered.append((name, reason))
+
+    scalars_not_lowered: list[tuple[str, str]] = []
+    for name, arr in sdfg.arrays.items():
+        if not isinstance(arr, dace.data.Scalar) or arr.dtype != dace.float64:
+            continue
+        if name in set(scalars_to_lower):
+            continue
+        if name in _CFL_SCALARS:
+            scalars_not_lowered.append((name, "CFL scalar"))
+        else:
+            scalars_not_lowered.append((name, "lower_all not set" if not options.get("lower_all") else "unknown"))
+
+    # --- Post-lowering audit: walk ALL SDFGs for remaining fp64 ---
+    # Only meaningful when target is lower than fp64; skip for fp64 builds.
+    # Classify each remaining fp64 as expected (with reason) or UNEXPECTED.
+    _boundary_cast_set = set(boundary_cast_targets)
+    _gpu_sibling_set = set(gpu_sibling)
+    _cfl_all = _CFL_SCALARS | _CFL_NESTED_SCALARS
+    fp64_expected: list[tuple[str, str, str]] = []   # (location, "name (kind)", reason)
+    fp64_unexpected: list[tuple[str, str]] = []       # (location, "name (kind)")
+    if external_dtype != dace.float64:
+        for nsdfg in sdfg.all_sdfgs_recursive():
+            is_top = nsdfg is sdfg
+            loc = f"{sdfg.name} (top-level)" if is_top else nsdfg.name
+            for name, arr in nsdfg.arrays.items():
+                if arr.dtype != dace.float64:
+                    continue
+                kind = "Array" if isinstance(arr, dace.data.Array) else "Scalar"
+                entry = f"{name} ({kind})"
+                # Classify
+                bare = name.replace("gpu_", "", 1) if name.startswith("gpu_") else name
+                if is_top and bare in _boundary_cast_set:
+                    fp64_expected.append((loc, entry, "CPU-side of boundary-cast"))
+                elif is_top and name in _gpu_sibling_set:
+                    fp64_expected.append((loc, entry, "GPU sibling of boundary-cast"))
+                elif bare in _cfl_all:
+                    fp64_expected.append((loc, entry, "CFL exclusion"))
+                else:
+                    fp64_unexpected.append((loc, entry))
+
+    _write_worklog(
+        sdfg_name=sdfg.name,
+        options=options,
+        external_dtype=external_dtype,
+        boundary_cast_targets=boundary_cast_targets,
+        gpu_transient=gpu_transient,
+        pure_transient=pure_transient,
+        gpu_only=gpu_only,
+        gpu_sibling=gpu_sibling,
+        bfp_targets=bfp_targets,
+        scalars_lowered=scalars_to_lower,
+        scalars_excluded=scalars_excluded,
+        nested_scalars_lowered=_nested_lowered,
+        nested_scalars_to_int32=_nested_to_int32,
+        nested_scalars_excluded=sorted(_CFL_NESTED_SCALARS | _CFL_SCALARS),
+        arrays_not_lowered=arrays_not_lowered,
+        scalars_not_lowered=scalars_not_lowered,
+        fp64_expected=fp64_expected,
+        fp64_unexpected=fp64_unexpected,
+    )
+
+    return sdfg, bfp_targets
 
 
 def main():
-    common.standard_main(STAGE_ID, optimization_action)
+    # Clear worklog from previous runs before appending
+    Path(WORKLOG_FILE).unlink(missing_ok=True)
+    common.standard_main(
+        STAGE_ID,
+        optimization_action,
+    )
 
 
 if __name__ == "__main__":
