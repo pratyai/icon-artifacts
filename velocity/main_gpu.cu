@@ -299,6 +299,7 @@ int main(int argc, char *argv[]) {
   }
 
   bool sensitivity_mode = args.get<bool>("sensitivity", false);
+  bool skip_gotwant = args.get<bool>("skip-gotwant", false);
   double sens_eps = args.get<double>("sens-eps", 1e-5);
 
   // Fields validated as safe to lower (SENSITIVITY_CANDIDATES from
@@ -349,38 +350,35 @@ int main(int argc, char *argv[]) {
   for (int n : ns) {
     acerr() << "Reading data for " << n << "..." << std::endl;
 
-    auto global_data_pair =
-        t0_t1_pair<global_data_type>(ROOT, "global_data", n);
-    auto &global_data = std::get<0>(global_data_pair);
-    auto &global_data_want = std::get<1>(global_data_pair);
-
-    auto p_diag_pair = t0_t1_pair<t_nh_diag>(ROOT, "p_diag", n);
-    auto &p_diag = std::get<0>(p_diag_pair);
-    auto &p_diag_want = std::get<1>(p_diag_pair);
-
+    // Read input (t0) data — always needed.
+    // Reference output (t1) data — only needed for got/want comparison.
+    auto global_data = read<global_data_type>(ROOT, "global_data.t0", n);
+    auto p_diag = read<t_nh_diag>(ROOT, "p_diag.t0", n);
     auto p_int = read<t_int_state>(ROOT, "p_int", n);
-
-    auto p_metrics_pair = t0_t1_pair<t_nh_metrics>(ROOT, "p_metrics", n);
-    auto &p_metrics = std::get<0>(p_metrics_pair);
-    auto &p_metrics_want = std::get<1>(p_metrics_pair);
-
+    auto p_metrics = read<t_nh_metrics>(ROOT, "p_metrics.t0", n);
     auto p_patch = read<t_patch>(ROOT, "p_patch", n);
+    auto p_prog = read<t_nh_prog>(ROOT, "p_prog.t0", n);
+    auto z_kin_hor_e = read<double *>(ROOT, "z_kin_hor_e.t0", n);
+    auto z_vt_ie = read<double *>(ROOT, "z_vt_ie.t0", n);
+    auto z_w_concorr_me = read<double *>(ROOT, "z_w_concorr_me.t0", n);
 
-    auto p_prog_pair = t0_t1_pair<t_nh_prog>(ROOT, "p_prog", n);
-    auto &p_prog = std::get<0>(p_prog_pair);
-    auto &p_prog_want = std::get<1>(p_prog_pair);
-
-    auto z_kin_hor_e_pair = t0_t1_pair<double *>(ROOT, "z_kin_hor_e", n);
-    auto &z_kin_hor_e = std::get<0>(z_kin_hor_e_pair);
-    auto &z_kin_hor_e_want = std::get<1>(z_kin_hor_e_pair);
-
-    auto z_vt_ie_pair = t0_t1_pair<double *>(ROOT, "z_vt_ie", n);
-    auto &z_vt_ie = std::get<0>(z_vt_ie_pair);
-    auto &z_vt_ie_want = std::get<1>(z_vt_ie_pair);
-
-    auto z_w_concorr_me_pair = t0_t1_pair<double *>(ROOT, "z_w_concorr_me", n);
-    auto &z_w_concorr_me = std::get<0>(z_w_concorr_me_pair);
-    auto &z_w_concorr_me_want = std::get<1>(z_w_concorr_me_pair);
+    // Want data (t1) — skip if not writing got/want.
+    std::optional<global_data_type> global_data_want_storage;
+    std::optional<t_nh_diag> p_diag_want_storage;
+    std::optional<t_nh_metrics> p_metrics_want_storage;
+    std::optional<t_nh_prog> p_prog_want_storage;
+    double *z_kin_hor_e_want = nullptr;
+    double *z_vt_ie_want = nullptr;
+    double *z_w_concorr_me_want = nullptr;
+    if (!skip_gotwant) {
+      global_data_want_storage.emplace(read<global_data_type>(ROOT, "global_data.t1", n));
+      p_diag_want_storage.emplace(read<t_nh_diag>(ROOT, "p_diag.t1", n));
+      p_metrics_want_storage.emplace(read<t_nh_metrics>(ROOT, "p_metrics.t1", n));
+      p_prog_want_storage.emplace(read<t_nh_prog>(ROOT, "p_prog.t1", n));
+      z_kin_hor_e_want = read<double *>(ROOT, "z_kin_hor_e.t1", n);
+      z_vt_ie_want = read<double *>(ROOT, "z_vt_ie.t1", n);
+      z_w_concorr_me_want = read<double *>(ROOT, "z_w_concorr_me.t1", n);
+    }
 
     int istep = read<int>(ROOT, "istep", n);
     int ldeepatmo = read<int>(ROOT, "ldeepatmo", n);
@@ -1640,21 +1638,20 @@ int main(int argc, char *argv[]) {
     }
     acout() << "Step " << n << " done." << std::endl;
 
-    // Sync lp → fp64 so got_want_pair serializes double values.
-    for (int i = 0; i < z_kin_n; i++)
-      z_kin_hor_e[i] = z_kin_hor_e_lp[i];
-    for (int i = 0; i < z_vt_n; i++)
-      z_vt_ie[i] = z_vt_ie_lp[i];
-    for (int i = 0; i < z_w_n; i++)
-      z_w_concorr_me[i] = z_w_concorr_me_lp[i];
-
-    if (!sensitivity_mode) {
-      got_want_pair<global_data_type>(global_data, global_data_want,
+    if (!sensitivity_mode && !skip_gotwant) {
+      // Sync lp → fp64 so got_want_pair serializes double values.
+      for (int i = 0; i < z_kin_n; i++)
+        z_kin_hor_e[i] = z_kin_hor_e_lp[i];
+      for (int i = 0; i < z_vt_n; i++)
+        z_vt_ie[i] = z_vt_ie_lp[i];
+      for (int i = 0; i < z_w_n; i++)
+        z_w_concorr_me[i] = z_w_concorr_me_lp[i];
+      got_want_pair<global_data_type>(global_data, *global_data_want_storage,
                                       "global_data", n, DUMP, cfg);
-      got_want_pair<t_nh_diag>(p_diag, p_diag_want, "p_diag", n, DUMP, cfg);
-      got_want_pair<t_nh_metrics>(p_metrics, p_metrics_want, "p_metrics", n,
+      got_want_pair<t_nh_diag>(p_diag, *p_diag_want_storage, "p_diag", n, DUMP, cfg);
+      got_want_pair<t_nh_metrics>(p_metrics, *p_metrics_want_storage, "p_metrics", n,
                                   DUMP, cfg);
-      got_want_pair<t_nh_prog>(p_prog, p_prog_want, "p_prog", n, DUMP, cfg);
+      got_want_pair<t_nh_prog>(p_prog, *p_prog_want_storage, "p_prog", n, DUMP, cfg);
       got_want_pair<double *>(z_kin_hor_e, z_kin_hor_e_want, "z_kin_hor_e", n,
                               DUMP, cfg);
       got_want_pair<double *>(z_vt_ie, z_vt_ie_want, "z_vt_ie", n, DUMP, cfg);
