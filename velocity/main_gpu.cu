@@ -256,10 +256,12 @@ int main(int argc, char *argv[]) {
   }
   nproma = args.get<int>("nproma", int(nproma));
 
-  const std::filesystem::path ROOT{"data_nproma" + std::to_string(nproma)};
+  const std::filesystem::path ROOT{
+      args.get<std::string>("data", "data_nproma" + std::to_string(nproma))};
   acerr() << "Will be reading data from: " << ROOT << std::endl;
-  const std::filesystem::path DUMP =
-      std::filesystem::current_path() / "gotwant" / ROOT.filename();
+  const std::filesystem::path DUMP{args.get<std::string>(
+      "gotwant",
+      (std::filesystem::current_path() / "gotwant" / ROOT.filename()).string())};
   std::error_code ec;
   if (!std::filesystem::create_directories(DUMP, ec) && ec) {
     acerr() << "Failed to create directory: " << ec.message() << std::endl;
