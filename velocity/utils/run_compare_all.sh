@@ -3,25 +3,29 @@
 #SBATCH --account=g34
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --time=04:00:00
+#SBATCH --time=01:00:00
 #SBATCH --output=compare_%j.log
 #
 # Run all comparisons (OG convergence + OG vs NU cross) into a single DB.
 #
-# Usage:  bash utils/run_compare_all.sh
-#   or:   bash utils/run_compare_all.sh -j 16
-#   or:   bash utils/run_compare_all.sh --force -j 8
+# Usage:  sbatch utils/run_compare_all.sh
+#   or:   bash  utils/run_compare_all.sh          # interactive
+#   or:   bash  utils/run_compare_all.sh --force
 #
 # Override paths:
-#   OG_BASE=... NU_BASE=... DB=... bash utils/run_compare_all.sh
+#   OG_BASE=... NU_BASE=... DB=... sbatch utils/run_compare_all.sh
 
 set -euo pipefail
 
 OG_BASE="${OG_BASE:-/capstor/scratch/cscs/pmazumde/SC2026-DATA/OG-ICON-NDYNSUBSTEPS-VARIATIONS}"
 NU_BASE="${NU_BASE:-/capstor/scratch/cscs/pmazumde/SC2026-DATA/NU-ICON-NDYNSUBSTEPS_5-DATA}"
-DB="${DB:-${NU_BASE}/all_comparisons.db}"
-SCRIPT="$(dirname "$0")/compare_serde.py"
+DB="${DB:-$(pwd)/all_comparisons.db}"
 
+REPO="${REPO:-/capstor/scratch/cscs/pmazumde/gitspace/ico2}"
+SCRIPT="${REPO}/velocity/utils/compare_serde.py"
+PYTHON="${REPO}/velocity/.venv/bin/python"
+
+WORKERS="${SLURM_CPUS_PER_TASK:-${SLURM_CPUS_ON_NODE:-$(nproc)}}"
 EXTRA_ARGS=("$@")
 
 # Grid dirs and short labels
@@ -31,7 +35,9 @@ declare -A GRIDS=(
     ["exclaim_ape_R02B04_dt8_g0008_R02B05"]="R02B05"
 )
 
-echo "DB: $DB"
+echo "DB:      $DB"
+echo "Python:  $PYTHON"
+echo "Workers: $WORKERS"
 echo ""
 
 # 1. OG internal convergence (pairwise ss within each grid)
@@ -43,7 +49,7 @@ for dir_name in "${!GRIDS[@]}"; do
         continue
     fi
     echo "=== Convergence: ${grid} ==="
-    python "$SCRIPT" -o "$DB" "${EXTRA_ARGS[@]}" convergence "$og_dir" --grid "$grid"
+    "$PYTHON" "$SCRIPT" -o "$DB" -j "$WORKERS" "${EXTRA_ARGS[@]}" convergence "$og_dir" --grid "$grid"
     echo ""
 done
 
@@ -64,7 +70,7 @@ for dir_name in "${!GRIDS[@]}"; do
         fi
         tag="OG_vs_${prec}"
         echo "=== Cross: ${grid} ${tag} ==="
-        python "$SCRIPT" -o "$DB" "${EXTRA_ARGS[@]}" cross "$og_dir" "$nu_dir" --grid "$grid" --tag "$tag"
+        "$PYTHON" "$SCRIPT" -o "$DB" -j "$WORKERS" "${EXTRA_ARGS[@]}" cross "$og_dir" "$nu_dir" --grid "$grid" --tag "$tag"
         echo ""
     done
 done
