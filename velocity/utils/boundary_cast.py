@@ -577,6 +577,37 @@ def _insert_d2h_cast(
     print(f"    Inserted D2H cast Map for {cpu_name}")
 
 
+def _flat_index_expr(flat_var: str, shape: list, perm: list[int] | None = None):
+    """Build per-dimension index expressions from a flat 1D index.
+
+    Returns a list of strings, one per dimension of the *logical* array,
+    such that ``arr[exprs[0], exprs[1], ...]`` walks memory in the order
+    implied by ``perm`` (C-contiguous when perm is None).
+
+    ``perm`` reorders the *iteration* so that ``logical_idx[perm[k]]``
+    varies fastest for increasing ``flat_var``.  This is used for the
+    permuted side of a boundary cast: the flat loop walks the permuted
+    layout linearly, and the expressions unpack that into logical indices.
+    """
+    ndim = len(shape)
+    if perm is None:
+        perm = list(range(ndim))
+
+    # Walk dimensions from fastest to slowest in the *permuted* order.
+    # perm[-1] is fastest-varying.
+    rev = list(reversed(perm))
+    exprs = [""] * ndim
+    remainder = flat_var
+    for k, dim in enumerate(rev):
+        s = str(shape[dim])
+        if k < ndim - 1:
+            exprs[dim] = f"({remainder}) % {s}"
+            remainder = f"({remainder}) / {s}"
+        else:
+            exprs[dim] = str(remainder)
+    return exprs
+
+
 def _add_cast_map(
     sdfg: dace.SDFG,
     state: dace.SDFGState,
@@ -589,30 +620,52 @@ def _add_cast_map(
     tag: str,
     permutation: list[int] | None = None,
 ):
-    """Add a Map that casts every element from src to dst.
+    """Add a 1-D flat Map that casts every element from src to dst.
 
-    The cast tasklet emits ``static_cast<target_dtype>(_in)``.
+    Uses a single map parameter over total elements → blockIdx.x
+    (CUDA limit 2^31-1), avoiding the 65535 limit on grid.y/z that
+    multi-dimensional maps can hit for large arrays (e.g. R02B06).
     """
     src_desc = sdfg.arrays[src_name]
     dst_desc = sdfg.arrays[dst_name]
 
-    map_ranges = {f"__i{i}": f"0:{s}" for i, s in enumerate(shape)}
-    indices = [f"__i{i}" for i in range(len(shape))]
+    shape_list = [str(s) for s in shape]
+    total = "*".join(shape_list)
 
-    src_indices = ", ".join(indices)
-    dst_indices = src_indices
+    # 1-D map over flat index
+    map_ranges = {"__flat": f"0:{total}"}
 
+    # Compute per-dimension indices for src and dst from the flat index.
+    # Without permutation both sides use C-order (dim 0 slowest).
+    # With permutation one side iterates in permuted order.
+    src_perm = None
+    dst_perm = None
     if permutation:
         p = permutation + list(range(len(permutation), len(shape)))
         if len(p) > len(shape):
-            p = p[: len(shape)]
-        permuted_indices = [indices[i] for i in p]
+            p = p[:len(shape)]
         if tag == "h2d":
-            # H2D: src is original CPU, dst is permuted lowered
-            dst_indices = ", ".join(permuted_indices)
+            # H2D: flat index walks dst (permuted) linearly
+            dst_perm = p
+            # src uses the same logical indices (unpacked from permuted walk)
         else:
-            # D2H: src is permuted lowered, dst is original CPU
-            src_indices = ", ".join(permuted_indices)
+            # D2H: flat index walks src (permuted) linearly
+            src_perm = p
+
+    # The flat index walks one side linearly.  For the *permuted* side the
+    # decomposition is trivial (just divmod in permuted dim order).  For the
+    # *non-permuted* side we need the same logical indices.
+    if permutation:
+        # Derive logical indices from the permuted walk order.
+        walk_perm = dst_perm if dst_perm else src_perm
+        idx_exprs = _flat_index_expr("__flat", shape_list, walk_perm)
+        src_indices = ", ".join(idx_exprs)
+        dst_indices = ", ".join(idx_exprs)
+    else:
+        # No permutation: C-order decomposition for both.
+        idx_exprs = _flat_index_expr("__flat", shape_list, None)
+        src_indices = ", ".join(idx_exprs)
+        dst_indices = ", ".join(idx_exprs)
 
     map_entry, map_exit = state.add_map(f"boundary_cast_{tag}_{src_name}", map_ranges)
 
@@ -671,3 +724,123 @@ def _add_cast_map(
         None,
         dace.Memlet.from_array(dst_name, dst_desc),
     )
+
+
+def inject_gpu_boundary_cast(
+    sdfg: dace.SDFG,
+    array_names: Union[str, Iterable[str]],
+    external_dtype: dace.typeclass,
+    output_names: Union[str, Iterable[str], None] = None,
+    output_only_names: Union[str, Iterable[str], None] = None,
+):
+    """Insert GPU→GPU dtype cast for arrays that are already GPU-resident.
+
+    Used in integration mode where all data lives on GPU (device pointers
+    from OpenACC/Fortran).  For each array:
+
+    1. Rename ``name`` → ``name_fp64`` (keeps fp64, non-transient interface)
+    2. Create ``name`` as GPU transient at ``external_dtype``
+    3. Insert a forward cast Map in the entry state (fp64→lowered),
+       unless the array is in ``output_only_names``
+    4. For output arrays: insert reverse cast Map in exit state (lowered→fp64)
+    5. Propagate lowered dtype through nested SDFGs
+
+    Args:
+        sdfg: The SDFG to transform (post-integration transforms).
+        array_names: All GPU-resident array names to lower.
+        external_dtype: Target dtype (e.g. ``dace.float32``).
+        output_names: Subset of array_names that are outputs (need reverse cast).
+            If None, all arrays get both forward and reverse casts.
+        output_only_names: Subset of output_names that are pure outputs
+            (written before read).  These skip the forward h2d cast.
+    """
+    if isinstance(array_names, str):
+        array_names = [array_names]
+    if output_names is None:
+        output_set = set(array_names)
+    elif isinstance(output_names, str):
+        output_set = {output_names}
+    else:
+        output_set = set(output_names)
+    if output_only_names is None:
+        output_only_set: set[str] = set()
+    elif isinstance(output_only_names, str):
+        output_only_set = {output_only_names}
+    else:
+        output_only_set = set(output_only_names)
+
+    entry_state = sdfg.start_state
+    exit_states = sdfg.sink_nodes()
+    exit_state = exit_states[0] if exit_states else None
+
+    for name in array_names:
+        if name not in sdfg.arrays:
+            print(f"  gpu_boundary_cast: {name} not in SDFG, skipping.")
+            continue
+
+        arr = sdfg.arrays[name]
+        orig_dtype = arr.dtype
+        if orig_dtype == external_dtype:
+            print(f"  gpu_boundary_cast: {name} already {external_dtype}, skipping.")
+            continue
+
+        fp64_name = f"{name}_fp64"
+        is_output = name in output_set
+
+        # Save original properties before any modifications.
+        orig_shape = list(arr.shape)
+        orig_storage = arr.storage
+        orig_strides = list(arr.strides)
+
+        # Step 1: Propagate lowered dtype through nested SDFGs FIRST.
+        # Edges still reference `name`, so _propagate_dtype can walk
+        # into NestedSDFGs via connector-mapped edges.  This changes
+        # arr.dtype *and* every internal array reachable from `name`.
+        _propagate_dtype(sdfg, name, external_dtype)
+
+        # Step 2: Make `name` a transient (computation buffer, now float).
+        arr.transient = True
+
+        # Step 3: Create _fp64 descriptor — non-transient interface that
+        # receives the Fortran device pointer (stays fp64).
+        sdfg.add_array(
+            fp64_name,
+            shape=orig_shape,
+            dtype=orig_dtype,
+            transient=False,
+            storage=orig_storage,
+            strides=orig_strides,
+        )
+
+        # Step 4: Forward cast in entry state (fp64 → lowered).
+        # Skipped for output-only arrays (written before read).
+        if name not in output_only_set:
+            fp64_an = entry_state.add_access(fp64_name)
+            lowered_an = entry_state.add_access(name)
+            _add_cast_map(
+                sdfg, entry_state,
+                fp64_an, fp64_name,
+                lowered_an, name,
+                orig_shape, external_dtype,
+                "gpu_h2d",
+            )
+
+        # Step 5: Reverse cast in exit state (lowered → fp64) for outputs.
+        if is_output and exit_state is not None:
+            lowered_exit_an = exit_state.add_access(name)
+            fp64_exit_an = exit_state.add_access(fp64_name)
+            _add_cast_map(
+                sdfg, exit_state,
+                lowered_exit_an, name,
+                fp64_exit_an, fp64_name,
+                orig_shape, orig_dtype,
+                "gpu_d2h",
+            )
+            direction = "←" if name in output_only_set else "↔"
+        else:
+            direction = "→"
+
+        print(
+            f"  gpu_boundary_cast: {fp64_name} ({orig_dtype}) {direction} "
+            f"{name} ({external_dtype})"
+        )

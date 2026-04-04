@@ -367,12 +367,25 @@ def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
     with open(filepath, "r") as file:
         lines = file.readlines()
     with open(filepath, "w") as file:
-        for line in lines:
-            if line.strip().startswith("//"):
+        commenting_block = False  # True while commenting a multi-line statement
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+
+            # Continue commenting until we hit the closing semicolon
+            if commenting_block:
+                indent = line[: len(line) - len(line.lstrip())]
+                file.write(indent + "//" + line.lstrip())
+                if ";" in stripped:
+                    commenting_block = False
+                continue
+
+            if stripped.startswith("//"):
                 file.write(line)
                 continue
+
             should_comment = False
             for name in name_set:
+                # delete/free on same line
                 if (
                     any(
                         x in line
@@ -382,6 +395,7 @@ def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
                 ):
                     should_comment = True
                     break
+                # Single-line: name = new DACE_ALIGN(...);
                 if (
                     name in line
                     and "=" in line
@@ -390,9 +404,24 @@ def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
                 ):
                     should_comment = True
                     break
+                # Multi-line: name =\n    new DACE_ALIGN(...)...;
+                # Detect "name =" without "new" on this line, but "new" on next line
+                if (
+                    name in line
+                    and "=" in line
+                    and "new" not in line
+                    and i + 1 < len(lines)
+                    and "new" in lines[i + 1]
+                    and "DACE_ALIGN" in lines[i + 1]
+                ):
+                    should_comment = True
+                    break
             if should_comment:
                 indent = line[: len(line) - len(line.lstrip())]
                 file.write(indent + "//" + line.lstrip())
+                # If no semicolon on this line, keep commenting continuation lines
+                if ";" not in stripped:
+                    commenting_block = True
             else:
                 file.write(line)
 
@@ -588,9 +617,9 @@ def compile_if_propagated_sdfgs(
             _replace_cpp_with_cu(build_loc)
             if stage > 5 and rm_syncs:
                 comment_out_syncs(cpu_src, gpu)
-            if allocation_names_to_comment_out and stage == 9:
+            if allocation_names_to_comment_out and stage >= 8:
                 comment_out_allocs_and_frees(cpu_src, allocation_names_to_comment_out)
-            if use_openacc_stream and stage == 9:
+            if use_openacc_stream and stage >= 8:
                 change_to_openacc_stream(cpu_src, dev_src, gpu)
             add_reduce_clean_up_calls(cpu_src)
             fix_levelmask_calls(cpu_src, True, stage)

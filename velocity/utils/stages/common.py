@@ -167,7 +167,10 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
         sdfgs = {
             name: dace.SDFG.from_file(stage_output(name, stage_id)) for name in names
         }
-        kwargs = compile_extra_kwargs or {}
+        if callable(compile_extra_kwargs):
+            kwargs = compile_extra_kwargs(all_metadata)
+        else:
+            kwargs = compile_extra_kwargs or {}
         compile_action(stage_id, sdfgs, **kwargs)
 
 

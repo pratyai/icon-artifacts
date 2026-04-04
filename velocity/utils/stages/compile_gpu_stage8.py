@@ -30,13 +30,23 @@ from utils.decrease_bitwidth_of_const_arrays import (
 from utils.profiling_patches import (
     insert_timers_for_profiling,
     insert_synchronization_for_profiling,
+    remove_profiling_states,
+    remove_sync_states,
+    insert_program_entry_exit_syncs,
+    rm_redundant_copies,
 )
+from utils.change_flatten_lib_to_shallow_copy import change_flatten_lib_to_shallow_copy
+from utils.input_to_gpu import input_to_gpu
+from utils.make_flattened_data_to_input import (
+    make_flattened_data_to_non_transient_gpu_input as _make_flat_gpu_input,
+)
+from utils.add_set_zero import add_set_zero
 
 from utils.assignment_and_copy_kernel_to_memset_and_memcpy import (
     AssignmentAndCopyKernelToMemsetAndMemcpy,
 )
 from utils.create_profile_sdfg import create_profile_sdfg
-from utils.boundary_cast import inject_boundary_cast, _propagate_dtype
+from utils.boundary_cast import inject_boundary_cast, inject_gpu_boundary_cast, _propagate_dtype
 from utils.bfp_compression import inject_bfp_packing
 
 STAGE_ID = 8
@@ -605,6 +615,15 @@ def optimization_action(sdfg):
     }
     external_dtype = lowprec_map.get(options["lowprec"], dace.float64)
 
+    # Arrays that input_to_gpu will make GPU-resident in integration mode.
+    # Must be excluded from lowering/boundary-cast to avoid schedule conflicts.
+    _INTEGRATION_GPU_INPUTS = {"z_w_concorr_me", "z_kin_hor_e", "z_vt_ie"}
+    _INTEGRATION_EXCLUDE = set()
+    if options["build_for_integration"]:
+        for n in _INTEGRATION_GPU_INPUTS:
+            _INTEGRATION_EXCLUDE.add(n)
+            _INTEGRATION_EXCLUDE.add(f"gpu_{n}")
+
     if options.get("lower_all"):
         # CFL reduction arrays managed by change_reduction_schedule.py.
         # These cross the GPU/CPU boundary in ways that
@@ -625,6 +644,7 @@ def optimization_action(sdfg):
             and arr.dtype == dace.float64
             and arr.total_size != 1
             and name not in _CFL_EXCLUDE
+            and name not in _INTEGRATION_EXCLUDE
         ]
         print(
             f"Lowering all {len(array_names)} float64 arrays to {external_dtype} for pointwise decompression:\n{array_names}"
@@ -733,13 +753,15 @@ def optimization_action(sdfg):
         # Transpose the first two dimensions
         permutation = [1, 0]
 
-    if boundary_cast_targets:
+    if boundary_cast_targets and not options["build_for_integration"]:
+        # Standalone: CPU↔GPU boundary cast at H2D/D2H edges
         inject_boundary_cast(
             sdfg,
             array_names=boundary_cast_targets,
             external_dtype=external_dtype,
             permutation=permutation,
         )
+    # Integration: GPU→GPU cast is deferred until after integration transforms
     if gpu_transient:
         # Transient arrays with GPU siblings: change both CPU and GPU dtype.
         # No boundary cast needed — internal computation, no serde.
@@ -1061,12 +1083,21 @@ def optimization_action(sdfg):
                 n for n in gpu_cast_targets
                 if any(n.startswith(p) for p in _OUTPUT_PREFIXES)
             ]
+            # Pure outputs: written before read, no need for h2d cast.
+            _OUTPUT_ONLY = {
+                "gpu___CG_p_diag__m_ddt_vn_apc_pc",
+                "gpu___CG_p_diag__m_ddt_w_adv_pc",
+            }
+            gpu_output_only_names = [
+                n for n in gpu_output_names if n in _OUTPUT_ONLY
+            ]
             if gpu_cast_targets:
                 inject_gpu_boundary_cast(
                     sdfg,
                     gpu_cast_targets,
                     external_dtype,
                     output_names=gpu_output_names,
+                    output_only_names=gpu_output_only_names,
                 )
             sdfg.validate()
 
@@ -1159,7 +1190,22 @@ def optimization_action(sdfg):
         fp64_unexpected=fp64_unexpected,
     )
 
-    return sdfg, bfp_targets
+    return sdfg, {
+        "bfp_targets": bfp_targets,
+        "allocation_names_to_comment_out": allocation_names_to_comment_out,
+    }
+
+
+def _compile_kwargs_from_metadata(all_metadata):
+    """Extract compile kwargs from optimization metadata."""
+    alloc_names = set()
+    for m in all_metadata:
+        if isinstance(m, dict):
+            alloc_names |= m.get("allocation_names_to_comment_out", set())
+    kwargs = {}
+    if alloc_names:
+        kwargs["allocation_names_to_comment_out"] = alloc_names
+    return kwargs
 
 
 def main():
@@ -1168,6 +1214,7 @@ def main():
     common.standard_main(
         STAGE_ID,
         optimization_action,
+        compile_extra_kwargs=_compile_kwargs_from_metadata,
     )
 
 
