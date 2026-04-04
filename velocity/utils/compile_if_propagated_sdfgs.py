@@ -363,6 +363,22 @@ def comment_out_syncs(filepath: str, gpu: bool):
             file.write(line)
 
 
+def _name_match(name: str, line: str) -> bool:
+    """Check that *name* appears in *line* as a whole identifier, not as a
+    substring of a longer name (e.g. ``edge_blk`` must not match
+    ``edge_blk_uint8``).  The character immediately after the match must be
+    a non-identifier character (not alphanumeric / underscore)."""
+    start = 0
+    while True:
+        idx = line.find(name, start)
+        if idx == -1:
+            return False
+        end = idx + len(name)
+        if end >= len(line) or not (line[end].isalnum() or line[end] == '_'):
+            return True
+        start = end
+
+
 def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
     with open(filepath, "r") as file:
         lines = file.readlines()
@@ -391,13 +407,18 @@ def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
                         x in line
                         for x in ["delete[]", "delete", "cudaFree", "cudaMalloc"]
                     )
-                    and name in line
+                    and _name_match(name, line)
                 ):
+                    # Don't comment out per-call boundary-cast buffer allocations.
+                    # These are local float* variables in __program_internal
+                    # (no "__state->" prefix), needed for fp64→float32 casting.
+                    if ("cudaMalloc" in line or "cudaFree" in line) and "__state->" not in line:
+                        continue
                     should_comment = True
                     break
                 # Single-line: name = new DACE_ALIGN(...);
                 if (
-                    name in line
+                    _name_match(name, line)
                     and "=" in line
                     and "new" in line
                     and "DACE_ALIGN" in line
@@ -407,7 +428,7 @@ def comment_out_allocs_and_frees(filepath: str, name_set: typing.Set[str]):
                 # Multi-line: name =\n    new DACE_ALIGN(...)...;
                 # Detect "name =" without "new" on this line, but "new" on next line
                 if (
-                    name in line
+                    _name_match(name, line)
                     and "=" in line
                     and "new" not in line
                     and i + 1 < len(lines)
@@ -507,6 +528,142 @@ def fix_mixed_precision_ambiguity(file_path: Path):
     if new_content != content:
         with open(file_path, "w") as f:
             f.write(new_content)
+
+
+def patch_bfp_reads(
+    code: str, bfp_gpu_names: list[str], block_size: int = 32, mantissa_bits: int = 16
+) -> str:
+    """Text-level BFP patching: fix parameter types and replace array reads
+    with bfp_decode calls for GPU arrays that were BFP-packed at the top level
+    but whose nested SDFG descriptors still say double*.
+
+    Patches:
+      - `(const) double *(__restrict__) gpu_NAME` → `const uint8_t *__restrict__ gpu_NAME`
+      - `gpu_NAME[(index)]` → `bfp_decode<BS, MB>(gpu_NAME, (int)(index))`
+    """
+    for gpu_name in bfp_gpu_names:
+        # 1. Fix parameter / declaration types (more robust regex for double*)
+        # Matches: double* gpu_NAME, const double * __restrict__ gpu_NAME, etc.
+        code = re.sub(
+            rf"(const\s+)?double\s*\*\s*(__restrict__\s+)?{re.escape(gpu_name)}\b",
+            f"const uint8_t *__restrict__ {gpu_name}",
+            code,
+        )
+
+        # 1b. Fix pointer casts: (double *)(&gpu_NAME[...]) → &gpu_NAME[...]
+        code = re.sub(
+            rf"\(double\s*\*\)\s*\(\s*&{re.escape(gpu_name)}\b",
+            f"(const uint8_t *)(&{gpu_name}",
+            code,
+        )
+
+        # 2. Replace array reads: gpu_NAME[(expr)] → bfp_decode(...)
+        #    Skip pointer passes like &gpu_NAME[0] — these pass the raw
+        #    pointer to kernel launch args, not element reads.
+        result = []
+        i = 0
+        search = f"{gpu_name}["
+        while i < len(code):
+            pos = code.find(search, i)
+            if pos == -1:
+                result.append(code[i:])
+                break
+            result.append(code[i:pos])
+            # Find matching ] by counting brackets
+            bracket_start = pos + len(search) - 1  # position of [
+            depth = 1
+            j = bracket_start + 1
+            while j < len(code) and depth > 0:
+                if code[j] == "[":
+                    depth += 1
+                elif code[j] == "]":
+                    depth -= 1
+                j += 1
+            if depth != 0:
+                # Unmatched bracket — leave as-is
+                result.append(code[pos : pos + len(search)])
+                i = pos + len(search)
+                continue
+            index_expr = code[bracket_start + 1 : j - 1].strip()
+            # Check if preceded by & (address-of → pointer pass, not read)
+            text_before = code[:pos].rstrip()
+            if text_before.endswith("&"):
+                # Pointer pass: &gpu_NAME[expr] — leave as-is
+                result.append(code[pos:j])
+            else:
+                result.append(
+                    f"bfp_decode<{block_size}, {mantissa_bits}>({gpu_name}, (int)({index_expr}))"
+                )
+            i = j
+        code = "".join(result)
+
+    return code
+
+
+def patch_block_loop_bounds(code: str) -> str:
+    """Clamp start_block and start_index reads to max(1, ...).
+
+    ICON uses 0-based sentinel values in start_block/start_index arrays to
+    encode empty refinement-level ranges.  Fortran's get_indices_v makes the
+    inner loop empty for these blocks, but DaCe's generated CUDA code launches
+    kernels covering the full block range, causing negative array offsets and
+    CUDA_ERROR_ILLEGAL_ADDRESS.
+
+    This patch wraps every assignment that reads from a start_block or
+    start_index array in std::max(1, ...), so sentinel values produce empty
+    loop ranges [1, 0] instead of invalid accesses.
+
+    Pattern matched (assignment context only):
+        VAR = __CG_...__m_start_block[EXPR];
+        VAR = __CG_...__m_start_index[EXPR];
+    Becomes:
+        VAR = std::max(1, __CG_...__m_start_block[EXPR]);
+        VAR = std::max(1, __CG_...__m_start_index[EXPR]);
+    """
+    # Clamp start_block reads: ICON may return 0 (sentinel for empty
+    # refinement level), but data arrays have LBOUND=1 in block dim.
+    # Note: codegen may split the expression across lines, so we use
+    # [\s\S] instead of [^\]] to match newlines inside brackets.
+    code = re.sub(
+        r"(=\s*)(__CG_\w+__m_start_block\[[\s\S]*?\])\s*;",
+        r"\1std::max(1, \2); // patched: clamp block sentinel",
+        code,
+    )
+    # Clamp start_index reads: same issue in nproma dim.
+    # Matches get_indices_c_lib's MAX(1, i_startidx_in) which
+    # get_indices_v_lib lacks.
+    code = re.sub(
+        r"(=\s*)(__CG_\w+__m_start_index\[[\s\S]*?\])\s*;",
+        r"\1std::max(1, \2); // patched: clamp index sentinel",
+        code,
+    )
+    return code
+
+
+def _add_bfp_include(file_path: Path):
+    """Inject bfp.cuh include for BFP decode support in generated CUDA code."""
+    with open(file_path, "r") as f:
+        content = f.read()
+
+    include = '#include "bfp.cuh"'
+    if include in content:
+        return
+
+    # Insert after the first #include line
+    new_content = re.sub(
+        r"(#include\s+[<\"][^>\"]+[>\"])",
+        rf"\1\n{include}",
+        content,
+        count=1,
+    )
+
+    if new_content != content:
+        with open(file_path, "w") as f:
+            f.write(new_content)
+
+
+# --- Init CUDA signature fix (extracted to utils/fix_init_cuda_odr.py) ---
+from utils.fix_init_cuda_odr import fix_init_cuda_0_signature
 
 
 # --- Compilation Flow ---
@@ -615,12 +772,35 @@ def compile_if_propagated_sdfgs(
 
         if gpu:
             _replace_cpp_with_cu(build_loc)
+
+            # Clamp start_block/start_index reads to max(1, ...) so that
+            # ICON's 0-valued sentinels produce empty loop ranges instead
+            # of negative array offsets on GPU.  Must run after
+            # _replace_cpp_with_cu so the CPU file is .cu.
+            # DISABLED: clamp patch was based on wrong diagnosis.
+            # The Fortran values are valid (>=1); the issue is in ctor/SOA.
+            # _n_patched = 0
+            # for cu_file in build_loc.rglob("*.cu"):
+            #     with open(cu_file, "r") as f:
+            #         content = f.read()
+            #     patched = patch_block_loop_bounds(content)
+            #     if patched != content:
+            #         _n_patched += 1
+            #         with open(cu_file, "w") as f:
+            #             f.write(patched)
+            # if _n_patched:
+            #     print(f"Block bounds: Patched {_n_patched} files")
+            # else:
+            #     print("Block bounds: WARNING — no start_block/start_index reads found to patch")
+
             if stage > 5 and rm_syncs:
                 comment_out_syncs(cpu_src, gpu)
             if allocation_names_to_comment_out and stage >= 8:
                 comment_out_allocs_and_frees(cpu_src, allocation_names_to_comment_out)
             if use_openacc_stream and stage >= 8:
                 change_to_openacc_stream(cpu_src, dev_src, gpu)
+            if stage >= 8:
+                fix_init_cuda_0_signature(cpu_src, dev_src)
             add_reduce_clean_up_calls(cpu_src)
             fix_levelmask_calls(cpu_src, True, stage)
             if stage > 5:
@@ -899,8 +1079,10 @@ def compile_if_propagated_sdfgs(
         # Add linker wrappers for memory tracking
         flags += " -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree"
 
-        # Pass lowered precision tag so main_gpu.cu can record it in SQLite
+        # Keep PTX/SASS intermediate files, organized by precision
         lowprec_tag = os.getenv("_LOWPREC", "fp64").lower()
+        ptx_dir = f"ptx_out/{lowprec_tag}"
+        flags += f" --keep --keep-dir={ptx_dir}"
         flags += f' -DLOWPREC_TAG=\\"{lowprec_tag}\\"'
 
         out_file = output_name or ("libvelocity_gpu.so" if lib else "velocity_gpu")
@@ -915,11 +1097,44 @@ def compile_if_propagated_sdfgs(
         out_file = output_name or ("libvelocity_cpu.so" if lib else "velocity_cpu")
         cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} -lsqlite3 -lz -o {out_file}"
 
-    recompile_sh = Path("recompile.sh")
-    recompile_sh.write_text(f"#!/bin/sh\nset -e\n{cmd}\n")
+    if gpu:
+        Path(ptx_dir).mkdir(parents=True, exist_ok=True)
+
+    # Write recompile.<variant>.sh, then invoke it — single source of truth.
+    # Derive variant suffix from output name, e.g.
+    #   libvelocity_gpu_stage8_solve_nh_integration_release.f16.so → integration.f16
+    _base = out_file.removesuffix(".so")
+    _base = _base.removeprefix("lib")
+    # Extract everything after "release" or "debug"
+    for _tag in ("_release", "_debug"):
+        _pos = _base.find(_tag)
+        if _pos != -1:
+            _variant = _base[_pos + len(_tag):].lstrip(".").replace(".", ".")
+            break
+    else:
+        _variant = ""
+    # e.g. "solve_nh_integration" part
+    for _itag in ("_solve_nh_integration", "_standalone"):
+        _ipos = _base.find(_itag)
+        if _ipos != -1:
+            _mode = _itag.lstrip("_").replace("solve_nh_", "")
+            _variant = f"{_mode}.{_variant}" if _variant else _mode
+            break
+    recompile_name = f"recompile.{_variant}.sh" if _variant else "recompile.sh"
+    recompile_sh = Path(recompile_name)
+    script = f"#!/bin/sh\nset -e\nBINARY={out_file}\n\n{cmd}\n"
+    if gpu:
+        script += (
+            f'\n# Dump SASS (native assembly) alongside PTX\n'
+            f'echo "Dumping SASS to {ptx_dir}/ ..."\n'
+            f'cuobjdump -sass "$BINARY" > {ptx_dir}/all_kernels.sass\n'
+        )
+    recompile_sh.write_text(script)
     recompile_sh.chmod(0o755)
-    print(f"Compiling: {cmd}")
-    if os.system(cmd) != 0:
-        print(f"\n❌ Compilation failed: ./{out_file}")
+
+    print(f"Compiling via ./{recompile_name}")
+    if os.system(f"./{recompile_name}") != 0:
+        print(f"\n❌ Build failed (see ./{recompile_name} for command)")
         exit(1)
     print(f"\n✅ Binary ready: ./{out_file}")
+    return cmd
