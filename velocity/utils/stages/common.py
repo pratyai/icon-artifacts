@@ -204,8 +204,13 @@ def compile_action(
     options = get_build_options()
     release = options["release"]
 
+    lowprec_tag = os.getenv("_LOWPREC", "fp64").lower()
     for name, g in sdfgs.items():
-        g.build_folder = f"{DEFAULT_CODEGEN_DIR}/stage{stage}/{name}"
+        g.build_folder = f"{DEFAULT_CODEGEN_DIR}/stage{stage}/{lowprec_tag}/{name}"
+        if options["permute_dimensions"]:
+            from utils.reshape_kernels import update_gpu_block_size
+
+            update_gpu_block_size(g, [32, 32, 1])
 
     sdfg_list = list(sdfgs.values())
     unique_names(sdfg_list)

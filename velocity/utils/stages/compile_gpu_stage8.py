@@ -624,6 +624,15 @@ def optimization_action(sdfg):
             _INTEGRATION_EXCLUDE.add(n)
             _INTEGRATION_EXCLUDE.add(f"gpu_{n}")
 
+    # w_concorr chain: z_w_concorr_me values are O(1e-15..1e-17),
+    # below FP16 min normal (~6e-8).  Keep the chain at FP32 to
+    # prevent underflow → -inf SNR while still saving memory vs FP64.
+    # Only needed for FP16 — in FP32 mode these would lower to FP32 anyway.
+    _FP32_OVERRIDE = {
+        "z_w_concorr_mc", "gpu_z_w_concorr_mc",
+        "__CG_p_diag__m_w_concorr_c", "gpu___CG_p_diag__m_w_concorr_c",
+    } if external_dtype == dace.float16 else set()
+
     if options.get("lower_all"):
         # CFL reduction arrays managed by change_reduction_schedule.py.
         # These cross the GPU/CPU boundary in ways that
@@ -645,6 +654,7 @@ def optimization_action(sdfg):
             and arr.total_size != 1
             and name not in _CFL_EXCLUDE
             and name not in _INTEGRATION_EXCLUDE
+            and name not in _FP32_OVERRIDE
         ]
         print(
             f"Lowering all {len(array_names)} float64 arrays to {external_dtype} for pointwise decompression:\n{array_names}"
@@ -799,6 +809,14 @@ def optimization_action(sdfg):
                 from utils.boundary_cast import _propagate_permutation
 
                 _propagate_permutation(sdfg, name, permutation)
+
+    # FP32 override: lower the w_concorr chain to FP32 instead of FP16.
+    if options.get("lower_all") and external_dtype != dace.float64:
+        _fp32_actual = [n for n in _FP32_OVERRIDE if n in sdfg.arrays]
+        if _fp32_actual:
+            print(f"FP32 override ({len(_fp32_actual)} arrays): {sorted(_fp32_actual)}")
+            for name in _fp32_actual:
+                _propagate_dtype(sdfg, name, dace.float32)
 
     # Lower float64 scalars used in GPU computation.
     # CFL-related scalars stay double (they feed the CFL reduction which is excluded).
@@ -1098,6 +1116,22 @@ def optimization_action(sdfg):
                     external_dtype,
                     output_names=gpu_output_names,
                     output_only_names=gpu_output_only_names,
+                )
+            # FP32 override arrays need their own FP64→FP32 boundary cast.
+            gpu_fp32_targets = [
+                n for n in _FP32_OVERRIDE
+                if n.startswith("gpu_") and n in sdfg.arrays
+            ]
+            gpu_fp32_outputs = [
+                n for n in gpu_fp32_targets
+                if any(n.startswith(p) for p in _OUTPUT_PREFIXES)
+            ]
+            if gpu_fp32_targets:
+                inject_gpu_boundary_cast(
+                    sdfg,
+                    gpu_fp32_targets,
+                    dace.float32,
+                    output_names=gpu_fp32_outputs,
                 )
             sdfg.validate()
 
