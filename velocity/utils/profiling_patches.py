@@ -33,35 +33,26 @@ def insert_timers_for_profiling(sdfg: dace.SDFG):
     assert len(last_blocks) == 1, "Expected exactly one last block in the SDFG"
     last_block = last_blocks[0]
 
-    timer_sync_state1 = sdfg.add_state_after(
-        state=flatten_state, label=PROFILE_START_SYNC
-    )
-    timer_sync_node1 = timer_sync_state1.add_tasklet(
-        name="sync_tasklet_" + PROFILE_START_SYNC,
-        code=f"dace_wait_device();",
-        inputs={},
-        outputs={},
-        language=dace.dtypes.Language.CPP,
-        code_global='#include "dace_wait_device.h"',
-    )
-    timer_state1 = sdfg.add_state_after(state=timer_sync_state1, label=ENTRY_TIMER)
+    # Single state after casts: sync then start timer
+    timer_state1 = sdfg.add_state_after(state=flatten_state, label=ENTRY_TIMER)
     timer_node1 = timer_state1.add_tasklet(
-        name="timer_" + ENTRY_TIMER,
-        code=f'dace_measure_time("{sdfg.name}");',
+        name="sync_and_timer_" + ENTRY_TIMER,
+        code=f'dace_wait_device();\ndace_measure_time("{sdfg.name}");',
         inputs={},
         outputs={},
         language=dace.dtypes.Language.CPP,
-        code_global='#include "dace_measure_time.h"',
+        code_global='#include "dace_wait_device.h"\n#include "dace_measure_time.h"',
     )
 
+    # Single state before cast-back: stop timer then sync
     timer_state2 = sdfg.add_state_before(state=deflatten_state, label=EXIT_TIMER)
     timer_node2 = timer_state2.add_tasklet(
-        name="timer_" + EXIT_TIMER,
-        code=f'dace_measure_time("{sdfg.name}");',
+        name="sync_and_timer_" + EXIT_TIMER,
+        code=f'dace_wait_device();\ndace_measure_time("{sdfg.name}");',
         inputs={},
         outputs={},
         language=dace.dtypes.Language.CPP,
-        # code_global='#include "dace_measure_time.h"',
+        # code_global already included above
     )
 
 
@@ -142,27 +133,36 @@ def remove_sync_states(sdfg: dace.SDFG):
     rm_state_and_reroute(sdfg, sync_state_names)
 
 
-def insert_program_entry_exit_syncs(sdfg: dace.SDFG):
+def insert_program_entry_exit_syncs(sdfg: dace.SDFG, with_timers: bool = False):
     last_blocks = [n for n in sdfg.nodes() if sdfg.out_degree(n) == 0]
     assert len(last_blocks) == 1, "Expected exactly one last block in the SDFG"
     last_block = last_blocks[0]
+
+    entry_code = "dace_wait_device();"
+    exit_code = "dace_wait_device();"
+    entry_global = '#include "dace_wait_device.h"'
+    if with_timers:
+        timer_call = f'dace_measure_time("{sdfg.name}");'
+        entry_code += f"\n{timer_call}"
+        exit_code = f"{timer_call}\n{exit_code}"
+        entry_global += '\n#include "dace_measure_time.h"'
 
     sync_state1 = sdfg.add_state_before(
         state=sdfg.start_block, label=PROGRAM_ENTRY_SYNC
     )
     sync_node1 = sync_state1.add_tasklet(
         name="sync_tasklet_" + PROGRAM_ENTRY_SYNC,
-        code="dace_wait_device();",
+        code=entry_code,
         inputs={},
         outputs={},
         language=dace.dtypes.Language.CPP,
-        code_global='#include "dace_wait_device.h"',
+        code_global=entry_global,
     )
 
     sync_state2 = sdfg.add_state_after(state=last_block, label=PROGRAM_EXIT_SYNC)
     sync_node2 = sync_state2.add_tasklet(
         name="sync_tasklet_" + PROGRAM_EXIT_SYNC,
-        code="dace_wait_device();",
+        code=exit_code,
         inputs={},
         outputs={},
         language=dace.dtypes.Language.CPP,

@@ -1081,7 +1081,7 @@ def optimization_action(sdfg):
         _make_flat_gpu_input(sdfg)
         sdfg.validate()
 
-        remove_profiling_states(sdfg)
+        # remove_profiling_states(sdfg)  # keep merged timer states (ENTRY_TIMER / EXIT_TIMER)
         remove_sync_states(sdfg)
         insert_program_entry_exit_syncs(sdfg)
         rm_redundant_copies(sdfg)
