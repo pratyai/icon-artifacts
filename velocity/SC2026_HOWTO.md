@@ -56,10 +56,13 @@ Regenerate the Fortran wrapper so its ABI matches the freshly-built `.so`.
 Run once per precision you plan to integrate — the output file is a single
 `wrapper.f90` (later runs overwrite earlier ones):
 ```bash
-python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp64 --output wrapper.f90
-python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp32 --output wrapper.f90
-python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp16 --output wrapper.f90
+python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp64 --serde --output wrapper.f90
+python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp32 --serde --output wrapper.f90
+python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp16 --serde --output wrapper.f90
 # → wrapper.f90   (re-run with the precision you want to integrate next)
+#   --serde is required: adds do_serialize-gated `serialize(at(...))` calls
+#   (p_patch, p_prog.t0, p_metrics.t0, p_diag.t0, …) inside velocity_tendencies_gpu.
+#   Without it, the GPU path produces no got/want dumps.
 ```
 
 > **✅ Artifacts ready**
