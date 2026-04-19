@@ -1,50 +1,36 @@
 # SC2026 — Velocity Tendencies (VT)
 
-**Scope**: only **stage 8** is relevant for the SC2026 results. Ignore
-everything else in this directory.
+**Scope**: only **stage 8** is relevant for SC2026. Ignore everything else.
 
 ## 1. Get the code
-Sparse-checkout only `velocity/` into a dir named `icon-vt-dace`:
+Sparse-checkout `velocity/` into `icon-vt-dace/`:
 ```bash
 git clone --depth 1 --filter=blob:none --sparse \
   --branch okbuddyicon git@github.com:pratyai/icon-artifacts.git _tmp_clone
 cd _tmp_clone
 git sparse-checkout set velocity
 mv velocity ../icon-vt-dace
-cd ..
-rm -rf _tmp_clone
-cd icon-vt-dace
+cd .. && rm -rf _tmp_clone && cd icon-vt-dace
 ```
 
 ## 2. Prereqs
 - Python 3.12, CUDA 12+, `ncu`
 - On the cluster:
-  - One-time: pull the ICON uenv image to your local repo (auto-created
-    on first use under `/capstor/scratch/cscs/$USER/.uenv-images`):
-    ```bash
-    uenv image pull icon/25.2:v1@santis
-    ```
-  - Every session: start the environment with the ICON view:
-    ```bash
-    uenv start --view=default icon/25.2:v1@santis
-    ```
-  - A working `spack` install, already activated in the shell (path/version
-    depends on the user — `spack --version` should return something sensible).
-  - Load the runtime deps:
-    ```bash
-    spack load cuda sqlite zstd
-    ```
+  - `uenv image pull icon/25.2:v1@santis`  (one-time)
+  - `uenv start --view=default icon/25.2:v1@santis`  (each session)
+  - `spack` activated (`spack --version` should work)
+  - `spack load cuda sqlite zstd`
 - `python3 -m venv .venv && source .venv/bin/activate`
-- `pip install numpy h5py polars scipy netCDF4 tqdm git+https://github.com/spcl/dace.git@f2dace/staging`
+- `pip install numpy h5py polars scipy netCDF4 tqdm zstandard git+https://github.com/spcl/dace.git@f2dace/staging`
 
 ## 3. Build integration `.so` + wrapper
 
-Required env var (GH200):
+GH200:
 ```bash
 export GENCODE_ARCH="arch=compute_90,code=sm_90"
 ```
 
-Build the integration shared libraries (one per precision):
+One `.so` per precision:
 ```bash
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp64
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp32
@@ -52,70 +38,69 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 # → libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so
 ```
 
-Regenerate the Fortran wrapper so its ABI matches the freshly-built `.so`.
-Run once per precision you plan to integrate — the output file is a single
-`wrapper.f90` (later runs overwrite earlier ones):
+Regenerate the Fortran wrapper (one file; later runs overwrite):
 ```bash
 python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp64 --serde --output wrapper.f90
 python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp32 --serde --output wrapper.f90
 python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp16 --serde --output wrapper.f90
-# → wrapper.f90   (re-run with the precision you want to integrate next)
-#   --serde is required: adds do_serialize-gated `serialize(at(...))` calls
-#   (p_patch, p_prog.t0, p_metrics.t0, p_diag.t0, …) inside velocity_tendencies_gpu.
-#   Without it, the GPU path produces no got/want dumps.
+# → wrapper.f90   (re-run with the precision you'll integrate next)
 ```
+`--serde` is required — adds the `do_serialize`-gated `serialize(at(...))`
+calls inside `velocity_tendencies_gpu`. Without it the GPU path dumps
+nothing.
 
 > **✅ Artifacts ready**
 >
-> At this point you have:
 > - `libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so`
 > - `wrapper.f90`
-> - `serde.f90` (serialization module, already in this tree;
->    mostly auto-generated + a small hand-written API block —
->    **TODO: streamline into a single fully auto-generated module**)
+> - `serde.f90` (already in-tree; mostly auto-generated, small hand-written
+>   API block — **TODO: fully auto-generate**)
 >
-> **For the ICON-side build + run, continue in the icon-dace repo's
-> `SC2026_HOWTO.md`.** The rest of this file (sections below) only covers
-> the standalone profiling path — skip unless you're regenerating the
-> NCU numbers.
+> **Next: §4 hands off to icon-dace for data generation, §5 brings you
+> back here for analysis.** §6 is the standalone NCU-profiling path,
+> independent of §4–5 — skip unless regenerating the paper's NCU numbers.
 
-## 4. Integrate with ICON
-<!-- TODO: fill in the full ICON-side build + run recipe -->
+## 4. Generate data (over in icon-dace)
 
-ICON needs the R02B04 grid:
+Data generation — ICON build, submit, `.data` dumps — lives in
+**icon-dace's `SC2026_HOWTO.md`**. In short: copy `wrapper.f90` into
+`icon-dace/src/atm_dyn_iconam/`, build ICON, then run
+`./run/sbatch_all_sc2026.sh <GRID>` over there for each grid.
+
+Follow it through §8 of icon-dace's HOWTO, then come back here for
+analysis.
+
+## 5. Analysis — SNR (come back from icon-dace)
+
+After jobs land their `.data` files under
+`icon-dace/build/verification/experiments/`, run from this tree:
+
 ```bash
-curl -LO http://icon-downloads.mpimet.mpg.de/grids/public/edzw/icon_grid_0010_R02B04_G.nc
-# → icon_grid_0010_R02B04_G.nc
+./run_snr_compare.sh 0050_R02B03   # 320 km
+./run_snr_compare.sh 0010_R02B04   # 160 km
+./run_snr_compare.sh 0008_R02B05   #  80 km
+./run_snr_compare.sh 0002_R02B06   #  40 km
+# → snr.db
 ```
-Full catalog: <http://icon-downloads.mpimet.mpg.de/dwd_grids.xml>
 
-1. Pick the integration build for the target precision, e.g.
-   `libvelocity_gpu_stage8_solve_nh_integration_release.fp32.so`.
-2. Point ICON at it — **TBD** (env var / symlink / ICON build-option path).
-3. Build / rebuild ICON — **TBD**.
-4. Run the ICON experiment — **TBD** (sbatch script or command).
-5. Integration outputs land in — **TBD**.
-
-## 5. Validate (from ICON integration run)
-<!-- TODO: replace with the concrete comparison against integration outputs -->
-- Compare integration-run outputs against the reference — **TBD**
-  (command, reference path, metric: SNR/RMSE).
+Writes a shared `snr.db` (SQLite), keyed by
+`(grid, tag, phys, field, sub_field)`. Tags per grid:
+`FP32_vs_FP64`, `FP16_vs_FP64`, `FP64_vs_refined`, `FP32_vs_refined`,
+`FP16_vs_refined`.
 
 ## 6. Profile (standalone)
 
-Everything in this section is only needed to regenerate the profiling
-numbers in the paper (NCU table). Skip if you only care about the ICON
+Only needed to regenerate the paper's NCU numbers. Skip for ICON
 integration.
 
 ### 6.1 Reference data
-`data_r02b04/` reference dumps (412 MB, timestep 2 only) from polybox:
+`data_r02b04/` (412 MB, timestep 2 only) from polybox:
 ```bash
 curl -L -o data_r02b04.tar.zst \
   'https://polybox.ethz.ch/index.php/s/xfprBf6rYjY7EZD/download?files=data_r02b04.tar.zst'
 tar -I zstd -xf data_r02b04.tar.zst
-# → data_r02b04/
 ```
-Other timesteps + `data_r02b0{3,5}/` grids live on Daint:
+Other timesteps + `data_r02b0{3,5}/` on Daint at
 `/capstor/scratch/cscs/pmazumde/gitspace/ico2/velocity/`.
 
 ### 6.2 Build standalone
@@ -129,36 +114,33 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 ### 6.3 Run standalone
 ```bash
 ./velocity_gpu_stage8_standalone_release.fp64 2 --reps=3 --data=data_r02b04
-#   2              : timestep
-#   --reps=3       : repetitions for timing
-#   --data=<dir>   : reference-dump directory (defaults to data_nproma<NPROMA>)
+#   2         : timestep
+#   --reps    : timing repetitions
+#   --data    : reference-dump dir (defaults to data_nproma<NPROMA>)
 ```
 
-### 6.4 Run NCU
+### 6.4 NCU
 ```bash
 sbatch profile_ncu.sh <precision> <timestep> <data_dir> <output_dir>
 # e.g.
 sbatch profile_ncu.sh f32 2 data_r02b04 vt_profiles-r02b04
 # → <output_dir>/vt.f32.ncu-rep
 ```
-Precision is `f16 | f32 | f64`. Inspect the report with `ncu-ui` or
-`ncu --import <output_dir>/vt.<prec>.ncu-rep --page details`.
+Precision: `f16 | f32 | f64`. Inspect via `ncu-ui` or
+`ncu --import <rep> --page details`.
 
 ### 6.5 Metric mapping
-The paper's profiling table is built from a handful of standard NCU
-metrics — verified present in an NCU 2025.2 report:
+Paper table metrics (verified on NCU 2025.2):
 
-- kernel duration: `gpu__time_duration.avg`
-- DRAM read/write bytes: `dram__bytes_read.sum`, `dram__bytes_write.sum`
-- BW utilization: `gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed`
-- L1 hit rate: `l1tex__t_sector_hit_rate.pct`
-- L2 hit rate: `lts__t_sector_hit_rate.pct`
+- duration: `gpu__time_duration.avg`
+- DRAM R/W: `dram__bytes_read.sum`, `dram__bytes_write.sum`
+- BW util: `gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed`
+- L1 / L2 hit rate: `l1tex__t_sector_hit_rate.pct`, `lts__t_sector_hit_rate.pct`
 - occupancy: `sm__warps_active.avg.pct_of_peak_sustained_active`
-- registers/thread: `launch__registers_per_thread`
-- FP{64,32,16} FLOP counts: `derived__smsp__sass_thread_inst_executed_op_{d,f,h}{fma,mul,add}_pred_on_xN`
-  (the `_xN` suffix pre-multiplies: FMA ×2, HFMA ×4 per NVIDIA convention)
+- regs/thread: `launch__registers_per_thread`
+- FP64/32/16 FLOPs: `derived__smsp__sass_thread_inst_executed_op_{d,f,h}{fma,mul,add}_pred_on_xN`
+  (`_xN` pre-multiplies — FMA×2, HFMA×4 per NVIDIA)
 
-Exact metric names shift across NCU versions. NCU 2025.2 in particular
-re-namespaces raw-page CSV columns under groups like `FBSP.TriageCompute.*`,
-`SM_B.TriageCompute.*`, etc., which breaks naive name-based extractors.
-Easier to eyeball via `ncu --import <rep> --page details`.
+Names shift across NCU versions. 2025.2 re-namespaces raw-page CSV
+columns under `FBSP.TriageCompute.*`, `SM_B.TriageCompute.*`, etc., which
+breaks naive extractors — eyeball via `--page details`.
