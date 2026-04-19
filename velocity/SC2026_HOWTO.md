@@ -137,13 +137,20 @@ Only needed to regenerate the paper's NCU numbers. Skip for ICON
 integration.
 
 ### 6.1 Reference data
-`data_r02b04/` (412 MB, timestep 2 only) from polybox:
+All four grids available on polybox (folder `SC2026 Data Dumps`).
+Timestep is 2 for R02B03/04/05, 1 for R02B06 (R02B06 was too big to
+keep more steps):
+
 ```bash
-curl -L -o data_r02b04.tar.zst \
-  'https://polybox.ethz.ch/index.php/s/xfprBf6rYjY7EZD/download?files=data_r02b04.tar.zst'
-tar -I zstd -xf data_r02b04.tar.zst
+SHARE='https://polybox.ethz.ch/index.php/s/xfprBf6rYjY7EZD/download'
+for F in data_r02b03.tar.zst data_r02b04.tar.zst data_r02b05.tar.zst data_r02b06.tar.zst; do
+  curl -L -o "$F" "$SHARE?files=$F"
+  tar -I zstd -xf "$F"
+done
+# → data_r02b0{3,4,5,6}/
 ```
-Other timesteps + `data_r02b0{3,5}/` on Daint at
+
+Extra timesteps beyond these remain only on Daint at
 `/capstor/scratch/cscs/pmazumde/gitspace/ico2/velocity/`.
 
 ### 6.2 Build standalone
@@ -162,17 +169,55 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 #   --data    : reference-dump dir (defaults to data_nproma<NPROMA>)
 ```
 
-### 6.4 NCU
-```bash
-sbatch profile_ncu.sh <precision> <timestep> <data_dir> <output_dir>
-# e.g.
-sbatch profile_ncu.sh f32 2 data_r02b04 vt_profiles-r02b04
-# → <output_dir>/vt.f32.ncu-rep
-```
-Precision: `f16 | f32 | f64`. Inspect via `ncu-ui` or
-`ncu --import <rep> --page details`.
+### 6.4 NCU — submit
 
-### 6.5 Metric mapping
+`profile_ncu.sh <precision> <timestep> <data_dir> <output_dir>` profiles
+one (precision, grid). Full 4×3 = 12-job sweep. Timestep is 2 for
+R02B03/04/05 and 1 for R02B06 (matches the polybox tarballs):
+
+```bash
+# 320 km (R02B03) — timestep 2
+sbatch profile_ncu.sh f64 2 data_r02b03 vt_profiles-r02b03
+sbatch profile_ncu.sh f32 2 data_r02b03 vt_profiles-r02b03
+sbatch profile_ncu.sh f16 2 data_r02b03 vt_profiles-r02b03
+
+# 160 km (R02B04) — timestep 2
+sbatch profile_ncu.sh f64 2 data_r02b04 vt_profiles-r02b04
+sbatch profile_ncu.sh f32 2 data_r02b04 vt_profiles-r02b04
+sbatch profile_ncu.sh f16 2 data_r02b04 vt_profiles-r02b04
+
+# 80 km (R02B05) — timestep 2
+sbatch profile_ncu.sh f64 2 data_r02b05 vt_profiles-r02b05
+sbatch profile_ncu.sh f32 2 data_r02b05 vt_profiles-r02b05
+sbatch profile_ncu.sh f16 2 data_r02b05 vt_profiles-r02b05
+
+# 40 km (R02B06) — timestep 1 (only step in the tarball)
+sbatch profile_ncu.sh f64 1 data_r02b06 vt_profiles-r02b06
+sbatch profile_ncu.sh f32 1 data_r02b06 vt_profiles-r02b06
+sbatch profile_ncu.sh f16 1 data_r02b06 vt_profiles-r02b06
+# → vt_profiles-<grid>/vt.<precision>.ncu-rep  (12 files total)
+```
+
+### 6.5 NCU — extract once, report many
+
+`extract_ncu.py` shells out to `ncu` to parse each `.ncu-rep` — slow
+(tens of seconds per file) and serial on NCU's side. Run it **once**
+over all 12 reports; it writes `ncu_summary.csv` (per-kernel) and
+`ncu_aggregate.csv` (per-file totals). `report_ncu.py` then reads those
+CSVs — fast, no re-parsing:
+
+```bash
+python extract_ncu.py vt_profiles-r02b0*/vt.*.ncu-rep   # one-shot, writes 2 CSVs
+python report_ncu.py                                     # aggregate + dominant kernel
+python report_ncu.py r02b04 fp16                         # filter by grid/precision
+python report_ncu.py --detail r02b04                     # per-kernel detail
+```
+
+Re-run `extract_ncu.py` only when you add new `.ncu-rep` files.
+Inspect any single report directly: `ncu-ui <file.ncu-rep>` or
+`ncu --import <file.ncu-rep> --page details`.
+
+### 6.6 Metric mapping
 Paper table metrics (verified on NCU 2025.2):
 
 - duration: `gpu__time_duration.avg`
