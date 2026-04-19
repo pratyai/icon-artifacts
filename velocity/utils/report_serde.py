@@ -2,12 +2,14 @@
 
 Usage:
     python utils/report_serde.py all_comparisons.db
-    python utils/report_serde.py all_comparisons.db --latex   # emit LaTeX snippets
+    python utils/report_serde.py all_comparisons.db --latex          # LaTeX snippets (MIN across phys)
+    python utils/report_serde.py all_comparisons.db --phys 2         # SNR at a specific phys gen (e.g. paper's first step)
+    python utils/report_serde.py all_comparisons.db --phys 2 --latex # paper-shaped LaTeX snippet
 """
 
 import argparse
 import sqlite3
-from pathlib import Path
+from typing import Optional
 
 import polars as pl
 
@@ -71,25 +73,44 @@ def report_cross(df: pl.DataFrame, grid: str, tag: str):
     print_table(detail)
 
 
-def report_cross_summary(df: pl.DataFrame):
-    """Small aggregated table: per (grid, tag, field) min/max SNR across phys steps."""
-    cross = df.filter(pl.col("tag").str.starts_with("OG_vs_"))
+def _cross_tags(df: pl.DataFrame) -> pl.DataFrame:
+    """Cross tags = everything NOT starting with 'ss' (convergence prefix)."""
+    return df.filter(~pl.col("tag").str.starts_with("ss"))
+
+
+def report_cross_summary(df: pl.DataFrame, phys: Optional[int] = None):
+    """Aggregated table: per (grid, tag, field). If phys is None, min/max across
+    phys steps. If phys is set, SNR at that phys gen only (paper convention)."""
+    cross = _cross_tags(df)
     if cross.is_empty():
         return
     cross = make_name(cross)
 
     finite = cross.filter(pl.col("SNR_db").is_finite() & (pl.col("SNR_db") > -900))
 
-    summary = (
-        finite.group_by(["grid", "tag", "name"]).agg([
-            pl.col("SNR_db").min().round(1).alias("min_SNR"),
-            pl.col("SNR_db").max().round(1).alias("max_SNR"),
-            pl.col("vSNR_db").min().round(1).alias("min_vSNR"),
-            pl.col("vSNR_db").max().round(1).alias("max_vSNR"),
-        ])
-        .sort(["grid", "tag", "name"])
-    )
-    print_header("CROSS SUMMARY (min/max SNR across phys steps)")
+    if phys is not None:
+        at_phys = finite.filter(pl.col("phys") == phys)
+        if at_phys.is_empty():
+            print(f"No cross rows at phys={phys}")
+            return
+        summary = (
+            at_phys.select(["grid", "tag", "name",
+                            pl.col("SNR_db").round(1).alias("SNR"),
+                            pl.col("vSNR_db").round(1).alias("vSNR")])
+            .sort(["grid", "tag", "name"])
+        )
+        print_header(f"CROSS SUMMARY (SNR at phys={phys})")
+    else:
+        summary = (
+            finite.group_by(["grid", "tag", "name"]).agg([
+                pl.col("SNR_db").min().round(1).alias("min_SNR"),
+                pl.col("SNR_db").max().round(1).alias("max_SNR"),
+                pl.col("vSNR_db").min().round(1).alias("min_vSNR"),
+                pl.col("vSNR_db").max().round(1).alias("max_vSNR"),
+            ])
+            .sort(["grid", "tag", "name"])
+        )
+        print_header("CROSS SUMMARY (min/max SNR across phys steps)")
     print_table(summary)
 
 
@@ -150,20 +171,78 @@ def _fmt_snr(v) -> str:
     return f"{v:.1f}"
 
 
-def latex_cross_table(df: pl.DataFrame):
-    """LaTeX table: rows=fields, columns=(grid × tag) with min SNR across phys."""
-    cross = df.filter(pl.col("tag").str.starts_with("OG_vs_"))
+PAPER_FIELDS = ["vn", "w", "vt", "vn_ie", "w_concorr_c"]
+PAPER_TAGS = [
+    "FP32_vs_FP64",
+    "FP16_vs_FP64",
+    "FP64_vs_refined",
+    "FP32_vs_refined",
+    "FP16_vs_refined",
+]
+
+
+def paper_snr_table(df: pl.DataFrame, phys: int):
+    """Paper-shaped pivot: one polars table per grid, rows=field, cols=tag,
+    values=SNR at the given phys. Limited to paper's 5 fields × 5 tags."""
+    cross = _cross_tags(df)
+    if cross.is_empty():
+        return
+    cross = make_name(cross)
+    at_phys = cross.filter(
+        (pl.col("phys") == phys)
+        & pl.col("sub_field").is_in(PAPER_FIELDS)
+        & pl.col("tag").is_in(PAPER_TAGS)
+        & pl.col("SNR_db").is_finite()
+        & (pl.col("SNR_db") > -900)
+    )
+    if at_phys.is_empty():
+        print(f"No rows at phys={phys}")
+        return
+
+    field_order = pl.Enum(PAPER_FIELDS)
+    tag_order = pl.Enum(PAPER_TAGS)
+    for grid in sorted(at_phys["grid"].unique().to_list()):
+        sub = at_phys.filter(pl.col("grid") == grid)
+        pivot = (
+            sub.select([
+                pl.col("sub_field").cast(field_order).alias("field"),
+                pl.col("tag").cast(tag_order),
+                pl.col("SNR_db").round(1),
+            ])
+            .pivot(values="SNR_db", index="field", on="tag")
+            .sort("field")
+        )
+        print_header(f"PAPER SNR TABLE: grid={grid}, phys={phys}")
+        print_table(pivot)
+
+
+def latex_cross_table(df: pl.DataFrame, phys: Optional[int] = None):
+    """LaTeX table: rows=fields, columns=(grid × tag). Aggregation over phys
+    steps is MIN unless `phys` is given (then value at that phys gen)."""
+    cross = _cross_tags(df)
     if cross.is_empty():
         return
     cross = make_name(cross)
     finite = cross.filter(pl.col("SNR_db").is_finite() & (pl.col("SNR_db") > -900))
 
-    summary = (
-        finite.group_by(["grid", "tag", "name"]).agg([
-            pl.col("SNR_db").min().round(1).alias("min_SNR"),
-        ])
-        .sort(["name", "grid", "tag"])
-    )
+    if phys is not None:
+        at_phys = finite.filter(pl.col("phys") == phys)
+        if at_phys.is_empty():
+            return
+        summary = (
+            at_phys.select(["grid", "tag", "name",
+                            pl.col("SNR_db").round(1).alias("SNR")])
+            .sort(["name", "grid", "tag"])
+        )
+        caption = f"SNR at phys={phys} (paper's first-step convention)"
+    else:
+        summary = (
+            finite.group_by(["grid", "tag", "name"]).agg([
+                pl.col("SNR_db").min().round(1).alias("SNR"),
+            ])
+            .sort(["name", "grid", "tag"])
+        )
+        caption = "min SNR across phys steps (worst-case)"
 
     grids = sorted(summary["grid"].unique().to_list())
     tags = sorted(summary["tag"].unique().to_list())
@@ -172,12 +251,12 @@ def latex_cross_table(df: pl.DataFrame):
     # Build lookup
     lookup = {}
     for row in summary.iter_rows(named=True):
-        lookup[(row["name"], row["grid"], row["tag"])] = row["min_SNR"]
+        lookup[(row["name"], row["grid"], row["tag"])] = row["SNR"]
 
     ncols = len(grids) * len(tags)
     col_spec = "l" + "r" * ncols
 
-    print(f"\n% LaTeX: Cross-comparison SNR (min across phys steps)")
+    print(f"\n% LaTeX: Cross-comparison SNR ({caption})")
     print(f"\\begin{{tabular}}{{{col_spec}}}")
     print("\\toprule")
 
@@ -304,6 +383,9 @@ def main():
     parser = argparse.ArgumentParser(description="Report on all_comparisons.db")
     parser.add_argument("db", help="Path to all_comparisons.db")
     parser.add_argument("--latex", action="store_true", help="Emit LaTeX table snippets")
+    parser.add_argument("--phys", type=int, default=None,
+                        help="Report SNR at a specific physics_generation "
+                             "(paper uses first-step, typically 2). Default: min across all phys.")
     parser.add_argument("--cross-only", action="store_true", help="Only show cross comparisons")
     parser.add_argument("--conv-only", action="store_true", help="Only show convergence")
     args = parser.parse_args()
@@ -316,15 +398,18 @@ def main():
     report_overview(df)
 
     grids = sorted(df["grid"].unique().to_list())
-    cross_tags = sorted(t for t in df["tag"].unique().to_list() if t.startswith("OG_vs_"))
-    has_conv = any(t.startswith("ss") for t in df["tag"].unique().to_list())
+    all_tags = df["tag"].unique().to_list()
+    cross_tags = sorted(t for t in all_tags if not t.startswith("ss"))
+    has_conv = any(t.startswith("ss") for t in all_tags)
 
     # Detailed tables
     if not args.conv_only:
         for grid in grids:
             for tag in cross_tags:
                 report_cross(df, grid, tag)
-        report_cross_summary(df)
+        report_cross_summary(df, phys=args.phys)
+        if args.phys is not None:
+            paper_snr_table(df, phys=args.phys)
 
     if not args.cross_only and has_conv:
         for grid in grids:
@@ -336,7 +421,7 @@ def main():
         print("  LaTeX SNIPPETS")
         print("=" * 90)
         if not args.conv_only:
-            latex_cross_table(df)
+            latex_cross_table(df, phys=args.phys)
         if not args.cross_only and has_conv:
             latex_convergence_table(df)
 

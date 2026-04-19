@@ -76,17 +76,60 @@ After jobs land their `.data` files under
 `icon-dace/build/verification/experiments/`, run from this tree:
 
 ```bash
-./run_snr_compare.sh 0050_R02B03   # 320 km
-./run_snr_compare.sh 0010_R02B04   # 160 km
-./run_snr_compare.sh 0008_R02B05   #  80 km
-./run_snr_compare.sh 0002_R02B06   #  40 km
-# → snr.db
+./run_snr_compare.sh <GRID> [EXP_DIR] [DB]
+# defaults: EXP_DIR=../icon-dace/build/verification/experiments, DB=./snr.db
+```
+
+Examples:
+```bash
+./run_snr_compare.sh 0050_R02B03   # 320 km, default EXP_DIR + snr.db
+./run_snr_compare.sh 0010_R02B04
+./run_snr_compare.sh 0008_R02B05
+./run_snr_compare.sh 0002_R02B06
+```
+
+If icon-dace isn't a sibling of this VT tree (e.g. on Daint the VT tree
+may live under `sc2026-ad-test/` while icon-dace lives under
+`gitspace/`), pass the absolute `EXP_DIR` explicitly:
+
+```bash
+./run_snr_compare.sh 0010_R02B04 /abs/path/to/icon-dace/build/verification/experiments
 ```
 
 Writes a shared `snr.db` (SQLite), keyed by
 `(grid, tag, phys, field, sub_field)`. Tags per grid:
 `FP32_vs_FP64`, `FP16_vs_FP64`, `FP64_vs_refined`, `FP32_vs_refined`,
 `FP16_vs_refined`.
+
+### Paper table (first-step SNR)
+
+The paper reports SNR at the first physics generation — `phys=2` in our
+data (phys=0/1 are init / pre-step). `report_serde.py --phys N` emits a
+polars pivot per grid, rows = paper's 5 fields (`vn`, `w`, `vt`,
+`vn_ie`, `w_concorr_c`), columns = tags:
+
+```bash
+python -m utils.report_serde snr.db --phys 2 --cross-only
+# → PAPER SNR TABLE: grid=R02B04, phys=2
+#   field       │ FP32   │ FP16  │ FP64_vs_refined │ FP32_vs_refined │ FP16_vs_refined
+#   vn          │ 154.10 │ 75.80 │ 66.60           │ 66.60           │ 66.10
+#   ...
+```
+
+Column legend (REF → TEST):
+
+| Tag                 | REF                        | TEST                       | Interpretation                             |
+|---------------------|----------------------------|----------------------------|--------------------------------------------|
+| `FP32_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp32` (VT FP32)    | noise FP32 introduces                      |
+| `FP16_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp16` (VT FP16)    | noise FP16 introduces                      |
+| `FP64_vs_refined`   | `ss5_vanilla` (FP64 ref)   | `ss10_vanilla` (FP64 ref×2 substeps) | temporal-discretization floor    |
+| `FP32_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpufp32` (VT FP32)    | FP32 vs the refined reference              |
+| `FP16_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpufp16` (VT FP16)    | FP16 vs the refined reference              |
+
+Viability check (paper convention): FP32/FP16 must beat `FP64_vs_refined` — otherwise
+reduced-precision noise has dipped below the temporal-discretization floor.
+
+One pivot is emitted per grid in the DB.
 
 ## 6. Profile (standalone)
 
