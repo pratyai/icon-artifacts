@@ -1139,9 +1139,12 @@ def compile_if_propagated_sdfgs(
     script = f"#!/bin/sh\nset -e\nBINARY={out_file}\n\n{cmd}\n"
     if gpu:
         script += (
-            f'\n# Dump SASS (native assembly) alongside PTX\n'
+            f'\n# Dump SASS (native assembly) alongside PTX — best-effort, not fatal\n'
             f'echo "Dumping SASS to {ptx_dir}/ ..."\n'
-            f'cuobjdump -sass "$BINARY" > {ptx_dir}/all_kernels.sass\n'
+            f'if ! cuobjdump -sass "$BINARY" > {ptx_dir}/all_kernels.sass 2> {ptx_dir}/cuobjdump.err; then\n'
+            f'  echo "[warn] cuobjdump SASS dump failed (see {ptx_dir}/cuobjdump.err); skipping — not essential"\n'
+            f'  rm -f {ptx_dir}/all_kernels.sass\n'
+            f'fi\n'
         )
     recompile_sh.write_text(script)
     recompile_sh.chmod(0o755)
