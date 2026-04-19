@@ -475,7 +475,7 @@ def generate(all_params: dict[str, list[dict]], *,
              "velocity_tendencies_gpu in wrapper.f90.")
     if serde:
         L.append("    CALL vt_tic()")
-        L.append("    IF (do_serialize) THEN")
+        L.append("    IF (do_serialize .AND. dycore_generation == 1 .AND. vt_generation == 1) THEN")
         L.append("#ifdef _OPENACC")
         L.append("      WRITE (message_text, *) 'D2H ', vt_generation")
         L.append("      CALL message('', message_text)")
@@ -668,32 +668,6 @@ def generate(all_params: dict[str, list[dict]], *,
     L.append("    CALL timer_stop(timer_solve_nh_veltend)")
     L.append("")
 
-    # Hook: after call
-    L.append("    ! --- START INSTRUMENTATION (after call) ---")
-    if serde:
-        L.append("    IF (do_serialize) THEN")
-        L.append("#ifdef _OPENACC")
-        L.append("      WRITE (message_text, *) 'D2H (after) ', vt_generation")
-        L.append("      CALL message('', message_text)")
-        L.append("      !$ACC UPDATE HOST(p_prog%vn, p_prog%w) &")
-        L.append("      !$ACC&  HOST(p_diag%vn_ie, p_diag%vt, p_diag%w_concorr_c, &")
-        L.append("      !$ACC&       p_diag%ddt_vn_apc_pc, p_diag%ddt_w_adv_pc, &")
-        L.append("      !$ACC&       p_diag%max_vcfl_dyn) &")
-        L.append("      !$ACC&  HOST(z_w_concorr_me, z_kin_hor_e, z_vt_ie)")
-        L.append("      !$ACC WAIT")
-        L.append("#endif")
-        L.append("")
-        L.append("      WRITE (message_text, *) "
-                 "'Done velocity_tendencies for vt_generation ', vt_generation")
-        L.append("      CALL message('', message_text)")
-        L.append("      CALL serialize_global_data(at('global_data.t1'))")
-        L.append("      CALL serialize(at('p_prog.t1'), p_prog)")
-        L.append("      CALL serialize(at('p_diag.t1'), p_diag)")
-        L.append("      CALL serialize(at('z_w_concorr_me.t1'), z_w_concorr_me)")
-        L.append("      CALL serialize(at('z_kin_hor_e.t1'), z_kin_hor_e)")
-        L.append("      CALL serialize(at('z_vt_ie.t1'), z_vt_ie)")
-        L.append("    ENDIF")
-        L.append("    ! --- END INSTRUMENTATION (after call) ---")
     L.append("")
 
     L.append("  END SUBROUTINE velocity_tendencies_gpu")
