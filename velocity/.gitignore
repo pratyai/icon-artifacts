@@ -20,3 +20,36 @@ ptx_out/**/*.fatbin.*
 ptx_out/**/*dlink*
 ptx_out/**/*cudafe1*
 build_*.log
+
+# Python envs
+.venv/
+.python-version
+
+# SQLite dev dbs
+*.db
+*.db-shm
+*.db-wal
+
+# Profiling outputs (compressed .ncu-rep.zst snapshots stay tracked)
+*.ncu-rep
+
+# Arbitrary log outputs at any level
+*.log
+
+# Loose .ptx dumps only at velocity/ root (ptx_out/**/*.ptx stays tracked)
+/*.ptx
+
+# NetCDF grid caches (kept on daint / as local backup)
+*.nc
+
+# PDFs (docs/papers live elsewhere)
+*.pdf
+
+# LaTeX fragments (paper repo, not here)
+performance_*.tex
+
+# Local backups
+*.bak
+*.bk
+*_backup
+*_backup/
