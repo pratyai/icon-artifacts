@@ -678,7 +678,6 @@ $L__BB7_2:
 	cvt.u32.u16 	%r73, %rs7;
 	.loc	1 74 5, function_name $L__info_string0, inlined_at 1 1473 21
 	mov.u32 	%r74, 4;
-	.loc	1 74 5, function_name $L__info_string1, inlined_at 1 1513 21
 	sub.s32 	%r75, %r74, %r13;
 	mul.lo.s32 	%r76, %r75, %r44;
 	sub.s32 	%r77, %r76, %r11;
@@ -1013,7 +1012,6 @@ $L__BB8_2:
 	cvt.u32.u16 	%r76, %rs7;
 	.loc	1 128 5, function_name $L__info_string1, inlined_at 1 1501 21
 	mov.u32 	%r77, 4;
-	.loc	1 128 5, function_name $L__info_string2, inlined_at 1 1541 21
 	sub.s32 	%r78, %r77, %r13;
 	mul.lo.s32 	%r79, %r78, %r47;
 	sub.s32 	%r80, %r79, %r11;
@@ -2764,7 +2762,7 @@ $L__BB19_6:
 	setp.lt.s32 	%p4, %r14, 1;
 	.loc	1 1991 13
 	or.pred  	%p5, %p4, %p3;
-	@%p5 bra 	$L__BB20_8;
+	@%p5 bra 	$L__BB20_2;
 
 	.loc	1 1989 13
 	cvta.to.global.u64 	%rd3, %rd1;
@@ -6206,7 +6204,7 @@ $L__BB35_6:
 	setp.lt.s32 	%p4, %r14, 1;
 	.loc	1 2661 13
 	or.pred  	%p5, %p4, %p3;
-	@%p5 bra 	$L__BB36_8;
+	@%p5 bra 	$L__BB36_2;
 
 	.loc	1 2659 13
 	cvta.to.global.u64 	%rd3, %rd1;

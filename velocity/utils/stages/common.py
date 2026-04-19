@@ -15,11 +15,8 @@ from utils.make_flattened_data_to_input import (
     make_flattened_data_to_non_transient_cpu_input,
     make_flattened_data_to_non_transient_gpu_input,
 )
-import os
-import shutil
 
 dace.config.Config.set("compiler", "cuda", "max_concurrent_streams", value="10")
-dace.config.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
 dace.config.Config.set("compiler", "default_data_types", value="C")
 
 STARTER_SDFG_FILES = [
@@ -63,9 +60,32 @@ def stage_outputs(stage: int, codegen_dir=DEFAULT_CODEGEN_DIR):
     return {name: stage_output(name, stage, codegen_dir) for name in sdfg_names()}
 
 
-def get_build_options():
-    """Centralize environment variable parsing."""
-    return {
+def _optimize_single(args):
+    """Worker function for parallel optimization."""
+    name, stage_id, func = args
+    infile = stage_input(name, stage_id)
+    outfile = stage_output(name, stage_id)
+
+    print(f"Stage #{stage_id}: Optimising {name} from {infile}")
+
+    sdfg = dace.SDFG.from_file(infile)
+    sdfg.name = name
+    sdfg.validate()
+
+    result = func(sdfg)
+    if isinstance(result, tuple):
+        sdfg, metadata = result
+    else:
+        sdfg, metadata = result, None
+
+    print(f"Stage #{stage_id}: Saved as {outfile}")
+    sdfg.save(outfile, compress=True)
+    return True, metadata
+
+
+def get_build_options(args=None):
+    """Centralize options parsing (args override env vars)."""
+    options = {
         "release": os.getenv("_RELEASE", "0").lower() in ("1", "true", "yes"),
         "lowprec": os.getenv("_LOWPREC", "fp64").lower(),
         "build_for_integration": os.getenv("_BUILD_LIB_FOR_SOLVE_NH", "0").lower()
@@ -116,9 +136,12 @@ def get_build_options():
 
 def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None):
     """Standardized main loop for all stage scripts to reduce boilerplate."""
-    import argparse
-
     argp = argparse.ArgumentParser()
+    argp.add_argument("--optimize", action=argparse.BooleanOptionalAction, default=None)
+    argp.add_argument("--compile", action=argparse.BooleanOptionalAction, default=None)
+
+    # Optional overrides for environment variables
+    argp.add_argument("--release", action=argparse.BooleanOptionalAction, default=None)
     argp.add_argument(
         "--lowprec",
         type=str,
@@ -142,26 +165,33 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
 
     args = argp.parse_args()
 
-    if not args.optimize and not args.compile:
+    # Default to both if neither is specified
+    if args.optimize is None and args.compile is None:
         args.optimize, args.compile = True, True
 
+    # Initialize environment
+    get_build_options(args)
     names = sdfg_names()
 
+    all_metadata = []
     if args.optimize:
-        for name in names:
-            infile = stage_input(name, stage_id)
-            outfile = stage_output(name, stage_id)
+        tasks = [(name, stage_id, optimization_action_func) for name in names]
 
-            print(f"Stage #{stage_id}: Optimising {name} from {infile}")
+        # Disable OpenMP thread pooling inside DaCe during multiprocessing to avoid oversubscription
+        dace.config.Config.set("compiler", "num_threads", value="1")
 
-            sdfg = dace.SDFG.from_file(infile)
-            sdfg.name = name
-            sdfg.validate()
+        single_threaded = os.getenv("SINGLE_THREADED", "0").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if single_threaded:
+            results = [_optimize_single(t) for t in tasks]
+        else:
+            with Pool(processes=min(len(tasks), os.cpu_count())) as pool:
+                results = pool.map(_optimize_single, tasks)
 
-            sdfg = optimization_action_func(sdfg)
-
-            print(f"Stage #{stage_id}: Saved as {outfile}")
-            sdfg.save(outfile, compress=True)
+        all_metadata = [r[1] for r in results if r[1] is not None]
 
     if args.compile:
         sdfgs = {
@@ -172,6 +202,8 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
         else:
             kwargs = compile_extra_kwargs or {}
         compile_action(stage_id, sdfgs, **kwargs)
+
+    return all_metadata
 
 
 def get_final_binary_name(stage, options):
@@ -218,7 +250,8 @@ def compile_action(
     if config.instrument:
         instrument_sdfg(sdfg_list)
 
-    dace.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
+    block_size_str = "32,32,1" if options["permute_dimensions"] else "256,1,1"
+    dace.Config.set("compiler", "cuda", "default_block_size", value=block_size_str)
     dace.Config.set("compiler", "cuda", "max_concurrent_streams", value="1")
 
     # Determine build configuration
@@ -231,7 +264,7 @@ def compile_action(
 
     output_name = get_final_binary_name(stage, options)
 
-    compile_if_propagated_sdfgs(
+    cmd = compile_if_propagated_sdfgs(
         sdfg_list,
         gpu=True,
         release=release,
@@ -246,3 +279,4 @@ def compile_action(
     )
 
     print(f"Output available: {output_name}")
+    print(f"Build command: {cmd}")

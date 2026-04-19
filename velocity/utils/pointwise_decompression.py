@@ -180,11 +180,6 @@ def _update_recursive(
                             # Structural nodes, skip and let the loop find the actual compute nodes
                             continue
 
-                        elif isinstance(node, nodes.LibraryNode):
-                            # TODO: LibraryNode must support the external_dtype.
-                            # We skip the shim here to avoid bulk copy overhead or type mismatches.
-                            continue
-
                         else:
                             if skip_shims:
                                 continue

@@ -114,6 +114,15 @@ void read_scalar(double &x, std::istream &s) {
   x = y;
 }
 
+void read_scalar(half &x, std::istream &s) {
+  if (s.eof())
+    return;
+  scroll_space(s);
+  long double y;
+  s >> y;
+  x = static_cast<half>(static_cast<float>(y));
+}
+
 void read_scalar(bool &x, std::istream &s) {
   char c;
   read_scalar(c, s);
@@ -156,6 +165,7 @@ template <typename T> std::string serialize_array(T *arr);
 
 void deserialize(float *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(double *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(half *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(long double *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(int *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(long *x, std::istream &s) { read_scalar(*x, s); }
@@ -163,6 +173,7 @@ void deserialize(long long *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(bool *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(float &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(double &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(half &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(long double &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(int &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(long &x, std::istream &s) { read_scalar(x, s); }

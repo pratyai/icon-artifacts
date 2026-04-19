@@ -2,15 +2,19 @@
 #include <iostream>
 #include <sqlite3.h>
 #include <vector>
-#include <zlib.h>
+#include <zstd.h>
 
 static std::vector<unsigned char> compress_data(const void *data, size_t size,
                                                 const std::string &label) {
-  uLongf compressed_size = compressBound(size);
-  std::vector<unsigned char> compressed_buffer(compressed_size);
-  if (compress(compressed_buffer.data(), &compressed_size, (const Bytef *)data,
-               size) != Z_OK) {
-    std::cerr << "Compression failed for " << label << "!" << std::endl;
+  size_t const compressed_bound = ZSTD_compressBound(size);
+  std::vector<unsigned char> compressed_buffer(compressed_bound);
+  size_t const compressed_size =
+      ZSTD_compress(compressed_buffer.data(), compressed_bound, data, size,
+                    3); // Level 3 is default
+
+  if (ZSTD_isError(compressed_size)) {
+    std::cerr << "Compression failed for " << label << ": "
+              << ZSTD_getErrorName(compressed_size) << std::endl;
     return {};
   }
   compressed_buffer.resize(compressed_size);

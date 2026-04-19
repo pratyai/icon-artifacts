@@ -9,8 +9,8 @@ from typing import Dict, List, Any
 def compare_data(
     got: np.ndarray,
     want: np.ndarray,
-    abs_tol: float = np.finfo(np.float64).eps,
-    rel_tol: float = np.finfo(np.float64).eps,
+    abs_tol: float = 1e-12,
+    rel_tol: float = 1e-12,
 ) -> Dict[str, Any]:
     if got.size != want.size:
         return {
@@ -40,13 +40,13 @@ def compare_data(
 
     # Mismatch count logic matching math.isclose
     is_close = abs_diff <= np.maximum(
-        rel_tol * np.maximum(np.abs(got), np.abs(want)), abs_tol
+        rel_tol * np.maximum(np.abs(got_64), np.abs(want_64)), abs_tol
     )
     mismatches = np.count_nonzero(~is_close)
 
     # Use linalg.norm for stability and handle potential overflows in sum of squares
     norm_diff = np.linalg.norm(abs_diff)
-    norm_want = np.linalg.norm(want)
+    norm_want = np.linalg.norm(want_64)
 
     if norm_diff == 0:
         snr_db = float("inf")
@@ -64,8 +64,8 @@ def compare_data(
         "snr_db": snr_db,
         "mismatches": int(mismatches),
         "count": got.size,
-        "has_nan": not (np.all(np.isfinite(got)) and np.all(np.isfinite(want))),
-        "max_norm_want": np.max(np.abs(want)) if want.size > 0 else 0.0,
+        "has_nan": not (np.all(np.isfinite(got_64)) and np.all(np.isfinite(want_64))),
+        "max_norm_want": np.max(np.abs(want_64)) if want_64.size > 0 else 0.0,
         "l2_norm_want": norm_want,
     }
 
@@ -152,11 +152,20 @@ def main():
     parser.add_argument(
         "--w-subs", type=int, default=1, help="subs for Reference side (default: 1)"
     )
+    parser.add_argument("--atol", type=float, default=1e-12, help="Absolute tolerance")
+    parser.add_argument("--rtol", type=float, default=1e-12, help="Relative tolerance")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
     def map_lp(lp_str):
-        mapping = {"fp64": "double", "fp32": "float"}
+        mapping = {
+            "fp64": "double",
+            "f64": "double",
+            "fp32": "float",
+            "f32": "float",
+            "fp16": "half",
+            "f16": "half",
+        }
         return mapping.get(lp_str.lower(), lp_str)
 
     lp_test_mapped, lp_ref_mapped = map_lp(args.lp), map_lp(args.w_lp)
@@ -172,7 +181,11 @@ def main():
             "SELECT DISTINCT timestamp, substeps, lowerprec FROM fields ORDER BY 1,2,3"
         ).fetchall()
         print("\nAvailable combinations:")
-        print(pl.DataFrame(combos, schema=["timestamp", "substeps", "lowerprec"]))
+        print(
+            pl.DataFrame(
+                combos, schema=["timestamp", "substeps", "lowerprec"], orient="row"
+            )
+        )
         return
 
     if args.ts is None:
@@ -237,7 +250,12 @@ def main():
         if field_name in TEXT_FIELDS:
             for var in got_dict:
                 if var in want_dict:
-                    stats = compare_data(got_dict[var], want_dict[var])
+                    stats = compare_data(
+                        got_dict[var],
+                        want_dict[var],
+                        abs_tol=args.atol,
+                        rel_tol=args.rtol,
+                    )
                     all_stats.append(
                         {
                             "timestamp": ts,

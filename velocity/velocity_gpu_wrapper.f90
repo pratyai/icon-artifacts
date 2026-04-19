@@ -687,14 +687,14 @@ CONTAINS
     INTEGER(c_int) :: c_istep, c_ntnd, c_lvn_only, c_ldeepatmo
     REAL(c_double) :: c_dtime, c_dt_linintp_ubc
 
-    CALL timer_start(timer_solve_nh_veltend)
-
     ! For copy-back of p_diag output arrays
     REAL(c_double), POINTER :: ptr_ddt_vn(:,:,:,:)
     REAL(c_double), POINTER :: ptr_ddt_w(:,:,:,:)
     REAL(c_double), POINTER :: ptr_vn_ie(:,:,:)
     REAL(c_double), POINTER :: ptr_vt(:,:,:)
     REAL(c_double), POINTER :: ptr_w_concorr_c(:,:,:)
+
+    CALL timer_start(timer_solve_nh_veltend)
 
     ! Pack Fortran structs into C-compatible glue types
     CALL ctor(p_patch, g_patch, .TRUE.)

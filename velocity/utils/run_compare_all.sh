@@ -3,7 +3,7 @@
 #SBATCH --account=g34
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --time=01:00:00
+#SBATCH --time=04:00:00
 #SBATCH --output=compare_%j.log
 #
 # Run all comparisons (OG convergence + OG vs NU cross) into a single DB.

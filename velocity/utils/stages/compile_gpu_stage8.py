@@ -1,4 +1,3 @@
-import threading
 import argparse
 import os
 from pathlib import Path
@@ -52,217 +51,10 @@ from utils.bfp_compression import inject_bfp_packing
 STAGE_ID = 8
 WORKLOG_FILE = "stage8_lowering.log"
 
-# Categorized arrays for FP32 conversion
-GRID_METRICS = [
-    "__CG_p_patch__CG_edges__m_inv_dual_edge_length",
-    # "__CG_p_metrics__m_ddqz_z_half",  # moved to SENSITIVITY_CANDIDATES
-    # "__CG_p_metrics__m_ddqz_z_full_e",
-    # "__CG_p_metrics__m_wgtfac_e",      # moved to SENSITIVITY_RULED_OUT
-    # "__CG_p_metrics__m_wgtfac_c",      # moved to SENSITIVITY_CANDIDATES
-    "__CG_p_metrics__m_wgtfacq1_c",
-    "__CG_p_metrics__m_wgtfacq_c",
-    "__CG_p_metrics__m_wgtfacq_e",
-    # "__CG_p_metrics__m_coeff1_dwdz",   # moved to SENSITIVITY_BORDERLINE
-    # "__CG_p_metrics__m_coeff2_dwdz",   # moved to SENSITIVITY_CANDIDATES
-    # "__CG_p_metrics__m_ddxn_z_full",   # moved to SENSITIVITY_CANDIDATES
-    # "__CG_p_metrics__m_ddxt_z_full",   # moved to SENSITIVITY_RULED_OUT
-    "__CG_p_metrics__m_coeff_gradp",
-    "__CG_p_metrics__m_zdiff_gradp",
-    # "__CG_p_metrics__m_coeff_gradekin",
-    "__CG_p_patch__CG_edges__m_inv_primal_edge_length",
-    # "__CG_p_metrics__m_inv_ddqz_z_full",  # not used in any SDFG variant
-    "__CG_p_patch__CG_cells__m_area",
-    # "__CG_p_patch__CG_edges__m_area_edge", # moved to SENSITIVITY_CANDIDATES
-    "__CG_p_metrics__m_deepatmo_gradh_mc",
-    "__CG_p_metrics__m_deepatmo_gradh_ifc",
-    "__CG_p_metrics__m_deepatmo_invr_mc",
-    "__CG_p_metrics__m_deepatmo_invr_ifc",
-    "__CG_p_metrics__m_rayleigh_vn",
-    "__CG_p_metrics__m_rayleigh_w",
-    "__CG_p_metrics__m_d_exner_dz_ref_ic",
-    "__CG_p_metrics__m_d2dexdz2_fac1_mc",
-    "__CG_p_metrics__m_d2dexdz2_fac2_mc",
-    "__CG_p_metrics__m_hmask_dd3d",
-    "__CG_p_metrics__m_scalfac_dd3d",
-]
-
-INTERPOLATION_COEFFS = [
-    # "__CG_p_int__m_rbf_vec_coeff_e",   # moved to SENSITIVITY_RULED_OUT
-    # "__CG_p_int__m_e_bln_c_s",         # moved to SENSITIVITY_BORDERLINE
-    # "__CG_p_int__m_c_lin_e",           # moved to SENSITIVITY_BORDERLINE
-    # "__CG_p_int__m_geofac_grdiv",     # moved to SENSITIVITY_CANDIDATES
-    # "__CG_p_int__m_geofac_rot",       # moved to SENSITIVITY_RULED_OUT
-    "__CG_p_int__m_geofac_n2s",
-    "__CG_p_int__m_cells_aw_verts",
-    "__CG_p_int__m_e_flx_avg",
-    # "__CG_p_patch__CG_edges__m_f_e",   # moved to SENSITIVITY_RULED_OUT
-    "__CG_p_patch__CG_edges__m_fn_e",
-    "__CG_p_patch__CG_edges__m_ft_e",
-    "__CG_p_patch__CG_edges__m_tangent_orientation",
-    "__CG_p_metrics__m_exner_exfac",
-    "__CG_p_metrics__m_vwind_expl_wgt",
-    "__CG_p_metrics__m_vwind_impl_wgt",
-]
-
-TRANSIENTS = [
-    # "z_w_concorr_me",
-    # "z_kin_hor_e",
-    # "z_vt_ie",
-    "z_v_grad_w",
-    "z_w_v",
-    # "zeta",
-    # "z_ekinh",
-    # "z_w_con_c_full",
-    # "z_w_con_c",
-    "z_w_concorr_mc",
-    "z_th_ddz_exner_c",
-    "z_dexner_dz_c",
-    "z_gradh_exner",
-    "z_rth_pr",
-    "z_grad_rth",
-    "z_graddiv_vn",
-    "z_alpha",
-    "z_beta",
-    "z_q",
-    "z_graddiv2_vn",
-    "z_theta_v_pr_ic",
-    "z_exner_ic",
-    "z_flxdiv_mass",
-    "z_flxdiv_theta",
-    "z_hydro_corr",
-    "z_dwdz_dd",
-    "z_exner_ex_pr",
-]
-
-DIAGNOSTICS = [
-    "__CG_p_diag__m_exner_pr",
-    # "__CG_p_diag__m_vt",
-    # "__CG_p_diag__m_vn_ie",
-    "__CG_p_diag__m_mass_fl_e",
-    "__CG_p_diag__m_mass_fl_e_sv",
-    # "__CG_p_diag__m_w_concorr_c",     # moved to SENSITIVITY_BORDERLINE
-    "__CG_p_diag__m_ddt_vn_apc_pc",
-    "__CG_p_diag__m_ddt_w_adv_pc",
-    "__CG_p_diag__m_rho_ic",
-    "__CG_p_diag__m_theta_v_ic",
-    "__CG_p_diag__m_exner_incr",
-    "__CG_p_diag__m_rho_incr",
-    "__CG_p_diag__m_vn_incr",
-    "__CG_p_diag__m_exner_dyn_incr",
-]
-
-def downcast_to_minimal_bitwidth(sdfg: dace.SDFG):
-    """
-    Downcasts large integer arrays to 16-bit where possible based on
-    domain-specific knowledge (nproma/nblocks).
-    """
-    # nproma dependent ones
-    sdfg = decrease_bitwidth_of_const_arrays(
-        sdfg,
-        array_names={
-            "gpu___CG_p_patch__CG_cells__m_edge_idx",
-            "gpu___CG_p_patch__CG_cells__m_neighbor_idx",
-            "gpu___CG_p_patch__CG_edges__m_cell_idx",
-            "gpu___CG_p_patch__CG_edges__m_quad_idx",
-            "gpu___CG_p_patch__CG_edges__m_vertex_idx",
-            "gpu___CG_p_patch__CG_verts__m_cell_idx",
-            "gpu___CG_p_patch__CG_verts__m_edge_idx",
-        },
-        nproma_name="__CG_global_data__m_nproma",
-    )
-    # nlock dependent ones
-    sdfg = force_decrease_bitwidth_of_nblk_arrays(
-        sdfg,
-        multi_val_array_names={
-            "gpu___CG_p_patch__CG_cells__m_edge_blk",
-            "gpu___CG_p_patch__CG_edges__m_quad_blk",
-            "gpu___CG_p_patch__CG_edges__m_neighbor_blk",
-            "gpu___CG_p_patch__CG_verts__m_edge_blk",
-        },
-        single_val_array_names={
-            "gpu___CG_p_patch__CG_cells__m_neighbor_blk",
-            "gpu___CG_p_patch__CG_edges__m_cell_blk",
-            "gpu___CG_p_patch__CG_edges__m_vertex_blk",
-            "gpu___CG_p_patch__CG_verts__m_cell_blk",
-            "gpu___CG_p_patch__CG_edges__m_neighbor_blk",
-        },
-    )
-    return sdfg
-
-
-def coarsen_coalescable_dim(sdfg: dace.SDFG, factor: int = 2):
-    """Thread coarsening: for each multi-dim map, find the coalescable
-    dimension (the loop var that indexes the last/contiguous array dim
-    most often), tile it by `factor`, and unroll the inner map."""
-    tile_targets = []
-    for nsdfg in sdfg.all_sdfgs_recursive():
-        for state in nsdfg.states():
-            for entry in state.nodes():
-                if not isinstance(entry, nodes.MapEntry):
-                    continue
-                if len(entry.map.params) < 2:
-                    continue
-
-                # Count how often each param appears in the last subset dim
-                param_count = {p: 0 for p in entry.map.params}
-                total = 0
-                for edge in state.edges():
-                    if not isinstance(edge.src, nodes.Tasklet) and not isinstance(
-                        edge.dst, nodes.Tasklet
-                    ):
-                        continue
-                    if edge.data.is_empty() or edge.data.subset is None:
-                        continue
-                    if len(edge.data.subset) < 2:
-                        continue
-                    last_start = edge.data.subset[-1][0]
-                    total += 1
-                    syms = {str(s) for s in last_start.free_symbols}
-                    for p in entry.map.params:
-                        if p in syms:
-                            param_count[p] += 1
-
-                if total == 0:
-                    continue
-                winner = max(param_count, key=lambda p: param_count[p])
-                if param_count[winner] < total * 0.5:
-                    continue  # no clear coalescable dimension
-                winner_idx = list(entry.map.params).index(winner)
-                tile_sizes = [1] * len(entry.map.params)
-                tile_sizes[winner_idx] = factor
-                tile_targets.append((nsdfg, state, entry, tuple(tile_sizes), winner))
-
-    print(f"Thread coarsening (×{factor} + unroll) on {len(tile_targets)} maps")
-    for nsdfg, state, entry, tile_sizes, winner in tile_targets:
-        print(f"  {entry.map.label}: coarsen '{winner}', tile_sizes={tile_sizes}")
-        MapTiling.apply_to(
-            nsdfg,
-            map_entry=entry,
-            options={"tile_sizes": tile_sizes},
-        )
-
-    # Mark inner tiled maps as Sequential + unroll so CUDA codegen
-    # emits them as #pragma unroll loops inside the kernel.
-    for nsdfg in sdfg.all_sdfgs_recursive():
-        for state in nsdfg.states():
-            for node in state.nodes():
-                if not isinstance(node, nodes.MapEntry):
-                    continue
-                if any(p.startswith("tile_") for p in node.map.params):
-                    continue
-                if node.map.unroll:
-                    continue
-                for s, e, st in node.map.range:
-                    range_syms = set()
-                    for expr in (s, e, st):
-                        try:
-                            range_syms |= {str(x) for x in expr.free_symbols}
-                        except AttributeError:
-                            pass
-                    if any(x.startswith("tile_") for x in range_syms):
-                        node.map.schedule = dace.ScheduleType.Sequential
-                        node.map.unroll = True
-                        break
+# Dynamic list of arrays that were BFP-packed during optimization.
+# Populated by optimize() at runtime; consumed by compile_if_propagated_sdfgs.py
+# for text-level patching. Empty until optimize() runs.
+BFP_PACKED: list[str] = []
 
 # Sensitivity-guided precision reduction workflow
 # ------------------------------------------------
@@ -607,13 +399,20 @@ def optimization_action(sdfg):
     lowprec_map = {
         "fp64": dace.float64,
         "fp32": dace.float32,
+        "fp16": dace.float16,
         "f32": dace.float32,
         "f64": dace.float64,
         "f16": dace.float16,
+        "bfp8": dace.float16,
         "bfp16": dace.float16,
         "bfp32": dace.float32,
     }
-    external_dtype = lowprec_map.get(options["lowprec"], dace.float64)
+    if options["lowprec"] not in lowprec_map:
+        raise ValueError(
+            f"Unknown lowprec value: {options['lowprec']!r}. "
+            f"Valid options: {', '.join(lowprec_map)}"
+        )
+    external_dtype = lowprec_map[options["lowprec"]]
 
     # Arrays that input_to_gpu will make GPU-resident in integration mode.
     # Must be excluded from lowering/boundary-cast to avoid schedule conflicts.
@@ -634,19 +433,15 @@ def optimization_action(sdfg):
     } if external_dtype == dace.float16 else set()
 
     if options.get("lower_all"):
-        # CFL reduction arrays managed by change_reduction_schedule.py.
-        # These cross the GPU/CPU boundary in ways that
-        # inject_pointwise_decompression cannot handle — CPU cast shims
-        # would dereference GPU device pointers.
+        # CFL scalar excluded — feeds the final CFL check which stays double.
+        # CFL arrays (gpu_maxvcfl_arr, gpu_vcflmax, vcflmax) are now lowered
+        # since reductions are templated and boundary cast handles the rest.
         _CFL_EXCLUDE = {
-            "gpu_maxvcfl_arr",
-            "gpu_vcflmax",
-            "vcflmax",
             "maxvcfl",
         }
 
         # Lower all float64 arrays in the SDFG
-        array_names = [
+        candidates = [
             name
             for name, arr in sdfg.arrays.items()
             if isinstance(arr, dace.data.Array)
@@ -656,38 +451,49 @@ def optimization_action(sdfg):
             and name not in _INTEGRATION_EXCLUDE
             and name not in _FP32_OVERRIDE
         ]
-        print(
-            f"Lowering all {len(array_names)} float64 arrays to {external_dtype} for pointwise decompression:\n{array_names}"
-        )
+
+        if options["lowprec"].startswith("bfp"):
+            # In BFP mode, strictly limit lowering to BFP-compatible arrays.
+            # Everything else (transients, output structs) stays double.
+            _OUTPUT_CG_PREFIXES = ("__CG_p_diag__", "__CG_p_prog__")
+            array_names = [
+                n
+                for n in candidates
+                if n.startswith("__CG_")
+                and not any(n.startswith(p) for p in _OUTPUT_CG_PREFIXES)
+            ]
+            print(
+                f"BFP Mode (_LOWER_ALL=1): Selected {len(array_names)} BFP-compatible arrays. "
+                f"Skipping {len(candidates) - len(array_names)} transients/outputs to prevent FP16 fallback."
+            )
+        else:
+            array_names = candidates
+            print(
+                f"Lowering all {len(array_names)} float64 arrays to {external_dtype} for pointwise decompression:\n{array_names}"
+            )
     else:
         # Lower only sensitivity-validated safe fields
         array_names = list(SENSITIVITY_CANDIDATES)
-        # # Lower the manually categorized lists (superseded by sensitivity)
-        # array_names = (
-        #     GRID_METRICS
-        #     + INTERPOLATION_COEFFS
-        #     + TRANSIENTS
-        #     + DIAGNOSTICS
-        #     + REFERENCE_STATES
-        #     + PREP_ADV
-        # )
 
-    # Exclude BFP arrays from pointwise decompression — they get their own
-    # SDFG-level transformation via inject_bfp_packing.
-    bfp_set = set(BFP_ARRAYS)
-    array_names = [n for n in array_names if n not in bfp_set]
+    # BFP exclusion is now dynamic — handled after boundary_cast_targets are
+    # classified as read-only vs read-write (see bfp_targets below).
 
-    # Split arrays into three categories:
-    #   boundary_cast_targets: __CG_ arrays with gpu_ sibling → boundary cast at H2D/D2H
-    #     (CPU array stays double for serde, GPU gets float)
-    #   gpu_transient: transient with gpu_ sibling but NOT __CG_ → change both dtypes
-    #     (internal computation, no serde boundary)
+    # Split arrays into four categories:
+    #   boundary_cast_targets: arrays with gpu_ sibling whose CPU side holds
+    #     externally-provided double data → boundary cast at H2D/D2H.
+    #     This includes __CG_ arrays (flatten copies from struct fields) and
+    #     non-transient arrays (function parameters from Fortran).
+    #   gpu_transient: transient with gpu_ sibling, NOT __CG_ and NOT function
+    #     param → change both dtypes (internal computation, no external boundary)
     #   pure_transient: no gpu_ sibling → change dtype directly
-    #   (skip gpu_ prefixed names — handled as siblings of the above)
+    #   gpu_only: gpu_ prefixed with no bare counterpart → change dtype directly
     boundary_cast_targets = [
         n
         for n in array_names
-        if n in sdfg.arrays and n.startswith("__CG_") and f"gpu_{n}" in sdfg.arrays
+        if n in sdfg.arrays
+        and not n.startswith("gpu_")
+        and (n.startswith("__CG_") or not sdfg.arrays[n].transient)
+        and f"gpu_{n}" in sdfg.arrays
     ]
     gpu_transient = [
         n
@@ -695,6 +501,7 @@ def optimization_action(sdfg):
         if n in sdfg.arrays
         and not n.startswith("__CG_")
         and not n.startswith("gpu_")
+        and sdfg.arrays[n].transient
         and f"gpu_{n}" in sdfg.arrays
     ]
     pure_transient = [
@@ -841,21 +648,7 @@ def optimization_action(sdfg):
                 f"Lowering {len(scalars_to_lower)} float64 scalars to {external_dtype}: {scalars_to_lower}"
             )
             for name in scalars_to_lower:
-                desc = sdfg.arrays[name]
-                if desc.transient:
-                    # Internal transients can be safely lowered everywhere
-                    _propagate_dtype(sdfg, name, external_dtype)
-                else:
-                    # Interface parameters (non-transient): Preserve top-level double,
-                    # lower only inside nested scopes to trigger DaCe's auto-casting.
-                    for state in sdfg.states():
-                        for node in state.nodes():
-                            if isinstance(node, nodes.NestedSDFG):
-                                for edge in state.in_edges(node):
-                                    if edge.data.data == name and edge.dst_conn:
-                                        _propagate_dtype(
-                                            node.sdfg, edge.dst_conn, external_dtype
-                                        )
+                _propagate_dtype(sdfg, name, external_dtype)
 
     # Lower transient double scalars inside nested SDFGs (GPU kernel
     # intermediates like difcoef, tmp_arg_*, w_con_e, etc.).
@@ -910,12 +703,24 @@ def optimization_action(sdfg):
 
     # BFP packing: change GPU arrays to uint8[packed_size], insert CPU-side
     # pack Map, replace H2D edge with packed version.
-    if options["lowprec"].startswith("bfp") and BFP_ARRAYS:
-        inject_bfp_packing(sdfg, BFP_ARRAYS)
+    if options["lowprec"].startswith("bfp") and bfp_targets:
+        bfp_mantissa_bits = {"bfp8": 8, "bfp16": 16, "bfp32": 16}[options["lowprec"]]
+        inject_bfp_packing(sdfg, bfp_targets, mantissa_bits=bfp_mantissa_bits)
+        # TAG THE ARRAYS: mark them so the compiler knows they are BFP
+        for name in bfp_targets:
+            gpu_name = f"gpu_{name}"
+            if gpu_name in sdfg.arrays:
+                sdfg.arrays[gpu_name].debuginfo = dace.dtypes.DebugInfo(
+                    start_line=0, end_line=0, filename="BFP_PACKED"
+                )
+        # Store for text-level patching in compile_if_propagated_sdfgs.py
+        global BFP_PACKED
+        BFP_PACKED = list(bfp_targets)
 
     # Apply transformations
     inverse_strides(sdfg, "gpu_levmask")
-    sdfg.validate()
+    if not (options["lowprec"].startswith("bfp") and bfp_targets):
+        sdfg.validate()  # skip when BFP — nested SDFG descriptors mismatch
 
     if options["reduce_bitwidth"]:
         sdfg = downcast_to_minimal_bitwidth(sdfg)
@@ -961,7 +766,8 @@ def optimization_action(sdfg):
     # Sync first
     insert_synchronization_for_profiling(sdfg)
     insert_timers_for_profiling(sdfg)
-    sdfg.validate()
+    if not (options["lowprec"].startswith("bfp") and bfp_targets):
+        sdfg.validate()  # skip when BFP — nested SDFG descriptors mismatch
 
     if options["profile"]:
         create_profile_sdfg(sdfg)
@@ -1101,21 +907,12 @@ def optimization_action(sdfg):
                 n for n in gpu_cast_targets
                 if any(n.startswith(p) for p in _OUTPUT_PREFIXES)
             ]
-            # Pure outputs: written before read, no need for h2d cast.
-            _OUTPUT_ONLY = {
-                "gpu___CG_p_diag__m_ddt_vn_apc_pc",
-                "gpu___CG_p_diag__m_ddt_w_adv_pc",
-            }
-            gpu_output_only_names = [
-                n for n in gpu_output_names if n in _OUTPUT_ONLY
-            ]
             if gpu_cast_targets:
                 inject_gpu_boundary_cast(
                     sdfg,
                     gpu_cast_targets,
                     external_dtype,
                     output_names=gpu_output_names,
-                    output_only_names=gpu_output_only_names,
                 )
             # FP32 override arrays need their own FP64→FP32 boundary cast.
             gpu_fp32_targets = [

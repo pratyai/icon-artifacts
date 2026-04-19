@@ -185,9 +185,7 @@ void reduce_maxZ_to_address_gpu(const TIn *__restrict__ d_in,
     last_size = size;
   }
 
-  // Call the reduction
-  cub::DeviceReduce::Max(maxZ_temp_storage, temp_storage_bytes, d_in, d_out, size, stream);
-}
+  cub::DeviceReduce::Max(temp_storage, temp_storage_bytes, d_in, d_tmp, size, stream);
 
   // Copy with implicit cast TIn -> TOut on host
   if constexpr (std::is_same_v<TIn, TOut>) {
@@ -213,38 +211,10 @@ TOut reduce_maxZ_to_scalar_gpu(const TIn *__restrict__ d_in, int size, cudaStrea
   // Use the same-type overload for the CUB reduction
   reduce_maxZ_to_address_gpu<TIn, TIn>(d_in, d_tmp, size, stream);
 
-  // Cleanup later
-  if (temp_storage_bytes != 0) {
-    cudaFree(d_temp_storage);
-  }
-
-  void *batched_reduce_max_v2_args[] = {
-      (void *)&d_out,
-      (void *)&d_in,
-      (void *)&size
-  };
-  cudaError_t err = cudaLaunchKernel(
-      (void*)batched_reduce_max_v2,
-      dim3(1, 1, 1),
-      dim3(1024, 1, 1),
-      (void**)batched_reduce_max_v2_args,
-      0,
-      stream
-  );
-}
-*/
-
-static double* maxZ_scalar_d_out = nullptr;
-double reduce_maxZ_to_scalar_gpu(const double *__restrict__ d_in, int size, cudaStream_t stream)
-{
-  if (maxZ_scalar_d_out == nullptr) {
-    cudaMalloc(&maxZ_scalar_d_out, sizeof(double));
-  }
-  reduce_maxZ_to_address_gpu(d_in, maxZ_scalar_d_out, size, stream);
-  double maxval;
-  cudaMemcpyAsync(&maxval, maxZ_scalar_d_out, sizeof(double), cudaMemcpyDeviceToHost, stream);
+  TIn tmp_host;
+  cudaMemcpyAsync(&tmp_host, d_tmp, sizeof(TIn), cudaMemcpyDeviceToHost, stream);
   cudaStreamSynchronize(stream);
-  return maxval;
+  return static_cast<TOut>(tmp_host);
 }
 
 template<typename TIn, typename TOut>
@@ -267,16 +237,14 @@ void reduce_sum_to_address_gpu(const TIn *__restrict__ d_in,
       temp_storage = nullptr;
     }
     temp_storage_bytes = 0;
-    cub::DeviceReduce::Sum(nullptr, temp_storage_bytes, d_in, d_out, size, nullptr);
+    cub::DeviceReduce::Sum(nullptr, temp_storage_bytes, d_in, d_tmp, size, nullptr);
     if (temp_storage_bytes != 0) {
       cudaMalloc(&temp_storage, temp_storage_bytes);
     }
     last_size = size;
   }
 
-  // Call the reduction
-  cub::DeviceReduce::Sum(sum_temp_storage, temp_storage_bytes, d_in, d_out, size, stream);
-}
+  cub::DeviceReduce::Sum(temp_storage, temp_storage_bytes, d_in, d_tmp, size, stream);
 
   if constexpr (std::is_same_v<TIn, TOut>) {
     cudaMemcpyAsync(d_out, d_tmp, sizeof(TOut), cudaMemcpyDeviceToDevice, stream);
@@ -314,31 +282,31 @@ template void reduce_sum_to_address_gpu<__half, double>(const __half*, double*, 
 
 // --- Non-templated int reductions ---
 
-static void* sum_int_temp_storage = nullptr;
-static int* sum_int_d_out = nullptr;
 int reduce_sum_to_scalar_gpu(const int *__restrict__ d_in, int size, cudaStream_t stream)
 {
+  static void* temp_storage = nullptr;
+  static int* d_out = nullptr;
   static size_t temp_storage_bytes = 0;
   static int last_size = -1;
 
-  if (sum_int_d_out == nullptr) {
-    cudaMalloc(&sum_int_d_out, sizeof(int));
+  if (d_out == nullptr) {
+    cudaMalloc(&d_out, sizeof(int));
   }
   if (size > last_size) {
-    if (sum_int_temp_storage != nullptr) {
-      cudaFree(sum_int_temp_storage);
-      sum_int_temp_storage = nullptr;
+    if (temp_storage != nullptr) {
+      cudaFree(temp_storage);
+      temp_storage = nullptr;
     }
     temp_storage_bytes = 0;
-    cub::DeviceReduce::Sum(nullptr, temp_storage_bytes, d_in, sum_int_d_out, size, nullptr);
+    cub::DeviceReduce::Sum(nullptr, temp_storage_bytes, d_in, d_out, size, nullptr);
     if (temp_storage_bytes != 0) {
-      cudaMalloc(&sum_int_temp_storage, temp_storage_bytes);
+      cudaMalloc(&temp_storage, temp_storage_bytes);
     }
     last_size = size;
   }
-  cub::DeviceReduce::Sum(sum_int_temp_storage, temp_storage_bytes, d_in, sum_int_d_out, size, stream);
+  cub::DeviceReduce::Sum(temp_storage, temp_storage_bytes, d_in, d_out, size, stream);
   int sumval;
-  cudaMemcpyAsync(&sumval, sum_int_d_out, sizeof(int), cudaMemcpyDeviceToHost, stream);
+  cudaMemcpyAsync(&sumval, d_out, sizeof(int), cudaMemcpyDeviceToHost, stream);
   cudaStreamSynchronize(stream);
   return sumval;
 }

@@ -2,8 +2,8 @@
 
 #include <chrono>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 struct TimingResult {
   std::string tag;

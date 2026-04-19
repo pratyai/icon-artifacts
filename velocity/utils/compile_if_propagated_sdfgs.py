@@ -689,6 +689,9 @@ def compile_if_propagated_sdfgs(
 
     patch_shared_struct_defs_h(sdfgs=sdfgs)
 
+    if os.getenv("SINGLE_THREADED", "0").lower() in ("1", "true", "yes"):
+        dace.config.Config.set("compiler", "num_threads", value="1")
+
     compare_structs(sdfgs)
     sources = {
         "src/reductions.cpp",
@@ -720,7 +723,12 @@ def compile_if_propagated_sdfgs(
             compiler.generate_program_folder(sdfg, program_objects, sdfg.build_folder)
             modify_files_in_directory(build_loc)
 
-            if os.getenv("_LOWPREC", "fp64").lower() in ("fp16", "f16", "bfp16"):
+            if os.getenv("_LOWPREC", "fp64").lower() in (
+                "fp16",
+                "f16",
+                "bfp8",
+                "bfp16",
+            ):
                 for cu_file in build_loc.rglob("*.cu"):
                     fix_mixed_precision_ambiguity(cu_file)
 
@@ -892,6 +900,13 @@ def compile_if_propagated_sdfgs(
                     "(0.65f / static_cast<float>(dtime_0_in))",
                     code,
                 )
+                _F05 = r"(?:float\()?0\.05f?\)?"
+                _F85 = r"(?:float\()?0\.85f?\)?"
+                code = re.sub(
+                    rf"\({_F05} / \(dtime_0_in \* \({_F85} - \(cfl_w_limit_0_in \* dtime_1_in\)\)\)\)",
+                    "(0.05f / (static_cast<float>(dtime_0_in) * (0.85f - (static_cast<float>(cfl_w_limit_0_in) * static_cast<float>(dtime_1_in)))))",
+                    code,
+                )
                 # ABI fix: non-transient scalars are lowered internally but
                 # Fortran passes double by reference.  Rename the parameter
                 # to __abi_X (double) and shadow with a lowered local.
@@ -903,51 +918,66 @@ def compile_if_propagated_sdfgs(
                         _lowered_ctype = _lt
                         break
                 if _lowered_ctype:
-                    for _sc in _ABI_SCALARS:
-                        code = code.replace(
-                            f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
-                        )
-                        code = code.replace(
-                            f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
-                        )
-                    # Insert shadow locals after each function's opening brace
-                    for _fn in [
+                    # Only patch the 3 Fortran-facing functions, not __dace_runkernel_*
+                    _ext_fns = [
                         f"__dace_init_{sdfg.name}(",
                         f"__program_{sdfg.name}(",
                         f"__program_{sdfg.name}_internal(",
-                    ]:
+                    ]
+                    for _fn in _ext_fns:
                         _pos = code.find(_fn)
                         while _pos != -1:
                             _sig_end = code.find(")", _pos)
                             if _sig_end == -1:
                                 break
                             _sig = code[_pos : _sig_end + 1]
-                            if "__abi_" not in _sig:
-                                _pos = code.find(_fn, _pos + len(_sig))
-                                continue
-                            _brace = code.find("{", _sig_end)
-                            if _brace != -1:
-                                _shadow = "".join(
-                                    f"\n  {_lowered_ctype} {_sc} = static_cast<{_lowered_ctype}>(__abi_{_sc});"
-                                    for _sc in _ABI_SCALARS
-                                    if f"__abi_{_sc}" in _sig
+                            # Rename parameters in this signature
+                            _new_sig = _sig
+                            for _sc in _ABI_SCALARS:
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
                                 )
-                                code = code[: _brace + 1] + _shadow + code[_brace + 1 :]
-                            _pos = code.find(
-                                _fn, _brace + 1 if _brace != -1 else _pos + 1
-                            )
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
+                                )
+                            code = code[:_pos] + _new_sig + code[_sig_end + 1 :]
+                            # Insert shadow locals after opening brace
+                            if "__abi_" in _new_sig:
+                                _brace = code.find("{", _pos + len(_new_sig))
+                                if _brace != -1:
+                                    _shadow = "".join(
+                                        f"\n  {_lowered_ctype} {_sc} = static_cast<{_lowered_ctype}>(__abi_{_sc});"
+                                        for _sc in _ABI_SCALARS
+                                        if f"__abi_{_sc}" in _new_sig
+                                    )
+                                    code = (
+                                        code[: _brace + 1]
+                                        + _shadow
+                                        + code[_brace + 1 :]
+                                    )
+                            _pos = code.find(_fn, _pos + len(_new_sig) + 1)
                 with open(cpu_src, "w") as f:
                     f.write(code)
                 if _lowered_ctype:
                     with open(header, "r") as f:
                         hdr = f.read()
-                    for _sc in _ABI_SCALARS:
-                        hdr = hdr.replace(
-                            f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
-                        )
-                        hdr = hdr.replace(
-                            f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
-                        )
+                    for _fn in _ext_fns:
+                        _pos = hdr.find(_fn)
+                        while _pos != -1:
+                            _sig_end = hdr.find(";", _pos)
+                            if _sig_end == -1:
+                                break
+                            _sig = hdr[_pos : _sig_end + 1]
+                            _new_sig = _sig
+                            for _sc in _ABI_SCALARS:
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc},", f"double __abi_{_sc},"
+                                )
+                                _new_sig = _new_sig.replace(
+                                    f"{_lowered_ctype} {_sc})", f"double __abi_{_sc})"
+                                )
+                            hdr = hdr[:_pos] + _new_sig + hdr[_sig_end + 1 :]
+                            _pos = hdr.find(_fn, _pos + len(_new_sig) + 1)
                     with open(header, "w") as f:
                         f.write(hdr)
                 fix_levelmask_calls(dev_src, False, stage)
@@ -977,13 +1007,13 @@ def compile_if_propagated_sdfgs(
                 )
             if stage in [8, 9]:
                 set_default_stream(cpu_src)
-                if stage > 5:
-                    set_default_stream(dev_src)
+                set_default_stream(dev_src)
 
-            # Flatten build folder: move source/header to root and clean up
+            # Flatten build folder: move source/header to parent and clean up
             cpu_src, dev_src, header = flatten_build_folder(build_loc, sdfg.name, gpu)
 
-            sources.add(dev_src)
+            if dev_src:
+                sources.add(dev_src)
             sources.add(cpu_src)
         else:
             with open(cpu_src, "r") as f:
@@ -1020,6 +1050,7 @@ def compile_if_propagated_sdfgs(
         sources.add(final_main)
 
     use_nvhpc = os.getenv("_USE_NVHPC", "0").lower() in ("1", "true", "yes")
+    # Headers are now in the root of the stage folder (build_loc.parent)
     base_inc = f"-I{build_loc.parent} -I{os.path.dirname(dace.__file__)}/runtime/include/ -Iinclude"
 
     # Use pkg-config to get correct paths for libraries loaded via Spack/Modules
@@ -1027,23 +1058,6 @@ def compile_if_propagated_sdfgs(
 
     extra_libs = ""
     for lib_name in ["sqlite3", "zlib", "libzstd"]:
-        try:
-            cflags = subprocess.check_output(
-                ["pkg-config", "--cflags", lib_name], text=True
-            ).strip()
-            lflags = subprocess.check_output(
-                ["pkg-config", "--libs", lib_name], text=True
-            ).strip()
-            base_inc += f" {cflags}"
-            extra_libs += f" {lflags}"
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
-
-    # Use pkg-config to get correct paths for libraries loaded via Spack/Modules
-    import subprocess
-
-    extra_libs = ""
-    for lib_name in ["sqlite3", "zlib"]:
         try:
             cflags = subprocess.check_output(
                 ["pkg-config", "--cflags", lib_name], text=True
@@ -1065,7 +1079,7 @@ def compile_if_propagated_sdfgs(
             [f"--diag-suppress {x}" for x in [68, 550, 20208, 1835, 177, 20012, 1098]]
         )
         nvhpc = "-ccbin=nvc++" if use_nvhpc else ""
-        dbg = "-lineinfo" if debuginfo else ""
+        dbg = "-lineinfo"
         xcomp = f"-Xcompiler=-Wall -Xcompiler=-Wextra -Xcompiler=-Wno-unused-parameter {'' if use_nvhpc else '-Xcompiler=-Wconversion -Xcompiler=-Wno-sign-conversion -Xcompiler=-Wfloat-conversion -Xcompiler=-Wno-unknown-pragmas -Xcompiler=-faligned-new'}"
         if release:
             flags = f"{nvhpc} {suppress} {xcomp} -DNDEBUG -Xcompiler=-DNDEBUG -Xcompiler=-O3 --expt-relaxed-constexpr -gencode {arch} --use_fast_math -O3 {dbg} --ftz=true --prec-div=false --prec-sqrt=false --fmad=true -Xptxas=-O3 -Xptxas=-v -Xcompiler=-march=native -Xcompiler=-mtune=native --restrict -DNDEBUG"

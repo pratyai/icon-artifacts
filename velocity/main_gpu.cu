@@ -96,6 +96,29 @@ template <std::ostream &CS> struct AtomicStream {
 using acout = AtomicStream<std::cout>;
 using acerr = AtomicStream<std::cerr>;
 
+struct Capture {
+  struct Entry {
+    std::vector<char> buffer;
+    void *target;
+    double scale;
+  };
+  std::vector<Entry> entries;
+  void add(void *p, size_t bytes, double scale = 1.0) {
+    if (!p)
+      return;
+    entries.push_back(
+        {std::vector<char>((char *)p, (char *)p + bytes), p, scale});
+  }
+  void restore() {
+    for (auto &e : entries) {
+      memcpy(e.target, e.buffer.data(), e.buffer.size());
+      if (e.scale != 1.0) {
+        *(double *)e.target *= e.scale;
+      }
+    }
+  }
+};
+
 template <typename F> auto spawn(std::vector<std::jthread> &pool, F &&f) {
   using R = std::invoke_result_t<F>;
 
