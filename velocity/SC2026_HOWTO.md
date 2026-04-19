@@ -49,7 +49,7 @@ Build the integration shared libraries (one per precision):
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp64
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp32
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp16
-# → shared_libs/solve_nh_integration/release/8/libvelocity.so.{fp64,fp32,fp16}
+# → libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so
 ```
 
 Regenerate the Fortran wrapper so its ABI matches the freshly-built `.so`.
@@ -62,6 +62,20 @@ python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp16 --output wrapper.f
 # → wrapper.f90   (re-run with the precision you want to integrate next)
 ```
 
+> **✅ Artifacts ready**
+>
+> At this point you have:
+> - `libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so`
+> - `wrapper.f90`
+> - `serde.f90` (serialization module, already in this tree;
+>    mostly auto-generated + a small hand-written API block —
+>    **TODO: streamline into a single fully auto-generated module**)
+>
+> **For the ICON-side build + run, continue in the icon-dace repo's
+> `SC2026_HOWTO.md`.** The rest of this file (sections below) only covers
+> the standalone profiling path — skip unless you're regenerating the
+> NCU numbers.
+
 ## 4. Integrate with ICON
 <!-- TODO: fill in the full ICON-side build + run recipe -->
 
@@ -73,7 +87,7 @@ curl -LO http://icon-downloads.mpimet.mpg.de/grids/public/edzw/icon_grid_0010_R0
 Full catalog: <http://icon-downloads.mpimet.mpg.de/dwd_grids.xml>
 
 1. Pick the integration build for the target precision, e.g.
-   `shared_libs/solve_nh_integration/release/8/libvelocity.so.fp32`.
+   `libvelocity_gpu_stage8_solve_nh_integration_release.fp32.so`.
 2. Point ICON at it — **TBD** (env var / symlink / ICON build-option path).
 3. Build / rebuild ICON — **TBD**.
 4. Run the ICON experiment — **TBD** (sbatch script or command).
