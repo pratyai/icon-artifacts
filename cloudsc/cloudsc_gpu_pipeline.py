@@ -69,12 +69,124 @@ def main():
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
+    # ---- Frontload toolchain probes: fail fast BEFORE any codegen. ----
+    prec = args.lowprec.replace("fp", "f")
+
+    def _probe(label, cmd):
+        """Run a detector command; print what we got so nothing is silent."""
+        try:
+            out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
+            print(f"  [probe] {label}: {' '.join(cmd)!r} -> {out or '(empty)'}")
+            return out
+        except FileNotFoundError as e:
+            print(f"  [probe] {label}: {cmd[0]!r} not on PATH ({e}); leaving empty")
+        except subprocess.CalledProcessError as e:
+            print(f"  [probe] {label}: {' '.join(cmd)!r} exited {e.returncode}; stderr/stdout:\n{e.output}")
+        return ""
+
+    # GPU architecture
+    gencode_num = os.getenv("GENCODE_NUMBER")
+    gencode_arch = os.getenv("GENCODE_ARCH")
+    if gencode_arch:
+        arch = gencode_arch
+    elif gencode_num:
+        arch = f"arch=compute_{gencode_num},code=sm_{gencode_num}"
+    else:
+        raise ValueError("GENCODE_NUMBER (e.g. 90) or GENCODE_ARCH must be set in environment.")
+    print(f"  [probe] GPU arch: {arch}")
+
+    dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
+    print(f"  [probe] dace runtime include: {dace_runtime}")
+
+    # HDF5 — required.
+    h5_cflags = _probe("hdf5 cflags (pkg-config)", ["pkg-config", "--cflags", "hdf5"])
+    h5_libs   = _probe("hdf5 libs (pkg-config)",   ["pkg-config", "--libs",   "hdf5"])
+    if not h5_cflags:
+        h5_prefix = _probe("hdf5 prefix (brew)", ["brew", "--prefix", "hdf5"])
+        if h5_prefix:
+            h5_cflags = f"-I{h5_prefix}/include"
+            h5_libs   = f"-L{h5_prefix}/lib -lhdf5"
+    if not h5_cflags or not h5_libs:
+        raise RuntimeError(
+            "HDF5 not found. Install it (brew install hdf5 / module load hdf5) "
+            "or ensure pkg-config / brew can locate it."
+        )
+
+    # Parallel HDF5 detection via H5pubconf.h.
+    h5_parallel = None
+    import re as _re
+    for inc in _re.findall(r"-I(\S+)", h5_cflags):
+        pubconf = Path(inc) / "H5pubconf.h"
+        if pubconf.exists():
+            text = pubconf.read_text(errors="ignore")
+            h5_parallel = bool(_re.search(r"^\s*#define\s+H5_HAVE_PARALLEL\s+1", text, _re.M))
+            print(f"  [probe] parallel HDF5 (from {pubconf}): {h5_parallel}")
+            break
+    else:
+        cfg = _probe("hdf5 build config (h5cc fallback)", ["h5cc", "-showconfig"])
+        if cfg:
+            h5_parallel = "Parallel HDF5: yes" in cfg
+            print(f"  [probe] parallel HDF5 (h5cc): {h5_parallel}")
+
+    mpi_cflags = ""
+    mpi_libs = ""
+    if h5_parallel:
+        env_cf = os.getenv("CLOUDSC_MPI_CFLAGS")
+        env_lf = os.getenv("CLOUDSC_MPI_LIBS")
+        if env_cf is not None or env_lf is not None:
+            mpi_cflags = env_cf or ""
+            mpi_libs   = env_lf or ""
+            print(f"  [probe] mpi cflags (CLOUDSC_MPI_CFLAGS): {mpi_cflags or '(empty)'}")
+            print(f"  [probe] mpi libs   (CLOUDSC_MPI_LIBS):   {mpi_libs or '(empty)'}")
+        else:
+            mpi_cflags = _probe("mpi cflags (openmpi)", ["mpicxx", "--showme:compile"])
+            mpi_libs   = _probe("mpi libs (openmpi)",   ["mpicxx", "--showme:link"])
+            if not mpi_cflags or not mpi_libs:
+                print("  [probe] openmpi-style failed; trying MPICH-style 'mpicxx -show'")
+                show = _probe("mpi show (mpich)", ["mpicxx", "-show"])
+                if show:
+                    cf_toks, lib_toks = [], []
+                    for tok in show.split():
+                        if tok.startswith(("-I", "-D")):
+                            cf_toks.append(tok)
+                        elif tok.startswith(("-L", "-l", "-Wl,")):
+                            lib_toks.append(tok)
+                    mpi_cflags = " ".join(cf_toks)
+                    mpi_libs   = " ".join(lib_toks)
+                    print(f"  [probe] mpi cflags (parsed from -show): {mpi_cflags or '(empty)'}")
+                    print(f"  [probe] mpi libs   (parsed from -show): {mpi_libs or '(empty)'}")
+        if not mpi_cflags or not mpi_libs:
+            raise RuntimeError(
+                "HDF5 is parallel but MPI flags could not be resolved. Tried OpenMPI wrapper "
+                "(`mpicxx --showme:compile/link`) and MPICH wrapper (`mpicxx -show`). "
+                "Set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS to bypass detection."
+            )
+        # nvcc-wrap non-standard flags. -I/-L/-l/-D/-U pass through; -Wl,foo,bar
+        # becomes -Xlinker=foo -Xlinker=bar; anything else gets -Xcompiler=.
+        def _nvccify(flagstr: str) -> str:
+            out = []
+            for tok in flagstr.split():
+                if tok.startswith(("-I", "-L", "-l", "-D", "-U")):
+                    out.append(tok)
+                elif tok.startswith("-Wl,"):
+                    for piece in tok[4:].split(","):
+                        if piece:
+                            out.append(f"-Xlinker={piece}")
+                else:
+                    out.append(f"-Xcompiler={tok}")
+            return " ".join(out)
+        mpi_cflags = _nvccify(mpi_cflags)
+        mpi_libs   = _nvccify(mpi_libs)
+        print(f"  [probe] mpi cflags (nvcc-wrapped): {mpi_cflags}")
+        print(f"  [probe] mpi libs   (nvcc-wrapped): {mpi_libs}")
+    elif h5_parallel is None:
+        print("  [probe] could not determine HDF5 parallelism; skipping MPI detection")
+
+    # ---- End toolchain probes. Now safe to proceed to codegen. ----
+
     print(f"Loading SDFG from {args.sdfg}...")
     sdfg = dace.SDFG.from_file(args.sdfg)
     sdfg.name = "cloudsc_py"
-
-    # Short precision tag: fp16 -> f16, etc.
-    prec = args.lowprec.replace("fp", "f")
 
     codegen_dir = Path(f"build/codegen/{prec}")
     if codegen_dir.exists():
@@ -156,129 +268,10 @@ def main():
 
     stabilize_interface(f"build/codegen/{prec}/cloudsc_py.h", "cloudsc_main.cu")
 
-    # 5. Build Script Generation
-    dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
-
-    # GPU Architecture detection (matches velocity)
-    gencode_num = os.getenv("GENCODE_NUMBER")
-    gencode_arch = os.getenv("GENCODE_ARCH")
-    
-    if gencode_arch:
-        arch = gencode_arch
-    elif gencode_num:
-        arch = f"arch=compute_{gencode_num},code=sm_{gencode_num}"
-    else:
-        raise ValueError("GENCODE_NUMBER (e.g. 90) or GENCODE_ARCH must be set in environment.")
-
-    # Ensure per-precision ptx_out directory exists
+    # Per-precision ptx_out directory (for nvcc --keep)
     ptx_dir = Path(f"build/ptx_out/{prec}")
     if not ptx_dir.exists():
         ptx_dir.mkdir(parents=True)
-
-    def _probe(label, cmd):
-        """Run a detector command; print what we got so nothing is silent."""
-        try:
-            out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
-            print(f"  [probe] {label}: {' '.join(cmd)!r} -> {out or '(empty)'}")
-            return out
-        except FileNotFoundError as e:
-            print(f"  [probe] {label}: {cmd[0]!r} not on PATH ({e}); leaving empty")
-        except subprocess.CalledProcessError as e:
-            print(f"  [probe] {label}: {' '.join(cmd)!r} exited {e.returncode}; stderr/stdout:\n{e.output}")
-        return ""
-
-    # HDF5: REQUIRED (driver #includes hdf5.h).
-    h5_cflags = _probe("hdf5 cflags (pkg-config)", ["pkg-config", "--cflags", "hdf5"])
-    h5_libs   = _probe("hdf5 libs (pkg-config)",   ["pkg-config", "--libs",   "hdf5"])
-    if not h5_cflags:
-        h5_prefix = _probe("hdf5 prefix (brew)", ["brew", "--prefix", "hdf5"])
-        if h5_prefix:
-            h5_cflags = f"-I{h5_prefix}/include"
-            h5_libs   = f"-L{h5_prefix}/lib -lhdf5"
-    if not h5_cflags or not h5_libs:
-        raise RuntimeError(
-            "HDF5 not found. Install it (brew install hdf5 / module load hdf5) "
-            "or ensure pkg-config / brew can locate it."
-        )
-
-    # Is HDF5 parallel? Inspect H5pubconf.h in the HDF5 include dir — this is
-    # the most robust signal because it doesn't depend on h5cc being on PATH.
-    h5_parallel = None
-    import re as _re
-    include_dirs = _re.findall(r"-I(\S+)", h5_cflags)
-    for inc in include_dirs:
-        pubconf = Path(inc) / "H5pubconf.h"
-        if pubconf.exists():
-            text = pubconf.read_text(errors="ignore")
-            h5_parallel = bool(_re.search(r"^\s*#define\s+H5_HAVE_PARALLEL\s+1", text, _re.M))
-            print(f"  [probe] parallel HDF5 (from {pubconf}): {h5_parallel}")
-            break
-    else:
-        cfg = _probe("hdf5 build config (h5cc fallback)", ["h5cc", "-showconfig"])
-        if cfg:
-            h5_parallel = "Parallel HDF5: yes" in cfg
-            print(f"  [probe] parallel HDF5 (h5cc): {h5_parallel}")
-    mpi_cflags = ""
-    mpi_libs = ""
-    if h5_parallel:
-        env_cf = os.getenv("CLOUDSC_MPI_CFLAGS")
-        env_lf = os.getenv("CLOUDSC_MPI_LIBS")
-        if env_cf is not None or env_lf is not None:
-            mpi_cflags = env_cf or ""
-            mpi_libs   = env_lf or ""
-            print(f"  [probe] mpi cflags (CLOUDSC_MPI_CFLAGS): {mpi_cflags or '(empty)'}")
-            print(f"  [probe] mpi libs   (CLOUDSC_MPI_LIBS):   {mpi_libs or '(empty)'}")
-        else:
-            # Try OpenMPI-style wrapper first.
-            mpi_cflags = _probe("mpi cflags (openmpi)", ["mpicxx", "--showme:compile"])
-            mpi_libs   = _probe("mpi libs (openmpi)",   ["mpicxx", "--showme:link"])
-            # Fall back to MPICH-style `mpicxx -show`, which prints the full compiler line.
-            if not mpi_cflags or not mpi_libs:
-                print("  [probe] openmpi-style failed; trying MPICH-style 'mpicxx -show'")
-                show = _probe("mpi show (mpich)", ["mpicxx", "-show"])
-                if show:
-                    # Pull -I/-D tokens for cflags; -L/-l/-Wl, tokens for libs.
-                    cf_toks, lib_toks = [], []
-                    for tok in show.split():
-                        if tok.startswith(("-I", "-D")):
-                            cf_toks.append(tok)
-                        elif tok.startswith(("-L", "-l", "-Wl,")):
-                            lib_toks.append(tok)
-                    mpi_cflags = " ".join(cf_toks)
-                    mpi_libs   = " ".join(lib_toks)
-                    print(f"  [probe] mpi cflags (parsed from -show): {mpi_cflags or '(empty)'}")
-                    print(f"  [probe] mpi libs   (parsed from -show): {mpi_libs or '(empty)'}")
-        if not mpi_cflags or not mpi_libs:
-            raise RuntimeError(
-                "HDF5 is parallel but MPI flags could not be resolved. Tried OpenMPI wrapper "
-                "(`mpicxx --showme:compile/link`) and MPICH wrapper (`mpicxx -show`). "
-                "Set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS to bypass detection."
-            )
-        # nvcc only understands a narrow flag set directly (-I/-L/-l/-D/-U).
-        # Everything else (e.g. -pthread) must go through -Xcompiler to reach the host compiler.
-        def _nvccify(flagstr: str) -> str:
-            # nvcc accepts -I/-L/-l/-D/-U directly. Everything else has to be
-            # routed through the host compiler or linker:
-            #   -Wl,foo,bar  -> -Xlinker=foo -Xlinker=bar   (one per comma-piece)
-            #   anything else -> -Xcompiler=<tok>
-            # -Xcompiler with embedded commas is unsafe (nvcc splits on them).
-            out = []
-            for tok in flagstr.split():
-                if tok.startswith(("-I", "-L", "-l", "-D", "-U")):
-                    out.append(tok)
-                elif tok.startswith("-Wl,"):
-                    for piece in tok[4:].split(","):
-                        if piece:
-                            out.append(f"-Xlinker={piece}")
-                else:
-                    out.append(f"-Xcompiler={tok}")
-            return " ".join(out)
-        mpi_cflags = _nvccify(mpi_cflags)
-        mpi_libs   = _nvccify(mpi_libs)
-        print(f"  [probe] mpi cflags (nvcc-wrapped): {mpi_cflags}")
-        print(f"  [probe] mpi libs   (nvcc-wrapped): {mpi_libs}")
-    elif h5_parallel is None:
-        print("  [probe] could not determine HDF5 parallelism; skipping MPI detection")
 
     if args.release:
         nvcc_flags = (
