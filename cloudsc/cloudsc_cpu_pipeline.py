@@ -148,12 +148,23 @@ def main():
             "or ensure pkg-config / brew can locate it."
         )
 
-    # Is HDF5 parallel? If yes, MPI is required (hdf5.h pulls in <mpi.h>).
+    # Is HDF5 parallel? Inspect H5pubconf.h in the HDF5 include dir — robust,
+    # doesn't require h5cc on PATH.
     h5_parallel = None
-    cfg = _probe("hdf5 build config (h5cc)", ["h5cc", "-showconfig"])
-    if cfg:
-        h5_parallel = "Parallel HDF5: yes" in cfg
-        print(f"  [probe] parallel HDF5: {h5_parallel}")
+    import re as _re
+    include_dirs = _re.findall(r"-I(\S+)", h5_cflags)
+    for inc in include_dirs:
+        pubconf = Path(inc) / "H5pubconf.h"
+        if pubconf.exists():
+            text = pubconf.read_text(errors="ignore")
+            h5_parallel = bool(_re.search(r"^\s*#define\s+H5_HAVE_PARALLEL\s+1", text, _re.M))
+            print(f"  [probe] parallel HDF5 (from {pubconf}): {h5_parallel}")
+            break
+    else:
+        cfg = _probe("hdf5 build config (h5cc fallback)", ["h5cc", "-showconfig"])
+        if cfg:
+            h5_parallel = "Parallel HDF5: yes" in cfg
+            print(f"  [probe] parallel HDF5 (h5cc): {h5_parallel}")
     mpi_cflags = ""
     mpi_libs = ""
     if h5_parallel:
