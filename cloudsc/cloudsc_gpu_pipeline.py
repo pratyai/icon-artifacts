@@ -221,10 +221,38 @@ def main():
     mpi_cflags = ""
     mpi_libs = ""
     if h5_parallel:
-        mpi_cflags = _probe("mpi cflags (required: parallel HDF5)", ["mpicxx", "--showme:compile"])
-        mpi_libs   = _probe("mpi libs (required: parallel HDF5)",   ["mpicxx", "--showme:link"])
+        env_cf = os.getenv("CLOUDSC_MPI_CFLAGS")
+        env_lf = os.getenv("CLOUDSC_MPI_LIBS")
+        if env_cf is not None or env_lf is not None:
+            mpi_cflags = env_cf or ""
+            mpi_libs   = env_lf or ""
+            print(f"  [probe] mpi cflags (CLOUDSC_MPI_CFLAGS): {mpi_cflags or '(empty)'}")
+            print(f"  [probe] mpi libs   (CLOUDSC_MPI_LIBS):   {mpi_libs or '(empty)'}")
+        else:
+            mpi_cflags = _probe("mpi cflags (required: parallel HDF5)", ["mpicxx", "--showme:compile"])
+            mpi_libs   = _probe("mpi libs (required: parallel HDF5)",   ["mpicxx", "--showme:link"])
         if not mpi_cflags or not mpi_libs:
-            raise RuntimeError("HDF5 is parallel but MPI (mpicxx) wasn't found.")
+            raise RuntimeError(
+                "HDF5 is parallel but MPI flags weren't resolved. "
+                "Either fix mpicxx on PATH, or set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS."
+            )
+        # nvcc only understands a narrow flag set directly (-I/-L/-l/-D/-U).
+        # Everything else (e.g. -pthread) must go through -Xcompiler to reach the host compiler.
+        def _nvccify(flagstr: str) -> str:
+            # nvcc accepts -I/-L/-l/-D/-U directly, and forwards -Wl,* to the linker.
+            # Other host-compiler flags (e.g. -pthread) must go through -Xcompiler.
+            # Do NOT wrap -Wl,* with -Xcompiler= because nvcc would split its value on commas.
+            out = []
+            for tok in flagstr.split():
+                if tok.startswith(("-I", "-L", "-l", "-D", "-U", "-Wl,")):
+                    out.append(tok)
+                else:
+                    out.append(f"-Xcompiler={tok}")
+            return " ".join(out)
+        mpi_cflags = _nvccify(mpi_cflags)
+        mpi_libs   = _nvccify(mpi_libs)
+        print(f"  [probe] mpi cflags (nvcc-wrapped): {mpi_cflags}")
+        print(f"  [probe] mpi libs   (nvcc-wrapped): {mpi_libs}")
     elif h5_parallel is None:
         print("  [probe] could not determine HDF5 parallelism; skipping MPI detection")
 

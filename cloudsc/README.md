@@ -42,6 +42,18 @@ pip install -e ../dace-cloudsc
 
 System: `libhdf5` (brew or apt). GPU build additionally needs `nvcc` and a Hopper/Ampere device.
 
+### On daint (uenv + spack)
+
+```bash
+uenv image pull icon/25.2:v1@santis                     # one-time
+uenv start --view=default icon/25.2:v1@santis           # each session
+spack load cuda sqlite zstd                             # provides nvcc, h5cc, mpicxx in PATH
+export GENCODE_ARCH="arch=compute_90,code=sm_90"        # GH200
+# then run Setup block above inside the uenv
+```
+
+HDF5 inside the uenv is parallel — the pipeline detects this by grepping `H5_HAVE_PARALLEL` in `H5pubconf.h` and pulls in MPI flags via `mpicxx --showme:compile`. Missing `mpicxx` on PATH → hard error (not a silent fallback).
+
 ## Optimize (once, precision-invariant)
 
 `optimize.py` runs SSA + LoopToMap on the input SDFG. Output goes under `build/sdfgz/`.
