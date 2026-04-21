@@ -183,6 +183,16 @@ def main():
     except Exception:
         pass # Handle manually if needed
 
+    # Parallel HDF5 (as on daint w/ nvhpc) pulls in <mpi.h>; locate MPI include/lib via mpicxx.
+    mpi_cflags = ""
+    mpi_libs = ""
+    try:
+        mpi_show = subprocess.check_output(["mpicxx", "--showme:compile"], text=True).strip()
+        mpi_cflags = mpi_show
+        mpi_libs = subprocess.check_output(["mpicxx", "--showme:link"], text=True).strip()
+    except Exception:
+        pass
+
     if args.release:
         nvcc_flags = (
             "-O3 -std=c++20 -DNDEBUG --use_fast_math --restrict "
@@ -211,9 +221,9 @@ def main():
         f"    -DCLOUDSC_PREC_TAG=\\\"{prec}\\\" \\\n"
         f"    --keep --keep-dir=build/ptx_out/{prec} \\\n"
         f"    -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree \\\n"
-        f"    -Ibuild/codegen/{prec} -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        f"    -Ibuild/codegen/{prec} -Iinclude -I{dace_runtime} {h5_cflags} {mpi_cflags} \\\n"
         f"    cloudsc_main.cu gpu_mem.cpp build/codegen/{prec}/*.cu \\\n"
-        f"    -o {bin_path} {h5_libs} -lcudart -lpthread"
+        f"    -o {bin_path} {h5_libs} {mpi_libs} -lcudart -lpthread"
     )
 
     recompile_script = (
