@@ -94,7 +94,10 @@ python cloudsc_python_ref_run.py --steps <n> --save  # -> build/outputs/ref/  (n
 Slurm wrapper — runs `ncu --set full` against the per-precision GPU binary. Output `.ncu-rep` goes under `build/profiles/` by default.
 
 ```bash
-sbatch profile_ncu.sh f32 2                # -> build/profiles/cloudsc.f32.ncu-rep
+# sbatch profile_ncu.sh <precision> <steps> [output_dir]
+#   steps: number of cloudsc step iterations per rep (the binary's first arg)
+#   --reps=3 is baked into the wrapper so NCU can separate cold (rep 0) from warm (rep 2)
+sbatch profile_ncu.sh f32 2                # runs 2 steps x 3 reps = 6 total calls
 sbatch profile_ncu.sh f16 2 build/profiles/custom-dir
 ```
 
@@ -126,3 +129,24 @@ python optimize.py cloudsc_pydace_simplified_symbolic.sdfgz
 ```
 
 Resume from a checkpoint with `--start-from after_l2m`.
+
+## Kernel fusion (current state)
+
+MapFusion / StateFusion are **not** applied in `optimize.py`. Status:
+
+- `optimize.py:checkpoint()` calls `sdfg.reset_cfg_list()` as hygiene — a DaCe bug
+  where `cfg_list[cfg_id]` returns a stale region otherwise causes
+  pattern-matching to crash on nested `LoopRegion` states (`KeyError: SDFGState (...)`).
+- **`MapFusionVertical`** reaches its apply stage after the DMR consolidation fix
+  in dace-cloudsc. It fuses ~10 pairs on `after_simplify.sdfgz` before hitting a
+  separate bug: NestedSDFG inout connectors in a *different* state end up with
+  mismatched in/out data names (`zldifdt` vs `__map_fusion_zldifdt`). Root cause
+  looks like shared inner-SDFG objects across top-level states; fix is
+  non-trivial. Not enabled in the pipeline yet.
+- **`StateFusion`** runs without crashing after `reset_cfg_list()` but rejects
+  0 pairs in strict mode. Rejections are legitimate conservative flags: e.g.
+  states that both write to `ztp1`/`zqsmix` trigger a read-write hazard at
+  `state_fusion.py:384` because `_check_all_paths` can't prove the overlapping
+  writes are non-conflicting. Permissive mode would fuse them but is unsafe.
+
+Revisit fusion when the above is resolved upstream.
