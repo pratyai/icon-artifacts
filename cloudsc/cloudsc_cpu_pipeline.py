@@ -122,29 +122,56 @@ def main():
 
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
 
-    # Detect HDF5
-    h5_cflags = ""
-    h5_libs = ""
-    try:
-        h5_cflags = subprocess.check_output(["pkg-config", "--cflags", "hdf5"], text=True).strip()
-        h5_libs = subprocess.check_output(["pkg-config", "--libs", "hdf5"], text=True).strip()
-    except Exception:
+    def _probe(label, cmd):
+        """Run a detector command; print what we got so nothing is silent."""
         try:
-            h5_prefix = subprocess.check_output(["brew", "--prefix", "hdf5"], text=True).strip()
-            h5_cflags = f"-I{h5_prefix}/include"
-            h5_libs = f"-L{h5_prefix}/lib -lhdf5"
-        except Exception:
-            pass
+            out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
+            print(f"  [probe] {label}: {' '.join(cmd)!r} -> {out or '(empty)'}")
+            return out
+        except FileNotFoundError as e:
+            print(f"  [probe] {label}: {cmd[0]!r} not on PATH ({e}); leaving empty")
+        except subprocess.CalledProcessError as e:
+            print(f"  [probe] {label}: {' '.join(cmd)!r} exited {e.returncode}; stderr/stdout:\n{e.output}")
+        return ""
 
-    # Detect OpenMP
+    # HDF5: REQUIRED (driver #includes hdf5.h). Prefer pkg-config, fall back to brew.
+    h5_cflags = _probe("hdf5 cflags (pkg-config)", ["pkg-config", "--cflags", "hdf5"])
+    h5_libs   = _probe("hdf5 libs (pkg-config)",   ["pkg-config", "--libs",   "hdf5"])
+    if not h5_cflags:
+        h5_prefix = _probe("hdf5 prefix (brew)", ["brew", "--prefix", "hdf5"])
+        if h5_prefix:
+            h5_cflags = f"-I{h5_prefix}/include"
+            h5_libs   = f"-L{h5_prefix}/lib -lhdf5"
+    if not h5_cflags or not h5_libs:
+        raise RuntimeError(
+            "HDF5 not found. Install it (brew install hdf5 / module load hdf5) "
+            "or ensure pkg-config / brew can locate it."
+        )
+
+    # Is HDF5 parallel? If yes, MPI is required (hdf5.h pulls in <mpi.h>).
+    h5_parallel = None
+    cfg = _probe("hdf5 build config (h5cc)", ["h5cc", "-showconfig"])
+    if cfg:
+        h5_parallel = "Parallel HDF5: yes" in cfg
+        print(f"  [probe] parallel HDF5: {h5_parallel}")
+    mpi_cflags = ""
+    mpi_libs = ""
+    if h5_parallel:
+        mpi_cflags = _probe("mpi cflags (required: parallel HDF5)", ["mpicxx", "--showme:compile"])
+        mpi_libs   = _probe("mpi libs (required: parallel HDF5)",   ["mpicxx", "--showme:link"])
+        if not mpi_cflags or not mpi_libs:
+            raise RuntimeError("HDF5 is parallel but MPI (mpicxx) wasn't found.")
+    elif h5_parallel is None:
+        print("  [probe] could not determine HDF5 parallelism; skipping MPI detection")
+
+    # OpenMP: REQUIRED (generated code uses #pragma omp).
+    # macOS: homebrew libomp. Linux: expect system libomp available.
     omp_cflags = ""
     omp_libs = "-lomp"
-    try:
-        omp_prefix = subprocess.check_output(["brew", "--prefix", "libomp"], text=True).strip()
+    omp_prefix = _probe("libomp prefix (brew, macOS only)", ["brew", "--prefix", "libomp"])
+    if omp_prefix:
         omp_cflags = f"-I{omp_prefix}/include"
-        omp_libs = f"-L{omp_prefix}/lib -lomp"
-    except Exception:
-        pass
+        omp_libs   = f"-L{omp_prefix}/lib -lomp"
 
     if args.release:
         cpp_flags = "-O3 -g -std=c++20 -DNDEBUG -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas -Xpreprocessor -fopenmp"
@@ -155,9 +182,9 @@ def main():
     cmd = (
         f"c++ {cpp_flags} {omp_cflags} \\\n"
         f"    -DCLOUDSC_PREC_TAG=\\\"{prec}\\\" \\\n"
-        f"    -Ibuild/codegen/{prec} -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        f"    -Ibuild/codegen/{prec} -Iinclude -I{dace_runtime} {h5_cflags} {mpi_cflags} \\\n"
         f"    cloudsc_main.cpp build/codegen/{prec}/*.cpp \\\n"
-        f"    -o {bin_path} -lpthread {omp_libs} {h5_libs}"
+        f"    -o {bin_path} -lpthread {omp_libs} {h5_libs} {mpi_libs}"
     )
 
     recompile_script = f"""#!/bin/bash

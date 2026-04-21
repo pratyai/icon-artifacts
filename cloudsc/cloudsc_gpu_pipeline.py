@@ -175,23 +175,47 @@ def main():
     if not ptx_dir.exists():
         ptx_dir.mkdir(parents=True)
 
-    h5_cflags = ""
-    h5_libs = ""
-    try:
-        h5_cflags = subprocess.check_output(["pkg-config", "--cflags", "hdf5"], text=True).strip()
-        h5_libs = subprocess.check_output(["pkg-config", "--libs", "hdf5"], text=True).strip()
-    except Exception:
-        pass # Handle manually if needed
+    def _probe(label, cmd):
+        """Run a detector command; print what we got so nothing is silent."""
+        try:
+            out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
+            print(f"  [probe] {label}: {' '.join(cmd)!r} -> {out or '(empty)'}")
+            return out
+        except FileNotFoundError as e:
+            print(f"  [probe] {label}: {cmd[0]!r} not on PATH ({e}); leaving empty")
+        except subprocess.CalledProcessError as e:
+            print(f"  [probe] {label}: {' '.join(cmd)!r} exited {e.returncode}; stderr/stdout:\n{e.output}")
+        return ""
 
-    # Parallel HDF5 (as on daint w/ nvhpc) pulls in <mpi.h>; locate MPI include/lib via mpicxx.
+    # HDF5: REQUIRED (driver #includes hdf5.h).
+    h5_cflags = _probe("hdf5 cflags (pkg-config)", ["pkg-config", "--cflags", "hdf5"])
+    h5_libs   = _probe("hdf5 libs (pkg-config)",   ["pkg-config", "--libs",   "hdf5"])
+    if not h5_cflags:
+        h5_prefix = _probe("hdf5 prefix (brew)", ["brew", "--prefix", "hdf5"])
+        if h5_prefix:
+            h5_cflags = f"-I{h5_prefix}/include"
+            h5_libs   = f"-L{h5_prefix}/lib -lhdf5"
+    if not h5_cflags or not h5_libs:
+        raise RuntimeError(
+            "HDF5 not found. Install it (brew install hdf5 / module load hdf5) "
+            "or ensure pkg-config / brew can locate it."
+        )
+
+    # Is HDF5 parallel? If yes, MPI is required (hdf5.h pulls in <mpi.h>).
+    h5_parallel = None
+    cfg = _probe("hdf5 build config (h5cc)", ["h5cc", "-showconfig"])
+    if cfg:
+        h5_parallel = "Parallel HDF5: yes" in cfg
+        print(f"  [probe] parallel HDF5: {h5_parallel}")
     mpi_cflags = ""
     mpi_libs = ""
-    try:
-        mpi_show = subprocess.check_output(["mpicxx", "--showme:compile"], text=True).strip()
-        mpi_cflags = mpi_show
-        mpi_libs = subprocess.check_output(["mpicxx", "--showme:link"], text=True).strip()
-    except Exception:
-        pass
+    if h5_parallel:
+        mpi_cflags = _probe("mpi cflags (required: parallel HDF5)", ["mpicxx", "--showme:compile"])
+        mpi_libs   = _probe("mpi libs (required: parallel HDF5)",   ["mpicxx", "--showme:link"])
+        if not mpi_cflags or not mpi_libs:
+            raise RuntimeError("HDF5 is parallel but MPI (mpicxx) wasn't found.")
+    elif h5_parallel is None:
+        print("  [probe] could not determine HDF5 parallelism; skipping MPI detection")
 
     if args.release:
         nvcc_flags = (
