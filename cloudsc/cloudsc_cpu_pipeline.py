@@ -176,12 +176,27 @@ def main():
             print(f"  [probe] mpi cflags (CLOUDSC_MPI_CFLAGS): {mpi_cflags or '(empty)'}")
             print(f"  [probe] mpi libs   (CLOUDSC_MPI_LIBS):   {mpi_libs or '(empty)'}")
         else:
-            mpi_cflags = _probe("mpi cflags (required: parallel HDF5)", ["mpicxx", "--showme:compile"])
-            mpi_libs   = _probe("mpi libs (required: parallel HDF5)",   ["mpicxx", "--showme:link"])
+            mpi_cflags = _probe("mpi cflags (openmpi)", ["mpicxx", "--showme:compile"])
+            mpi_libs   = _probe("mpi libs (openmpi)",   ["mpicxx", "--showme:link"])
+            if not mpi_cflags or not mpi_libs:
+                print("  [probe] openmpi-style failed; trying MPICH-style 'mpicxx -show'")
+                show = _probe("mpi show (mpich)", ["mpicxx", "-show"])
+                if show:
+                    cf_toks, lib_toks = [], []
+                    for tok in show.split():
+                        if tok.startswith(("-I", "-D")):
+                            cf_toks.append(tok)
+                        elif tok.startswith(("-L", "-l", "-Wl,")):
+                            lib_toks.append(tok)
+                    mpi_cflags = " ".join(cf_toks)
+                    mpi_libs   = " ".join(lib_toks)
+                    print(f"  [probe] mpi cflags (parsed from -show): {mpi_cflags or '(empty)'}")
+                    print(f"  [probe] mpi libs   (parsed from -show): {mpi_libs or '(empty)'}")
         if not mpi_cflags or not mpi_libs:
             raise RuntimeError(
-                "HDF5 is parallel but MPI flags weren't resolved. "
-                "Either fix mpicxx on PATH, or set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS."
+                "HDF5 is parallel but MPI flags could not be resolved. Tried OpenMPI wrapper "
+                "(`mpicxx --showme:compile/link`) and MPICH wrapper (`mpicxx -show`). "
+                "Set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS to bypass detection."
             )
     elif h5_parallel is None:
         print("  [probe] could not determine HDF5 parallelism; skipping MPI detection")

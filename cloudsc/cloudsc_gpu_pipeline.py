@@ -229,23 +229,47 @@ def main():
             print(f"  [probe] mpi cflags (CLOUDSC_MPI_CFLAGS): {mpi_cflags or '(empty)'}")
             print(f"  [probe] mpi libs   (CLOUDSC_MPI_LIBS):   {mpi_libs or '(empty)'}")
         else:
-            mpi_cflags = _probe("mpi cflags (required: parallel HDF5)", ["mpicxx", "--showme:compile"])
-            mpi_libs   = _probe("mpi libs (required: parallel HDF5)",   ["mpicxx", "--showme:link"])
+            # Try OpenMPI-style wrapper first.
+            mpi_cflags = _probe("mpi cflags (openmpi)", ["mpicxx", "--showme:compile"])
+            mpi_libs   = _probe("mpi libs (openmpi)",   ["mpicxx", "--showme:link"])
+            # Fall back to MPICH-style `mpicxx -show`, which prints the full compiler line.
+            if not mpi_cflags or not mpi_libs:
+                print("  [probe] openmpi-style failed; trying MPICH-style 'mpicxx -show'")
+                show = _probe("mpi show (mpich)", ["mpicxx", "-show"])
+                if show:
+                    # Pull -I/-D tokens for cflags; -L/-l/-Wl, tokens for libs.
+                    cf_toks, lib_toks = [], []
+                    for tok in show.split():
+                        if tok.startswith(("-I", "-D")):
+                            cf_toks.append(tok)
+                        elif tok.startswith(("-L", "-l", "-Wl,")):
+                            lib_toks.append(tok)
+                    mpi_cflags = " ".join(cf_toks)
+                    mpi_libs   = " ".join(lib_toks)
+                    print(f"  [probe] mpi cflags (parsed from -show): {mpi_cflags or '(empty)'}")
+                    print(f"  [probe] mpi libs   (parsed from -show): {mpi_libs or '(empty)'}")
         if not mpi_cflags or not mpi_libs:
             raise RuntimeError(
-                "HDF5 is parallel but MPI flags weren't resolved. "
-                "Either fix mpicxx on PATH, or set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS."
+                "HDF5 is parallel but MPI flags could not be resolved. Tried OpenMPI wrapper "
+                "(`mpicxx --showme:compile/link`) and MPICH wrapper (`mpicxx -show`). "
+                "Set CLOUDSC_MPI_CFLAGS and CLOUDSC_MPI_LIBS to bypass detection."
             )
         # nvcc only understands a narrow flag set directly (-I/-L/-l/-D/-U).
         # Everything else (e.g. -pthread) must go through -Xcompiler to reach the host compiler.
         def _nvccify(flagstr: str) -> str:
-            # nvcc accepts -I/-L/-l/-D/-U directly, and forwards -Wl,* to the linker.
-            # Other host-compiler flags (e.g. -pthread) must go through -Xcompiler.
-            # Do NOT wrap -Wl,* with -Xcompiler= because nvcc would split its value on commas.
+            # nvcc accepts -I/-L/-l/-D/-U directly. Everything else has to be
+            # routed through the host compiler or linker:
+            #   -Wl,foo,bar  -> -Xlinker=foo -Xlinker=bar   (one per comma-piece)
+            #   anything else -> -Xcompiler=<tok>
+            # -Xcompiler with embedded commas is unsafe (nvcc splits on them).
             out = []
             for tok in flagstr.split():
-                if tok.startswith(("-I", "-L", "-l", "-D", "-U", "-Wl,")):
+                if tok.startswith(("-I", "-L", "-l", "-D", "-U")):
                     out.append(tok)
+                elif tok.startswith("-Wl,"):
+                    for piece in tok[4:].split(","):
+                        if piece:
+                            out.append(f"-Xlinker={piece}")
                 else:
                     out.append(f"-Xcompiler={tok}")
             return " ".join(out)
