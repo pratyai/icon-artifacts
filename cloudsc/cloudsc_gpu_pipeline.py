@@ -149,7 +149,10 @@ def main():
     sdfg = dace.SDFG.from_file(args.sdfg)
     sdfg.name = "cloudsc_py"
 
-    codegen_dir = Path("build/codegen")
+    # Short precision tag: fp16 -> f16, etc.
+    prec = args.lowprec.replace("fp", "f")
+
+    codegen_dir = Path(f"build/codegen/{prec}")
     if codegen_dir.exists():
         shutil.rmtree(codegen_dir)
     codegen_dir.mkdir(parents=True)
@@ -168,7 +171,7 @@ def main():
     apply_lowprec(sdfg, args.lowprec)
 
     Path("build/sdfgz").mkdir(parents=True, exist_ok=True)
-    lowered_sdfg_path = os.path.abspath("build/sdfgz/cloudsc_lowered_gpu.sdfgz")
+    lowered_sdfg_path = os.path.abspath(f"build/sdfgz/cloudsc_lowered_gpu.{prec}.sdfgz")
     sdfg.save(lowered_sdfg_path, compress=True)
     print(f"Saved lowered GPU SDFG to: {lowered_sdfg_path}")
 
@@ -227,7 +230,7 @@ def main():
     from text_patches import apply_text_patches
     apply_text_patches(codegen_dir, args.lowprec)
 
-    stabilize_interface("build/codegen/cloudsc_py.h", "cloudsc_main.cu")
+    stabilize_interface(f"build/codegen/{prec}/cloudsc_py.h", "cloudsc_main.cu")
 
     # 5. Build Script Generation
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
@@ -243,8 +246,8 @@ def main():
     else:
         raise ValueError("GENCODE_NUMBER (e.g. 90) or GENCODE_ARCH must be set in environment.")
 
-    # Ensure ptx_out directory exists
-    ptx_dir = Path("build/ptx_out")
+    # Ensure per-precision ptx_out directory exists
+    ptx_dir = Path(f"build/ptx_out/{prec}")
     if not ptx_dir.exists():
         ptx_dir.mkdir(parents=True)
 
@@ -275,31 +278,44 @@ def main():
     # Suppress noisy DaCe-related CUDA warnings
     suppress = " ".join([f"--diag-suppress {x}" for x in [68, 550, 20208, 1835, 177, 20012, 1098]])
     
-    # We include all .cu files in codegen/
-    # And we add the memory wrapper implementations
+    # Per-precision outputs so builds coexist.
+    bin_path = f"build/bin/cloudsc_gpu_bin.{prec}"
+    sass_path = f"build/ptx_out/{prec}/all_kernels.sass"
     cmd = (
         f"nvcc {nvcc_flags} -gencode {arch} {suppress} \\\n"
         f"    -Xcompiler=\"{xcompiler_flags}\" \\\n"
-        f"    --keep --keep-dir=build/ptx_out \\\n"
+        f"    -DCLOUDSC_PREC_TAG=\\\"{prec}\\\" \\\n"
+        f"    --keep --keep-dir=build/ptx_out/{prec} \\\n"
         f"    -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree \\\n"
-        f"    -Ibuild/codegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
-        "    cloudsc_main.cu gpu_mem.cpp build/codegen/*.cu \\\n"
-        f"    -o build/bin/cloudsc_gpu_bin {h5_libs} -lcudart -lpthread"
+        f"    -Ibuild/codegen/{prec} -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        f"    cloudsc_main.cu gpu_mem.cpp build/codegen/{prec}/*.cu \\\n"
+        f"    -o {bin_path} {h5_libs} -lcudart -lpthread"
     )
 
-    recompile_script = f"#!/bin/bash\nset -e\nmkdir -p build/bin\nrm -f build/bin/cloudsc_gpu_bin\n{cmd}\n"
+    recompile_script = (
+        f"#!/bin/bash\n"
+        f"set -e\n"
+        f"mkdir -p build/bin build/ptx_out/{prec}\n"
+        f"rm -f {bin_path}\n"
+        f"{cmd}\n"
+        f"\n"
+        f"# Dump SASS (native assembly) alongside PTX\n"
+        f"echo 'Dumping SASS to {sass_path} ...'\n"
+        f"cuobjdump -sass {bin_path} > {sass_path} || echo '  (SASS dump failed — non-fatal)'\n"
+    )
 
-    with open("recompile.sh", "w") as f:
+    recompile_name = f"recompile.gpu.{prec}.sh"
+    with open(recompile_name, "w") as f:
         f.write(recompile_script)
-    os.chmod("recompile.sh", 0o755)
-    print(f"Build script written to: {os.path.abspath('recompile.sh')}")
-    print(f"Binary will be output to: {os.path.abspath('build/bin/cloudsc_gpu_bin')}")
-    print(f"\nGPU Pipeline ready. Build command in recompile.sh (Release={args.release}, Precision={args.lowprec})")
+    os.chmod(recompile_name, 0o755)
+    print(f"Build script written to: {os.path.abspath(recompile_name)}")
+    print(f"Binary will be output to: {os.path.abspath(bin_path)}")
+    print(f"\nGPU Pipeline ready. Build script: {recompile_name} (Release={args.release}, Precision={args.lowprec})")
     print(f"  Input SDFG:    {os.path.abspath(args.sdfg)}")
     print(f"  Lowered SDFG:  {lowered_sdfg_path}")
     print(f"  Codegen dir:   {codegen_dir.absolute()}")
-    print(f"  Build script:  {os.path.abspath('recompile.sh')}")
-    print(f"  Binary output: {os.path.abspath('build/bin/cloudsc_gpu_bin')}")
+    print(f"  Build script:  {os.path.abspath(recompile_name)}")
+    print(f"  Binary output: {os.path.abspath(bin_path)}")
 
 
 if __name__ == "__main__":

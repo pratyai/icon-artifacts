@@ -4,3 +4,4 @@ __pycache__
 build/
 outputs_sweep_ref/
 recompile.sh
+recompile.*.sh

@@ -163,8 +163,11 @@ def main():
     sdfg = dace.SDFG.from_file(args.sdfg)
     sdfg.name = "cloudsc_py"
 
-    # Set build folder explicitly (like velocity)
-    codegen_dir = Path("build/codegen")
+    # Short precision tag: fp16 -> f16, etc. Used to keep precisions coexisting.
+    prec = args.lowprec.replace("fp", "f")
+
+    # Per-precision codegen dir so f16/f32/f64 don't clobber each other.
+    codegen_dir = Path(f"build/codegen/{prec}")
     if codegen_dir.exists():
         shutil.rmtree(codegen_dir)
     codegen_dir.mkdir(parents=True)
@@ -176,9 +179,9 @@ def main():
     from lowprec import apply_lowprec
     apply_lowprec(sdfg, args.lowprec)
 
-    # Save the lowered SDFG for inspection before codegen
+    # Save the lowered SDFG for inspection before codegen (per-precision)
     Path("build/sdfgz").mkdir(parents=True, exist_ok=True)
-    lowered_sdfg_path = "build/sdfgz/cloudsc_lowered.sdfgz"
+    lowered_sdfg_path = f"build/sdfgz/cloudsc_lowered.{prec}.sdfgz"
     sdfg.save(lowered_sdfg_path, compress=True)
     print(f"Saved lowered SDFG to {lowered_sdfg_path}")
 
@@ -237,11 +240,13 @@ def main():
     else:
         cpp_flags = "-O0 -g -std=c++20 -Wall -Wextra -Wno-parentheses-equality -Wno-unused-parameter -Wno-unknown-pragmas -Xpreprocessor -fopenmp"
 
+    bin_path = f"build/bin/cloudsc_cpu_bin.{prec}"
     cmd = (
         f"c++ {cpp_flags} {omp_cflags} \\\n"
-        f"    -Ibuild/codegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
-        "    cloudsc_main.cpp build/codegen/*.cpp \\\n"
-        f"    -o build/bin/cloudsc_cpu_bin -lpthread {omp_libs} {h5_libs}"
+        f"    -DCLOUDSC_PREC_TAG=\\\"{prec}\\\" \\\n"
+        f"    -Ibuild/codegen/{prec} -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        f"    cloudsc_main.cpp build/codegen/{prec}/*.cpp \\\n"
+        f"    -o {bin_path} -lpthread {omp_libs} {h5_libs}"
     )
 
     recompile_script = f"""#!/bin/bash
@@ -251,15 +256,16 @@ set -e
 mkdir -p build/bin
 
 # Remove old binary if it exists
-rm -f build/bin/cloudsc_cpu_bin
+rm -f {bin_path}
 
 # Compile
 {cmd}
 """
-    with open("recompile.sh", "w") as f:
+    recompile_name = f"recompile.cpu.{prec}.sh"
+    with open(recompile_name, "w") as f:
         f.write(recompile_script)
-    os.chmod("recompile.sh", 0o755)
-    print(f"Pipeline ready. Build command updated in recompile.sh (Release={args.release}, HDF5 support included)")
+    os.chmod(recompile_name, 0o755)
+    print(f"Pipeline ready. Build script: {recompile_name} -> {bin_path} (Release={args.release})")
 
 
 if __name__ == "__main__":

@@ -159,15 +159,17 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=int, help="Comparison step index (compares ref vs cpp)")
     parser.add_argument("--ref", type=str, help="Path to reference HDF5 file")
     parser.add_argument("--test", type=str, help="Path to test HDF5 file")
-    parser.add_argument("--gpu", action="store_true", help="Compare GPU outputs (defaults to outputs_gpu/gpu_*)")
+    parser.add_argument("--gpu", action="store_true", help="Compare GPU outputs (defaults to build/outputs/gpu/<prec>)")
+    parser.add_argument("--prec", type=str, default="f64", help="Precision tag subdir (f16/f32/f64)")
     parser.add_argument("--tol", type=float, default=1e-12, help="Relative error tolerance")
     args = parser.parse_args()
 
-    test_dir = "build/outputs/gpu" if args.gpu else "build/outputs/cpp"
+    test_dir = f"build/outputs/gpu/{args.prec}" if args.gpu else f"build/outputs/cpp/{args.prec}"
     test_prefix = "gpu" if args.gpu else "cpp"
+    ref_dir = "build/outputs/ref"
 
     if args.step is not None:
-        file_ref = f"build/outputs/ref/ref_output_step_{args.step}.h5"
+        file_ref = f"{ref_dir}/ref_output_step_{args.step}.h5"
         file_test = f"{test_dir}/{test_prefix}_output_step_{args.step}.h5"
         compare_files(file_ref, file_test, args.tol)
     elif args.ref and args.test:
