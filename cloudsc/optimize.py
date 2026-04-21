@@ -9,7 +9,6 @@ import argparse
 import os
 
 import dace
-from dace import nodes as nd
 from dace.transformation.interstate import LoopToMap
 
 
@@ -93,21 +92,6 @@ def condition_fusion(sdfg: dace.SDFG) -> int:
     return fuse_all_conditions(sdfg)
 
 
-def fix_missing_nsdfg_symbols(sdfg: dace.SDFG):
-    """Propagate missing symbols into NestedSDFGs."""
-    fixed = 0
-    for node, _ in sdfg.all_nodes_recursive():
-        if isinstance(node, nd.NestedSDFG):
-            nsdfg = node.sdfg
-            connectors = set(node.in_connectors.keys()) | set(node.out_connectors.keys())
-            for sym in nsdfg.free_symbols:
-                if sym not in connectors and sym not in node.symbol_mapping:
-                    node.symbol_mapping[sym] = dace.symbolic.pystr_to_symbolic(sym)
-                    fixed += 1
-    if fixed:
-        print(f"  Fixed {fixed} missing NestedSDFG symbol mappings")
-
-
 def checkpoint(sdfg: dace.SDFG, name: str, out_dir: str):
     """Validate and save a checkpoint SDFG."""
     path = os.path.join(out_dir, f"{name}.sdfgz")
@@ -176,7 +160,6 @@ if __name__ == "__main__":
     # 2. Constant propagation — nclv and related indices become concrete
     if not args.no_propagate and "propagate" not in skip_steps:
         propagate_constants(sdfg, SYMBOL_MAP)
-        fix_missing_nsdfg_symbols(sdfg)
         checkpoint(sdfg, "after_propagate", out_dir)
 
     # 3. Unroll — unroll maps/loops with nclv-sized extents
@@ -186,7 +169,6 @@ if __name__ == "__main__":
 
     # 3b. Simplify after unroll (state fusion, dead code, etc.)
     if "simplify1" not in skip_steps:
-        fix_missing_nsdfg_symbols(sdfg)
         sdfg.simplify()
         checkpoint(sdfg, "after_simplify1", out_dir)
 
@@ -247,8 +229,7 @@ if __name__ == "__main__":
             print(f"LoopToMap (post-condfuse): converted {n2} more loops to maps")
         checkpoint(sdfg, "after_l2m2", out_dir)
 
-    # 10. Fix missing NestedSDFG symbols, then simplify
-    fix_missing_nsdfg_symbols(sdfg)
+    # 10. Simplify
     sdfg.simplify()
     checkpoint(sdfg, "after_simplify", out_dir)
 
