@@ -77,6 +77,17 @@ GENCODE_NUMBER=90 python cloudsc_gpu_pipeline.py --sdfg $OPT --release --lowprec
 python cloudsc_python_ref_run.py --steps <n> --save  # -> build/outputs/ref/  (no precision tag)
 ```
 
+## Profile (GPU, NCU)
+
+Slurm wrapper — runs `ncu --set full` against the per-precision GPU binary. Output `.ncu-rep` goes under `build/profiles/` by default.
+
+```bash
+sbatch profile_ncu.sh f32 2                # -> build/profiles/cloudsc.f32.ncu-rep
+sbatch profile_ncu.sh f16 2 build/profiles/custom-dir
+```
+
+Reuses velocity's post-processing: `velocity/extract_ncu.py` parses `.ncu-rep` into summary/aggregate CSVs; `velocity/report_ncu.py` prints the cold/warm table. FLOP sums are reconstructed via `.sum.per_cycle_elapsed × cycles_elapsed.avg` because NCU 2025.2.0 drops raw `.sum` when `--metrics` is used explicitly.
+
 ## Compare
 
 ```bash
