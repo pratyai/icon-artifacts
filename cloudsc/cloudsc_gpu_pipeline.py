@@ -149,10 +149,10 @@ def main():
     sdfg = dace.SDFG.from_file(args.sdfg)
     sdfg.name = "cloudsc_py"
 
-    codegen_dir = Path("codegen")
+    codegen_dir = Path("build/codegen")
     if codegen_dir.exists():
         shutil.rmtree(codegen_dir)
-    codegen_dir.mkdir()
+    codegen_dir.mkdir(parents=True)
     print(f"Created codegen directory: {codegen_dir.absolute()}")
     sdfg.build_folder = str(codegen_dir / sdfg.name)
     print(f"SDFG build folder set to: {sdfg.build_folder}")
@@ -167,7 +167,8 @@ def main():
     from lowprec import apply_lowprec
     apply_lowprec(sdfg, args.lowprec)
 
-    lowered_sdfg_path = os.path.abspath("cloudsc_lowered_gpu.sdfgz")
+    Path("build/sdfgz").mkdir(parents=True, exist_ok=True)
+    lowered_sdfg_path = os.path.abspath("build/sdfgz/cloudsc_lowered_gpu.sdfgz")
     sdfg.save(lowered_sdfg_path, compress=True)
     print(f"Saved lowered GPU SDFG to: {lowered_sdfg_path}")
 
@@ -226,7 +227,7 @@ def main():
     from text_patches import apply_text_patches
     apply_text_patches(codegen_dir, args.lowprec)
 
-    stabilize_interface("codegen/cloudsc_py.h", "cloudsc_main.cu")
+    stabilize_interface("build/codegen/cloudsc_py.h", "cloudsc_main.cu")
 
     # 5. Build Script Generation
     dace_runtime = Path(dace.__file__).parent / "runtime" / "include"
@@ -243,9 +244,9 @@ def main():
         raise ValueError("GENCODE_NUMBER (e.g. 90) or GENCODE_ARCH must be set in environment.")
 
     # Ensure ptx_out directory exists
-    ptx_dir = Path("ptx_out")
+    ptx_dir = Path("build/ptx_out")
     if not ptx_dir.exists():
-        ptx_dir.mkdir()
+        ptx_dir.mkdir(parents=True)
 
     h5_cflags = ""
     h5_libs = ""
@@ -279,26 +280,26 @@ def main():
     cmd = (
         f"nvcc {nvcc_flags} -gencode {arch} {suppress} \\\n"
         f"    -Xcompiler=\"{xcompiler_flags}\" \\\n"
-        f"    --keep --keep-dir=ptx_out \\\n"
+        f"    --keep --keep-dir=build/ptx_out \\\n"
         f"    -Xlinker --wrap=cudaMalloc -Xlinker --wrap=cudaFree \\\n"
-        f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
-        "    cloudsc_main.cu gpu_mem.cpp codegen/*.cu \\\n"
-        f"    -o cloudsc_gpu_bin {h5_libs} -lcudart -lpthread"
+        f"    -Ibuild/codegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        "    cloudsc_main.cu gpu_mem.cpp build/codegen/*.cu \\\n"
+        f"    -o build/bin/cloudsc_gpu_bin {h5_libs} -lcudart -lpthread"
     )
 
-    recompile_script = f"#!/bin/bash\nset -e\nrm -f cloudsc_gpu_bin\n{cmd}\n"
-    
+    recompile_script = f"#!/bin/bash\nset -e\nmkdir -p build/bin\nrm -f build/bin/cloudsc_gpu_bin\n{cmd}\n"
+
     with open("recompile.sh", "w") as f:
         f.write(recompile_script)
     os.chmod("recompile.sh", 0o755)
     print(f"Build script written to: {os.path.abspath('recompile.sh')}")
-    print(f"Binary will be output to: {os.path.abspath('cloudsc_gpu_bin')}")
+    print(f"Binary will be output to: {os.path.abspath('build/bin/cloudsc_gpu_bin')}")
     print(f"\nGPU Pipeline ready. Build command in recompile.sh (Release={args.release}, Precision={args.lowprec})")
     print(f"  Input SDFG:    {os.path.abspath(args.sdfg)}")
     print(f"  Lowered SDFG:  {lowered_sdfg_path}")
     print(f"  Codegen dir:   {codegen_dir.absolute()}")
     print(f"  Build script:  {os.path.abspath('recompile.sh')}")
-    print(f"  Binary output: {os.path.abspath('cloudsc_gpu_bin')}")
+    print(f"  Binary output: {os.path.abspath('build/bin/cloudsc_gpu_bin')}")
 
 
 if __name__ == "__main__":

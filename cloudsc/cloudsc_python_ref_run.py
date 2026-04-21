@@ -104,8 +104,8 @@ def run_ref_simulation():
         total_time += (end - start)
         
         if args.save:
-            os.makedirs("outputs_ref", exist_ok=True)
-            out_name = f"outputs_ref/ref_output_step_{i}.h5"
+            os.makedirs("build/outputs/ref", exist_ok=True)
+            out_name = f"build/outputs/ref/ref_output_step_{i}.h5"
             with h5py.File(out_name, 'w') as f_out:
                 for f_name in output_arrays:
                     f_out.create_dataset(f_name.upper(), data=fields[f_name])

@@ -147,7 +147,12 @@ if __name__ == "__main__":
 
     sdfg = dace.SDFG.from_file(args.input)
     only_ssa = set(args.only_ssa.split(",")) if args.only_ssa else None
-    out_dir = os.path.dirname(args.output or args.input)
+    # Default output and checkpoint dir: build/sdfgz/
+    if not args.output:
+        stem = os.path.splitext(os.path.basename(args.input))[0]
+        args.output = os.path.join("build", "sdfgz", f"{stem}_opt.sdfgz")
+    out_dir = os.path.dirname(args.output) or "build/sdfgz"
+    os.makedirs(out_dir, exist_ok=True)
 
     # Jump to a checkpoint if --start-from is given
     start_from = args.start_from
@@ -247,6 +252,5 @@ if __name__ == "__main__":
     sdfg.simplify()
     checkpoint(sdfg, "after_simplify", out_dir)
 
-    out_path = args.output or args.input.replace(".sdfgz", "_opt.sdfgz")
-    sdfg.save(out_path, compress=True)
-    print(f"Saved to {out_path}")
+    sdfg.save(args.output, compress=True)
+    print(f"Saved to {args.output}")

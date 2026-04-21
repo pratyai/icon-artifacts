@@ -1,7 +1,6 @@
 .dacecache
 _dacegraphs
 __pycache__
-outputs_cpp/
-outputs_ref/
+build/
 outputs_sweep_ref/
-cloudsc_cpu_bin
+recompile.sh

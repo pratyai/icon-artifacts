@@ -164,10 +164,10 @@ def main():
     sdfg.name = "cloudsc_py"
 
     # Set build folder explicitly (like velocity)
-    codegen_dir = Path("codegen")
+    codegen_dir = Path("build/codegen")
     if codegen_dir.exists():
         shutil.rmtree(codegen_dir)
-    codegen_dir.mkdir()
+    codegen_dir.mkdir(parents=True)
     sdfg.build_folder = str(codegen_dir / sdfg.name)
 
     print(f"Generating code ({'Release' if args.release else 'Debug'}, lowprec={args.lowprec})...")
@@ -177,8 +177,10 @@ def main():
     apply_lowprec(sdfg, args.lowprec)
 
     # Save the lowered SDFG for inspection before codegen
-    sdfg.save("cloudsc_lowered.sdfgz", compress=True)
-    print("Saved lowered SDFG to cloudsc_lowered.sdfgz")
+    Path("build/sdfgz").mkdir(parents=True, exist_ok=True)
+    lowered_sdfg_path = "build/sdfgz/cloudsc_lowered.sdfgz"
+    sdfg.save(lowered_sdfg_path, compress=True)
+    print(f"Saved lowered SDFG to {lowered_sdfg_path}")
 
     # Use velocity's lower-level codegen path
     sdfg.fill_scope_connectors()
@@ -237,16 +239,19 @@ def main():
 
     cmd = (
         f"c++ {cpp_flags} {omp_cflags} \\\n"
-        f"    -Icodegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
-        "    cloudsc_main.cpp codegen/*.cpp \\\n"
-        f"    -o cloudsc_cpu_bin -lpthread {omp_libs} {h5_libs}"
+        f"    -Ibuild/codegen -Iinclude -I{dace_runtime} {h5_cflags} \\\n"
+        "    cloudsc_main.cpp build/codegen/*.cpp \\\n"
+        f"    -o build/bin/cloudsc_cpu_bin -lpthread {omp_libs} {h5_libs}"
     )
 
     recompile_script = f"""#!/bin/bash
 set -e
 
+# Ensure output dir exists
+mkdir -p build/bin
+
 # Remove old binary if it exists
-rm -f cloudsc_cpu_bin
+rm -f build/bin/cloudsc_cpu_bin
 
 # Compile
 {cmd}

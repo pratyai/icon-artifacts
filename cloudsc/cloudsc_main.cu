@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <cuda_runtime.h>
 #include "h5_utils.h"
-#include "codegen/cloudsc_py.h"
+#include "cloudsc_py.h"
 #include "cloudsc_constants.h"
 #include "cloudsc_inputs.h"
 
@@ -52,8 +52,8 @@ int main(int argc, char** argv) {
         total_time += std::chrono::duration<double>(end - start).count();
 
         if (save_output) {
-            std::filesystem::create_directories("outputs_gpu");
-            std::string out_name = "outputs_gpu/gpu_output_step_" + std::to_string(s) + ".h5";
+            std::filesystem::create_directories("build/outputs/gpu");
+            std::string out_name = "build/outputs/gpu/gpu_output_step_" + std::to_string(s) + ".h5";
             std::filesystem::path full_path = std::filesystem::absolute(out_name);
             hid_t out_id = H5Fcreate(out_name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
             save_outputs(out_id, data, klon, klev, nclv);

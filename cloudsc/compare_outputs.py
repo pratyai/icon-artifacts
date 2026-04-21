@@ -94,7 +94,7 @@ def compare_files(file_ref, file_test, tol=1e-12):
     else:
         print(f"\n✅ Validation PASSED (tol={tol})")
 
-def compare_all_steps(ref_dir="outputs_ref", test_dir="outputs_cpp", test_prefix="cpp", tol=1e-12):
+def compare_all_steps(ref_dir="build/outputs/ref", test_dir="build/outputs/cpp", test_prefix="cpp", tol=1e-12):
     print(f"Comparing all steps in {ref_dir} and {test_dir}\n")
     
     ref_files = [f for f in os.listdir(ref_dir) if f.startswith("ref_output_step_") and f.endswith(".h5")]
@@ -163,11 +163,11 @@ if __name__ == "__main__":
     parser.add_argument("--tol", type=float, default=1e-12, help="Relative error tolerance")
     args = parser.parse_args()
 
-    test_dir = "outputs_gpu" if args.gpu else "outputs_cpp"
+    test_dir = "build/outputs/gpu" if args.gpu else "build/outputs/cpp"
     test_prefix = "gpu" if args.gpu else "cpp"
 
     if args.step is not None:
-        file_ref = f"outputs_ref/ref_output_step_{args.step}.h5"
+        file_ref = f"build/outputs/ref/ref_output_step_{args.step}.h5"
         file_test = f"{test_dir}/{test_prefix}_output_step_{args.step}.h5"
         compare_files(file_ref, file_test, args.tol)
     elif args.ref and args.test:
