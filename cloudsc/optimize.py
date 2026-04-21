@@ -93,7 +93,13 @@ def condition_fusion(sdfg: dace.SDFG) -> int:
 
 
 def checkpoint(sdfg: dace.SDFG, name: str, out_dir: str):
-    """Validate and save a checkpoint SDFG."""
+    """Validate and save a checkpoint SDFG.
+
+    Also refresh the cfg_list so downstream passes (and any pattern matching
+    they invoke) don't see stale CFG indices. Cheap insurance against the
+    DaCe bug where `cfg_list[cfg_id]` returns the wrong region after mutations.
+    """
+    sdfg.reset_cfg_list()
     path = os.path.join(out_dir, f"{name}.sdfgz")
     sdfg.save(path, compress=True)
     print(f"  checkpoint: {path}")
