@@ -1,7 +1,6 @@
 import dace
 import os
 import shutil
-import re
 import argparse
 import subprocess
 from pathlib import Path
@@ -9,88 +8,13 @@ from pathlib import Path
 from dace.codegen import codegen, compiler
 from dace.sdfg import infer_types
 
+from pipeline_utils import repl_in_file, stabilize_interface, modify_files_in_directory
+
 dace.config.Config.set("compiler", "default_data_types", value="C")
 dace.config.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
 dace.config.Config.set("compiler", "cuda", "max_concurrent_streams", value="1")
 
 # --- Source Management ---
-
-def repl_in_file(file_path: str, src: str, dst: str):
-    if not os.path.exists(file_path):
-        return
-    with open(file_path, "r") as f:
-        code = f.read()
-    with open(file_path, "w") as f:
-        f.write(code.replace(src, dst))
-
-
-def stabilize_interface(header_path: str, main_cu: str):
-    """Parse the generated header and rewrite cloudsc_main.cu call sites to match."""
-    if not os.path.exists(header_path) or not os.path.exists(main_cu):
-        return
-
-    with open(header_path) as f:
-        header = f.read()
-
-    h = re.sub(r"\s+", " ", header)
-
-    # Extract __dace_init param names
-    m = re.search(r"__dace_init_cloudsc_py\(([^)]+)\)", h)
-    if not m:
-        print("  WARNING: could not parse __dace_init signature")
-        return
-    init_params = [p.strip().split()[-1] for p in m.group(1).split(",")]
-
-    # Extract __program param names
-    m = re.search(r"__program_cloudsc_py\(([^)]+)\)", h)
-    if not m:
-        print("  WARNING: could not parse __program signature")
-        return
-    prog_params = []
-    for p in m.group(1).split(","):
-        tokens = p.strip().replace("*", "").replace("__restrict__", "").split()
-        prog_params.append(tokens[-1])
-
-    init_call = f"__dace_init_cloudsc_py({', '.join(init_params)})"
-    prog_call = f"__program_cloudsc_py({', '.join(prog_params)})"
-
-    with open(main_cu) as f:
-        code = f.read()
-
-    code = re.sub(r"__dace_init_cloudsc_py\([^)]+\)", init_call, code)
-    code = re.sub(r"__program_cloudsc_py\([^)]+\)", prog_call, code)
-
-    with open(main_cu, "w") as f:
-        f.write(code)
-
-    print(f"  Stabilized interface: init({len(init_params)} args), program({len(prog_params)} args)")
-
-
-def modify_files_in_directory(directory):
-    pattern = re.compile(r"^(\s*)int tmp_struct_symbol")
-    for root, _, files in os.walk(directory):
-        for file in files:
-            file_path = os.path.join(root, file)
-            if file_path.endswith((".c", ".h", ".cpp", ".cu")):
-                modify_file(file_path, pattern)
-
-
-def modify_file(file_path, pattern):
-    with open(file_path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    modified = False
-    new_lines = []
-    for line in lines:
-        if pattern.match(line) and "(" not in line and "," not in line and ";" in line:
-            line = pattern.sub(r"\1static int tmp_struct_symbol", line)
-            modified = True
-        new_lines.append(line)
-
-    if modified:
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.writelines(new_lines)
-
 
 def _replace_cpp_with_cu(directory: Path):
     """Renames all .cpp and .cc files in a directory to .cu."""
