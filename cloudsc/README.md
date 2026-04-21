@@ -23,28 +23,49 @@ Under `build/` (gitignored, all per-precision so variants coexist):
 
 ## Setup
 
-Requires DaCe from `../dace-cloudsc` on branch `pratyai/support-half`.
+Requires a sibling DaCe checkout at `../dace-cloudsc` on branch `pratyai/support-half`.
 
 ```bash
+# One-time: clone the sibling dace on the required branch
+git clone git@github.com:spcl/dace.git ../dace-cloudsc
+cd ../dace-cloudsc
+git checkout pratyai/support-half
+git submodule update --init dace/external/cub dace/external/moodycamel dace/viewer/webclient
+cd -
+
+# Venv + deps
 python3 -m venv .venv
-source env.sh
+source env.sh                      # or env.fish
 pip install -r requirements.txt
 pip install -e ../dace-cloudsc
 ```
 
 System: `libhdf5` (brew or apt). GPU build additionally needs `nvcc` and a Hopper/Ampere device.
 
+## Optimize (once, precision-invariant)
+
+`optimize.py` runs SSA + LoopToMap on the input SDFG. Output goes under `build/sdfgz/`.
+
+```bash
+python optimize.py cloudsc_pydace_simplified_symbolic.sdfgz
+# -> build/sdfgz/cloudsc_pydace_simplified_symbolic_opt.sdfgz  (pipeline input below)
+# -> build/sdfgz/after_*.sdfgz                                 (intermediate checkpoints)
+```
+
+Resume from a checkpoint: `python optimize.py <input> --start-from after_l2m`.
+
 ## Build
 
 ```bash
 # CPU — one pipeline run per precision; precisions coexist
-python cloudsc_cpu_pipeline.py --release --lowprec fp64
+OPT=build/sdfgz/cloudsc_pydace_simplified_symbolic_opt.sdfgz
+python cloudsc_cpu_pipeline.py --sdfg $OPT --release --lowprec fp64
 ./recompile.cpu.f64.sh                                    # -> build/bin/cloudsc_cpu_bin.f64
-python cloudsc_cpu_pipeline.py --release --lowprec fp32
+python cloudsc_cpu_pipeline.py --sdfg $OPT --release --lowprec fp32
 ./recompile.cpu.f32.sh                                    # -> build/bin/cloudsc_cpu_bin.f32
 
 # GPU
-GENCODE_NUMBER=90 python cloudsc_gpu_pipeline.py --release --lowprec fp64
+GENCODE_NUMBER=90 python cloudsc_gpu_pipeline.py --sdfg $OPT --release --lowprec fp64
 ./recompile.gpu.f64.sh                                    # -> build/bin/cloudsc_gpu_bin.f64 + SASS dump
 ```
 
