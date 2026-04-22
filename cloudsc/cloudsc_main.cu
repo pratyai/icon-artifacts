@@ -17,7 +17,7 @@
 int main(int argc, char** argv) {
     int num_steps = 1;
     int num_reps = 1;
-    int klon_tile = 1;
+    int klon_override = 0;
     int klev_override = 0;
     bool save_output = true;
     for(int i=1; i<argc; ++i) {
@@ -25,15 +25,17 @@ int main(int argc, char** argv) {
         if(a == "--save") save_output = true;
         else if(a.rfind("--reps=", 0) == 0) num_reps = std::stoi(a.substr(7));
         else if(a == "--reps" && i+1 < argc) num_reps = std::stoi(argv[++i]);
-        else if(a.rfind("--klon-tile=", 0) == 0) klon_tile = std::stoi(a.substr(12));
-        else if(a == "--klon-tile" && i+1 < argc) klon_tile = std::stoi(argv[++i]);
+        else if(a.rfind("--klon=", 0) == 0) klon_override = std::stoi(a.substr(7));
+        else if(a == "--klon" && i+1 < argc) klon_override = std::stoi(argv[++i]);
         else if(a.rfind("--klev=", 0) == 0) klev_override = std::stoi(a.substr(7));
         else if(a == "--klev" && i+1 < argc) klev_override = std::stoi(argv[++i]);
         else if(i == 1 && a.size() >= 2 && a.substr(0,2) != "--") num_steps = std::stoi(a);
     }
 
-    int klon = 100 * klon_tile, klev = (klev_override > 0 ? klev_override : 137), nclv = 5;
     int klon_native = 100;
+    int klon = (klon_override > 0 ? klon_override : klon_native);
+    int klev = (klev_override > 0 ? klev_override : 137);
+    int nclv = 5;
     int kidia = 1, kfdia = 100;
     double ptsphy = 3600;
 
@@ -49,7 +51,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Running CloudSC GPU for " << num_steps << " steps." << std::endl;
 
-    CloudSCData data = (klon_tile > 1)
+    CloudSCData data = (klon > klon_native)
         ? load_inputs_tiled(file_id, klon_native, klev, nclv, klon)
         : load_inputs(file_id, klon, klev, nclv);
     if (file_id >= 0) H5Fclose(file_id);
