@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <algorithm>
 #include "h5_utils.h"
 
 struct CloudSCData {
@@ -83,6 +84,29 @@ static T* _tile_klon(T* orig, size_t orig_size, int klev, int klon_native,
         T* dst = out + o * klon_eff;
         for (int j = 0; j < klon_eff; ++j)
             dst[j] = row[j % klon_native];
+    }
+    delete[] orig;
+    return out;
+}
+
+// Repack a flat buffer laid out as (outer, klev_slot_native, klon_native) into
+// a kernel-shaped (outer, klev_slot_out, klon_out) buffer.  Handles slicing
+// (klon_out <= klon_native, klev_slot_out <= klev_slot_native), tiling
+// (klon_out > klon_native via modulo) and klev over-allocation (zero-pad).
+// `outer` is typically 1 (2D arrays) or `nclv` (3D arrays).  For rank-1
+// `(klon,)` arrays, pass outer=1 and both klev slots = 1.
+template <typename T>
+static T* _repack_klon_klev(T* orig, int outer, int klev_slot_native, int klon_native,
+                            int klev_slot_out, int klon_out) {
+    T* out = new T[(size_t)outer * klev_slot_out * klon_out]();
+    int klev_copy = std::min(klev_slot_out, klev_slot_native);
+    for (int b = 0; b < outer; ++b) {
+        for (int k = 0; k < klev_copy; ++k) {
+            const T* src = orig + ((size_t)b * klev_slot_native + k) * klon_native;
+            T* dst = out + ((size_t)b * klev_slot_out + k) * klon_out;
+            for (int j = 0; j < klon_out; ++j)
+                dst[j] = src[j % klon_native];
+        }
     }
     delete[] orig;
     return out;
@@ -211,6 +235,67 @@ inline CloudSCData load_inputs_tiled(hid_t file_id, int klon_native, int klev,
     tile_d(d.pclv, k3);
     tile_d(d.tendency_loc_cld, k3);
     tile_d(d.tendency_tmp_cld, k3);
+
+    return d;
+}
+
+// Load inputs and resize to the kernel's (klon, klev) extent.  The HDF5
+// dataset is always at (klev_native, klon_native) — we load at native
+// (H5Dread then matches the dataset shape exactly, no overflow), then
+// repack every array into a kernel-shaped buffer with strides matching
+// `klon` (inner) and `klev` (outer).  Handles klon<native (slice),
+// klon>native (tile via modulo), klev<native (slice) and klev>native
+// (zero-pad).
+inline CloudSCData load_inputs_resized(hid_t file_id, int klon, int klev, int nclv,
+                                       int klon_native, int klev_native) {
+    CloudSCData d = load_inputs(file_id, klon_native, klev_native, nclv);
+    if (klon == klon_native && klev == klev_native) return d;
+
+    auto rep_d_1d = [&](double*& p) {
+        p = _repack_klon_klev<double>(p, 1, 1, klon_native, 1, klon);
+    };
+    auto rep_i_1d = [&](int*& p) {
+        p = _repack_klon_klev<int>(p, 1, 1, klon_native, 1, klon);
+    };
+    auto rep_d_k = [&](double*& p) {
+        p = _repack_klon_klev<double>(p, 1, klev_native, klon_native, klev, klon);
+    };
+    auto rep_d_kp = [&](double*& p) {
+        p = _repack_klon_klev<double>(p, 1, klev_native + 1, klon_native, klev + 1, klon);
+    };
+    auto rep_d_nkl = [&](double*& p) {
+        p = _repack_klon_klev<double>(p, nclv, klev_native, klon_native, klev, klon);
+    };
+
+    rep_i_1d(d.ktype); rep_i_1d(d.ldcum);
+    rep_d_1d(d.plsm); rep_d_1d(d.prainfrac_toprfz);
+
+    rep_d_k(d.pa);         rep_d_k(d.pap);        rep_d_k(d.paph);
+    rep_d_k(d.pccn);       rep_d_k(d.pcovptot);
+    rep_d_k(d.pdyna);      rep_d_k(d.pdyni);      rep_d_k(d.pdynl);
+    rep_d_k(d.phrlw);      rep_d_k(d.phrsw);
+    rep_d_k(d.picrit_aer); rep_d_k(d.plcrit_aer);
+    rep_d_k(d.plu);        rep_d_k(d.plude);
+    rep_d_k(d.pmfd);       rep_d_k(d.pmfu);
+    rep_d_k(d.pnice);      rep_d_k(d.pq);
+    rep_d_k(d.pre_ice);    rep_d_k(d.psnde);
+    rep_d_k(d.psupsat);    rep_d_k(d.pt);
+    rep_d_k(d.pvervel);    rep_d_k(d.pvfa);
+    rep_d_k(d.pvfi);       rep_d_k(d.pvfl);
+    rep_d_k(d.tendency_loc_a); rep_d_k(d.tendency_loc_q); rep_d_k(d.tendency_loc_t);
+    rep_d_k(d.tendency_tmp_a); rep_d_k(d.tendency_tmp_q); rep_d_k(d.tendency_tmp_t);
+
+    rep_d_kp(d.pfcqlng);   rep_d_kp(d.pfcqnng);
+    rep_d_kp(d.pfcqrng);   rep_d_kp(d.pfcqsng);
+    rep_d_kp(d.pfhpsl);    rep_d_kp(d.pfhpsn);
+    rep_d_kp(d.pfplsl);    rep_d_kp(d.pfplsn);
+    rep_d_kp(d.pfsqif);    rep_d_kp(d.pfsqitur);
+    rep_d_kp(d.pfsqlf);    rep_d_kp(d.pfsqltur);
+    rep_d_kp(d.pfsqrf);    rep_d_kp(d.pfsqsf);
+
+    rep_d_nkl(d.pclv);
+    rep_d_nkl(d.tendency_loc_cld);
+    rep_d_nkl(d.tendency_tmp_cld);
 
     return d;
 }

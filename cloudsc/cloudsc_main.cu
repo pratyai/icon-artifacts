@@ -38,10 +38,7 @@ int main(int argc, char** argv) {
     int klon = (klon_override > 0 ? klon_override : klon_native);
     int klev = (klev_override > 0 ? klev_override : klev_native);
     int nclv = 5;
-    // Allocation must cover the HDF5's native extent (H5Dread(H5S_ALL) reads
-    // the full dataset). Kernels iterate only up to `klev`.
-    int klev_alloc = std::max(klev, klev_native);
-    int kidia = 1, kfdia = 100;
+    int kidia = 1, kfdia = klon;
     double ptsphy = 3600;
 
     // Load input data
@@ -56,9 +53,10 @@ int main(int argc, char** argv) {
 
     std::cout << "Running CloudSC GPU for " << num_steps << " steps." << std::endl;
 
-    CloudSCData data = (klon > klon_native)
-        ? load_inputs_tiled(file_id, klon_native, klev_alloc, nclv, klon)
-        : load_inputs(file_id, klon, klev_alloc, nclv);
+    // HDF5 is always (klev_native, klon_native) — load at native then repack
+    // into a kernel-shaped buffer whose strides match the runtime (klev, klon).
+    CloudSCData data = load_inputs_resized(file_id, klon, klev, nclv,
+                                           klon_native, klev_native);
     if (file_id >= 0) H5Fclose(file_id);
 
     auto& [ktype, ldcum, pa, pap, paph, pccn, pclv, pcovptot, pdyna, pdyni, pdynl, pfcqlng, pfcqnng, pfcqrng, pfcqsng, pfhpsl, pfhpsn, pfplsl, pfplsn, pfsqif, pfsqitur, pfsqlf, pfsqltur, pfsqrf, pfsqsf, phrlw, phrsw, picrit_aer, plcrit_aer, plsm, plu, plude, pmfd, pmfu, pnice, pq, prainfrac_toprfz, pre_ice, psnde, psupsat, pt, pvervel, pvfa, pvfi, pvfl, tendency_loc_a, tendency_loc_cld, tendency_loc_q, tendency_loc_t, tendency_tmp_a, tendency_tmp_cld, tendency_tmp_q, tendency_tmp_t] = data;
