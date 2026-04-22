@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
     int num_steps = 1;
     int num_reps = 1;
     int klon_tile = 1;
+    int klev_override = 0;
     bool save_output = true;
     for(int i=1; i<argc; ++i) {
         std::string a = argv[i];
@@ -26,10 +27,12 @@ int main(int argc, char** argv) {
         else if(a == "--reps" && i+1 < argc) num_reps = std::stoi(argv[++i]);
         else if(a.rfind("--klon-tile=", 0) == 0) klon_tile = std::stoi(a.substr(12));
         else if(a == "--klon-tile" && i+1 < argc) klon_tile = std::stoi(argv[++i]);
-        else if(i == 1) num_steps = std::stoi(argv[1]);
+        else if(a.rfind("--klev=", 0) == 0) klev_override = std::stoi(a.substr(7));
+        else if(a == "--klev" && i+1 < argc) klev_override = std::stoi(argv[++i]);
+        else if(i == 1 && a.size() >= 2 && a.substr(0,2) != "--") num_steps = std::stoi(a);
     }
 
-    int klon = 100 * klon_tile, klev = 137, nclv = 5;
+    int klon = 100 * klon_tile, klev = (klev_override > 0 ? klev_override : 137), nclv = 5;
     int klon_native = 100;
     int kidia = 1, kfdia = 100;
     double ptsphy = 3600;

@@ -18,9 +18,9 @@ int main(int argc, char** argv) {
     int num_steps = 1;
     int num_reps = 1;
     int klon_tile = 1;
-    if (argc > 1 && std::string(argv[1]) != "--save" && std::string(argv[1]) != "--sensitivity"
-                 && std::string(argv[1]).rfind("--reps", 0) != 0
-                 && std::string(argv[1]).rfind("--klon-tile", 0) != 0) num_steps = std::stoi(argv[1]);
+    int klev_override = 0;
+    if (argc > 1 && std::string(argv[1]).size() >= 2
+                 && std::string(argv[1]).substr(0, 2) != "--") num_steps = std::stoi(argv[1]);
     bool save_output = true;
     bool sensitivity_mode = false;
     double sens_eps = 1e-5;
@@ -33,9 +33,11 @@ int main(int argc, char** argv) {
         else if(a == "--reps" && i+1 < argc) num_reps = std::stoi(argv[++i]);
         else if(a.rfind("--klon-tile=", 0) == 0) klon_tile = std::stoi(a.substr(12));
         else if(a == "--klon-tile" && i+1 < argc) klon_tile = std::stoi(argv[++i]);
+        else if(a.rfind("--klev=", 0) == 0) klev_override = std::stoi(a.substr(7));
+        else if(a == "--klev" && i+1 < argc) klev_override = std::stoi(argv[++i]);
     }
 
-    int klon = 100 * klon_tile, klev = 137, nclv = 5;
+    int klon = 100 * klon_tile, klev = (klev_override > 0 ? klev_override : 137), nclv = 5;
     int klon_native = 100;
     int kidia = 1, kfdia = 100;
     double ptsphy = 3600;
