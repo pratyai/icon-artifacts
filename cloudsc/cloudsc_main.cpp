@@ -17,8 +17,10 @@
 int main(int argc, char** argv) {
     int num_steps = 1;
     int num_reps = 1;
+    int klon_tile = 1;
     if (argc > 1 && std::string(argv[1]) != "--save" && std::string(argv[1]) != "--sensitivity"
-                 && std::string(argv[1]).rfind("--reps", 0) != 0) num_steps = std::stoi(argv[1]);
+                 && std::string(argv[1]).rfind("--reps", 0) != 0
+                 && std::string(argv[1]).rfind("--klon-tile", 0) != 0) num_steps = std::stoi(argv[1]);
     bool save_output = true;
     bool sensitivity_mode = false;
     double sens_eps = 1e-5;
@@ -29,9 +31,12 @@ int main(int argc, char** argv) {
         else if(a == "--sens-eps" && i+1 < argc) sens_eps = std::stod(argv[++i]);
         else if(a.rfind("--reps=", 0) == 0) num_reps = std::stoi(a.substr(7));
         else if(a == "--reps" && i+1 < argc) num_reps = std::stoi(argv[++i]);
+        else if(a.rfind("--klon-tile=", 0) == 0) klon_tile = std::stoi(a.substr(12));
+        else if(a == "--klon-tile" && i+1 < argc) klon_tile = std::stoi(argv[++i]);
     }
 
-    int klon = 100, klev = 137, nclv = 5;
+    int klon = 100 * klon_tile, klev = 137, nclv = 5;
+    int klon_native = 100;
     int kidia = 1, kfdia = 100;
     double ptsphy = 3600;
 
@@ -46,7 +51,9 @@ int main(int argc, char** argv) {
 
     std::cout << "Running CloudSC for " << num_steps << " steps." << std::endl;
 
-    CloudSCData data = load_inputs(file_id, klon, klev, nclv);
+    CloudSCData data = (klon_tile > 1)
+        ? load_inputs_tiled(file_id, klon_native, klev, nclv, klon)
+        : load_inputs(file_id, klon, klev, nclv);
     if (file_id >= 0) H5Fclose(file_id);
 
     auto& [ktype, ldcum, pa, pap, paph, pccn, pclv, pcovptot, pdyna, pdyni, pdynl, pfcqlng, pfcqnng, pfcqrng, pfcqsng, pfhpsl, pfhpsn, pfplsl, pfplsn, pfsqif, pfsqitur, pfsqlf, pfsqltur, pfsqrf, pfsqsf, phrlw, phrsw, picrit_aer, plcrit_aer, plsm, plu, plude, pmfd, pmfu, pnice, pq, prainfrac_toprfz, pre_ice, psnde, psupsat, pt, pvervel, pvfa, pvfi, pvfl, tendency_loc_a, tendency_loc_cld, tendency_loc_q, tendency_loc_t, tendency_tmp_a, tendency_tmp_cld, tendency_tmp_q, tendency_tmp_t] = data;

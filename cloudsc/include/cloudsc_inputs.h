@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include "h5_utils.h"
 
 struct CloudSCData {
@@ -57,6 +58,36 @@ struct CloudSCData {
     double* tendency_tmp_t;
 };
 
+// --- klon replication helpers ----------------------------------------------
+// cloudsc's input HDF5 is written for some native klon (the benchmark dwarf
+// uses klon=100).  For GPU perf profiling we often want a much larger
+// effective klon so the grid has enough parallel work.  Rather than
+// regenerate the HDF5, we load at the native klon and tile the horizontal
+// dim by repeating columns modulo klon_native.
+
+template <typename T>
+static T* _tile_klon(T* orig, size_t orig_size, int klev, int klon_native,
+                     int nclv, int klon_eff) {
+    // Deduce the per-column "outer" size from the total element count.
+    size_t outer;
+    if      (orig_size == (size_t)klon_native)                    outer = 1;
+    else if (orig_size == (size_t)klon_native * klev)             outer = (size_t)klev;
+    else if (orig_size == (size_t)klon_native * (klev + 1))       outer = (size_t)klev + 1;
+    else if (orig_size == (size_t)klon_native * klev * nclv)      outer = (size_t)klev * nclv;
+    else if (orig_size == (size_t)klon_native * (klev + 1) * nclv) outer = (size_t)(klev + 1) * nclv;
+    else return orig;  // unknown shape; leave untouched (caller mustn't tile it)
+
+    T* out = new T[outer * (size_t)klon_eff];
+    for (size_t o = 0; o < outer; ++o) {
+        const T* row = orig + o * klon_native;
+        T* dst = out + o * klon_eff;
+        for (int j = 0; j < klon_eff; ++j)
+            dst[j] = row[j % klon_native];
+    }
+    delete[] orig;
+    return out;
+}
+
 inline CloudSCData load_inputs(hid_t file_id, int klon, int klev, int nclv) {
     CloudSCData d;
     size_t sz = (size_t)klon * (klev + 1) * nclv;
@@ -113,6 +144,74 @@ inline CloudSCData load_inputs(hid_t file_id, int klon, int klev, int nclv) {
     d.tendency_tmp_cld = load_h5_array_double(file_id, "TENDENCY_TMP_CLD", sz);
     d.tendency_tmp_q = load_h5_array_double(file_id, "TENDENCY_TMP_Q", sz);
     d.tendency_tmp_t = load_h5_array_double(file_id, "TENDENCY_TMP_T", sz);
+    return d;
+}
+
+// Load native inputs and tile the horizontal dim so every array has
+// klon_eff columns instead of klon_native.  Pure synthetic replication —
+// useful for GPU perf profiling, NOT for physical-correctness runs.
+inline CloudSCData load_inputs_tiled(hid_t file_id, int klon_native, int klev,
+                                     int nclv, int klon_eff) {
+    CloudSCData d = load_inputs(file_id, klon_native, klev, nclv);
+    if (klon_eff == klon_native) return d;
+
+    auto tile_d = [&](double*& p, size_t sz) {
+        p = _tile_klon<double>(p, sz, klev, klon_native, nclv, klon_eff);
+    };
+    auto tile_i = [&](int*& p, size_t sz) {
+        p = _tile_klon<int>(p, sz, klev, klon_native, nclv, klon_eff);
+    };
+
+    // Shapes per array (from save_outputs in this file):
+    //   (klon,)                  : plsm, prainfrac_toprfz, ktype, ldcum
+    //   (klev, klon)             : pa, pap, paph, pccn, pdyna, pdyni, pdynl,
+    //                              phrlw, phrsw, picrit_aer, plcrit_aer, plu,
+    //                              plude, pmfd, pmfu, pnice, pq, pre_ice,
+    //                              psnde, psupsat, pt, pvervel, pvfa, pvfi,
+    //                              pvfl, pcovptot, tendency_{loc,tmp}_{a,q,t}
+    //   (klev+1, klon)           : pfcqlng, pfcqnng, pfcqrng, pfcqsng,
+    //                              pfhpsl, pfhpsn, pfplsl, pfplsn,
+    //                              pfsqif, pfsqitur, pfsqlf, pfsqltur,
+    //                              pfsqrf, pfsqsf
+    //   (nclv, klev, klon)       : pclv, tendency_loc_cld, tendency_tmp_cld
+
+    size_t k1 = (size_t)klon_native;
+    size_t k2 = (size_t)klon_native * klev;
+    size_t k2p = (size_t)klon_native * (klev + 1);
+    size_t k3 = (size_t)klon_native * klev * nclv;
+
+    tile_i(d.ktype, k1);
+    tile_i(d.ldcum, k1);
+    tile_d(d.plsm, k1);
+    tile_d(d.prainfrac_toprfz, k1);
+
+    tile_d(d.pa, k2);         tile_d(d.pap, k2);        tile_d(d.paph, k2);
+    tile_d(d.pccn, k2);       tile_d(d.pcovptot, k2);
+    tile_d(d.pdyna, k2);      tile_d(d.pdyni, k2);      tile_d(d.pdynl, k2);
+    tile_d(d.phrlw, k2);      tile_d(d.phrsw, k2);
+    tile_d(d.picrit_aer, k2); tile_d(d.plcrit_aer, k2);
+    tile_d(d.plu, k2);        tile_d(d.plude, k2);
+    tile_d(d.pmfd, k2);       tile_d(d.pmfu, k2);
+    tile_d(d.pnice, k2);      tile_d(d.pq, k2);
+    tile_d(d.pre_ice, k2);    tile_d(d.psnde, k2);
+    tile_d(d.psupsat, k2);    tile_d(d.pt, k2);
+    tile_d(d.pvervel, k2);    tile_d(d.pvfa, k2);
+    tile_d(d.pvfi, k2);       tile_d(d.pvfl, k2);
+    tile_d(d.tendency_loc_a, k2); tile_d(d.tendency_loc_q, k2); tile_d(d.tendency_loc_t, k2);
+    tile_d(d.tendency_tmp_a, k2); tile_d(d.tendency_tmp_q, k2); tile_d(d.tendency_tmp_t, k2);
+
+    tile_d(d.pfcqlng, k2p);   tile_d(d.pfcqnng, k2p);
+    tile_d(d.pfcqrng, k2p);   tile_d(d.pfcqsng, k2p);
+    tile_d(d.pfhpsl, k2p);    tile_d(d.pfhpsn, k2p);
+    tile_d(d.pfplsl, k2p);    tile_d(d.pfplsn, k2p);
+    tile_d(d.pfsqif, k2p);    tile_d(d.pfsqitur, k2p);
+    tile_d(d.pfsqlf, k2p);    tile_d(d.pfsqltur, k2p);
+    tile_d(d.pfsqrf, k2p);    tile_d(d.pfsqsf, k2p);
+
+    tile_d(d.pclv, k3);
+    tile_d(d.tendency_loc_cld, k3);
+    tile_d(d.tendency_tmp_cld, k3);
+
     return d;
 }
 
