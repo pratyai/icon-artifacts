@@ -210,19 +210,19 @@ def _rename_inside_loop(loop: LoopRegion, rename: Dict[str, str]) -> None:
 def _inject_init_into_loop_body(loop: LoopRegion,
                                 inits: List[Tuple[SDFGState, List[nd.AccessNode]]],
                                 rename: Dict[str, str]) -> None:
-    """Insert a fresh state at the start of `loop`'s body containing cloned
-    back-cones of every init's write sinks, with references renamed."""
-    init_clone = loop.add_state(label=f"init_privatize_{next(iter(rename.values()))}",
-                                is_start_block=False)
+    """Insert a fresh state BEFORE the current start of `loop` containing
+    cloned back-cones of every init's write sinks, with references renamed.
+    Uses DaCe's `add_state_before` so the loop's start-block bookkeeping is
+    updated correctly."""
+    old_start = loop.start_block
+    init_clone = loop.add_state_before(
+        old_start,
+        label=f"init_privatize_{next(iter(rename.values()))}",
+        is_start_block=True,
+    )
 
     for src_state, sinks in inits:
         _clone_back_cone_into(src_state, init_clone, sinks, rename)
-
-    old_start = loop.start_block
-    loop.add_edge(init_clone, old_start, dace.InterstateEdge())
-    loop._cached_start_block = init_clone
-    for b in loop.nodes():
-        b.is_start_block = (b is init_clone)
 
 
 def privatize_arrays(sdfg: dace.SDFG) -> int:

@@ -133,6 +133,8 @@ if __name__ == "__main__":
                         help="Skip condition fusion/hoist")
     parser.add_argument("--no-arrpriv", action="store_true",
                         help="Skip array privatization")
+    parser.add_argument("--no-arrexp", action="store_true",
+                        help="Skip array expansion")
     parser.add_argument("--start-from", type=str, default=None,
                         help="Start from a checkpoint (e.g. after_l2m)")
     args = parser.parse_args()
@@ -201,6 +203,13 @@ if __name__ == "__main__":
     if not args.no_expand and "expand" not in skip_steps:
         expand_scalars(sdfg, diagnose=True)
         checkpoint(sdfg, "after_expand", out_dir)
+
+    # 7b. Array expansion — widen small transients with a loop-itervar dim so
+    #     per-iteration "scratch" array writes stop looking like races.
+    if not args.no_arrexp and "arrexp" not in skip_steps:
+        from ssa.array_expansion import expand_arrays
+        expand_arrays(sdfg)
+        checkpoint(sdfg, "after_arrexp", out_dir)
 
     # 8. LoopToMap — convert eligible control-flow loops into dataflow maps
     if not args.no_l2m and "l2m" not in skip_steps:
