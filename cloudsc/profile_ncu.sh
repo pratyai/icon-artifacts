@@ -46,8 +46,20 @@ done
 
 NCU_KERNEL_FILTER=()
 if [ -n "$PER_KERNEL_RANGE" ]; then
-    NCU_KERNEL_FILTER+=(--kernel-id "::.*:${PER_KERNEL_RANGE}")
-    echo "[profile_ncu] profiling invocations ${PER_KERNEL_RANGE} of every kernel"
+    # NCU --kernel-id wants `context:stream:[op:]name:invocation-NR` (single
+    # int). To capture a range 0..N, emit one --kernel-id flag per invocation
+    # index. Example --per-kernel=0-2 expands to --kernel-id repeated 3x.
+    if [[ "$PER_KERNEL_RANGE" == *-* ]]; then
+        LO="${PER_KERNEL_RANGE%-*}"
+        HI="${PER_KERNEL_RANGE#*-}"
+    else
+        LO="$PER_KERNEL_RANGE"
+        HI="$PER_KERNEL_RANGE"
+    fi
+    for i in $(seq "$LO" "$HI"); do
+        NCU_KERNEL_FILTER+=(--kernel-id "::regex:.*:$i")
+    done
+    echo "[profile_ncu] profiling invocations ${LO}..${HI} of every kernel"
 fi
 
 BIN="./build/bin/cloudsc_gpu_bin.${PREC}"
