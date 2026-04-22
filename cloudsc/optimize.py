@@ -155,7 +155,10 @@ if __name__ == "__main__":
     start_from = args.start_from
     skip_steps = set()
     if start_from:
-        step_order = ["liftcond", "propagate", "unroll", "simplify1", "ssa", "isolate", "privatize", "expand", "l2m", "condfuse", "condhoist", "ssa2", "isolate2", "privatize2", "l2m2", "simplify"]
+        step_order = ["liftcond", "propagate", "unroll", "simplify1", "ssa",
+                      "isolate", "privatize", "expand", "arrexp", "l2m",
+                      "condfuse", "condhoist", "privatize2", "l2m2", "arrpriv",
+                      "mapfusion", "simplify"]
         for step in step_order:
             skip_steps.add(step)
             if step == start_from.replace("after_", ""):
@@ -221,21 +224,21 @@ if __name__ == "__main__":
         print(f"LoopToMap: converted {n} loops to maps")
         checkpoint(sdfg, "after_l2m", out_dir)
 
-    # 9. Condition fusion + hoist + second SSA/privatize round
-    if not args.no_condfuse:
-        # 9. Condition fusion — merge consecutive/nested ConditionalBlocks
-        # TODO: move condition fusion before LoopToMap once we confirm it helps
+    # 9. Condition fusion — merge consecutive/nested ConditionalBlocks
+    if not args.no_condfuse and "condfuse" not in skip_steps:
         n_fused = condition_fusion(sdfg)
         if n_fused:
             print(f"ConditionFusion: fused {n_fused} conditional blocks")
         checkpoint(sdfg, "after_condfuse", out_dir)
 
-        # 9a. Condition hoist — move loop-invariant conditions above loops
+    # 9a. Condition hoist — move loop-invariant conditions above loops
+    if not args.no_condfuse and "condhoist" not in skip_steps:
         n_hoisted = hoist_invariant_conditions(sdfg)
         checkpoint(sdfg, "after_condhoist", out_dir)
 
-        # 9b. Isolate + privatize on cloned loops from hoist
-        # NOTE: skip SSA round 2 — it breaks memlet refs inside nested SDFGs
+    # 9b. Isolate + privatize on cloned loops from hoist
+    # NOTE: skip SSA round 2 — it breaks memlet refs inside nested SDFGs
+    if not args.no_condfuse and "privatize2" not in skip_steps:
         if not args.no_isolate:
             isolate_loop_variables(sdfg)
         if not args.no_privatize:
@@ -243,7 +246,7 @@ if __name__ == "__main__":
         checkpoint(sdfg, "after_privatize2", out_dir)
 
     # 9c. Another round of LoopToMap after condition fusion/hoist
-    if not args.no_l2m:
+    if not args.no_l2m and "l2m2" not in skip_steps:
         n2 = loop_to_map(sdfg)
         if n2:
             print(f"LoopToMap (post-condfuse): converted {n2} more loops to maps")
@@ -252,7 +255,7 @@ if __name__ == "__main__":
     # 9d. Array privatization — small transient arrays with external init used
     #     as per-iteration scratch inside the remaining loops.  Correctness-
     #     preserving rename + init clone; doesn't widen shapes.
-    if not args.no_arrpriv:
+    if not args.no_arrpriv and "arrpriv" not in skip_steps:
         from ssa.array_privatization import privatize_arrays
         privatize_arrays(sdfg)
         checkpoint(sdfg, "after_arrpriv", out_dir)
@@ -261,7 +264,7 @@ if __name__ == "__main__":
     #     count. Relies on dace-cloudsc's DMR-consolidation, inout-split, and
     #     itervar-independent-producer rejection fixes (see 51103da8b,
     #     9f7c8397d, 0246bd1d8 on pratyai/support-half).
-    if not args.no_mapfuse:
+    if not args.no_mapfuse and "mapfusion" not in skip_steps:
         from dace.transformation.dataflow import MapFusionVertical
         # MapFusionVertical needs adjacent maps in the same state.  The full
         # pipeline leaves each map in its own state (post-LoopToMap), so
@@ -289,8 +292,9 @@ if __name__ == "__main__":
         checkpoint(sdfg, "after_mapfusion", out_dir)
 
     # 10. Simplify
-    sdfg.simplify()
-    checkpoint(sdfg, "after_simplify", out_dir)
+    if "simplify" not in skip_steps:
+        sdfg.simplify()
+        checkpoint(sdfg, "after_simplify", out_dir)
 
     sdfg.save(args.output, compress=True)
     print(f"Saved to {args.output}")
