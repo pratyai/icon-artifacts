@@ -80,7 +80,9 @@ def _loop_range(loop: LoopRegion):
     itervar = loop.loop_variable
     if any(x is None for x in (start, end, step, itervar)):
         return None
-    # End is exclusive in DaCe's get_loop_end convention for this pipeline.
+    # DaCe's get_loop_end returns the *inclusive* end of the iteration range
+    # (e.g. for `jl <= kfdia` it returns `kfdia`). Callers expect extent to be
+    # computed as `end - start + 1`.
     return itervar, start, end, step
 
 
@@ -310,9 +312,10 @@ def expand_arrays(sdfg: dace.SDFG) -> int:
                 continue
             itervar, start, end, step = info
 
-            # Extent for the new leading dim: end - start (end is exclusive).
-            # We use `(itervar - start)` as the offset when indexing.
-            extent = symbolic.pystr_to_symbolic(f"({end}) - ({start})")
+            # Extent for the new leading dim: end - start + 1 (inclusive end).
+            # We use `(itervar - start)` as the offset when indexing; it ranges
+            # 0 .. end-start, i.e. exactly `extent` distinct values.
+            extent = symbolic.pystr_to_symbolic(f"({end}) - ({start}) + 1")
             itervar_offset = symbolic.pystr_to_symbolic(f"({itervar}) - ({start})")
 
             new_name = _mint_expanded(sdfg, name, extent, taken)
