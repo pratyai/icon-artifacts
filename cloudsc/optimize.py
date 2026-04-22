@@ -9,6 +9,7 @@ import argparse
 import os
 
 import dace
+from dace import nodes as nd
 from dace.transformation.interstate import LoopToMap
 
 
@@ -135,6 +136,8 @@ if __name__ == "__main__":
                         help="Skip array privatization")
     parser.add_argument("--no-arrexp", action="store_true",
                         help="Skip array expansion")
+    parser.add_argument("--no-mapfuse", action="store_true",
+                        help="Skip MapFusionVertical")
     parser.add_argument("--start-from", type=str, default=None,
                         help="Start from a checkpoint (e.g. after_l2m)")
     args = parser.parse_args()
@@ -253,6 +256,37 @@ if __name__ == "__main__":
         from ssa.array_privatization import privatize_arrays
         privatize_arrays(sdfg)
         checkpoint(sdfg, "after_arrpriv", out_dir)
+
+    # 9e. MapFusion — merge adjacent maps to cut per-iteration kernel-launch
+    #     count. Relies on dace-cloudsc's DMR-consolidation, inout-split, and
+    #     itervar-independent-producer rejection fixes (see 51103da8b,
+    #     9f7c8397d, 0246bd1d8 on pratyai/support-half).
+    if not args.no_mapfuse:
+        from dace.transformation.dataflow import MapFusionVertical
+        # MapFusionVertical needs adjacent maps in the same state.  The full
+        # pipeline leaves each map in its own state (post-LoopToMap), so
+        # simplify first to collapse state boundaries via StateFusion.
+        sdfg.simplify()
+        checkpoint(sdfg, "before_mapfusion_simplify", out_dir)
+        before_maps = sum(1 for sd in sdfg.all_sdfgs_recursive()
+                          for st in sd.all_states()
+                          for n in st.nodes()
+                          if isinstance(n, nd.MapEntry))
+        sdfg.reset_cfg_list()
+        n_mf = 0
+        while True:
+            k = sdfg.apply_transformations_repeated(
+                MapFusionVertical, permissive=False, validate=False)
+            if not k:
+                break
+            n_mf += k
+            sdfg.reset_cfg_list()
+        after_maps = sum(1 for sd in sdfg.all_sdfgs_recursive()
+                         for st in sd.all_states()
+                         for n in st.nodes()
+                         if isinstance(n, nd.MapEntry))
+        print(f"MapFusion: {n_mf} fusions applied ({before_maps} -> {after_maps} maps)")
+        checkpoint(sdfg, "after_mapfusion", out_dir)
 
     # 10. Simplify
     sdfg.simplify()
