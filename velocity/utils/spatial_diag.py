@@ -19,7 +19,8 @@ def load_grid(path, load_reconstruction=False):
     ds = nc.Dataset(str(path))
     d = {"ncells": ds.dimensions["cell"].size, "nedges": ds.dimensions["edge"].size,
          "clon": ds["clon"][:].data, "clat": ds["clat"][:].data,
-         "elon": ds["elon"][:].data, "elat": ds["elat"][:].data}
+         "elon": ds["elon"][:].data, "elat": ds["elat"][:].data,
+         "cell_area": ds["cell_area"][:].data if "cell_area" in ds.variables else None}
     if load_reconstruction:
         # Build 3D Cartesian edge normals from geographic (zonal/meridional) normals.
         # Geographic normal (nz, nm) at edge (lon, lat) → Cartesian via local tangent basis:
@@ -402,20 +403,49 @@ def main():
         nn_val = f_2d[indices[i, 0], lev]
         print(f"  cell {i}: coarse={c_val:.6e}, fine_interp={f_val:.6e}, fine_nn={nn_val:.6e}, diff={c_val-f_val:.6e}")
 
-    # Parent-child averaging comparison
+    # Parent-child averaging comparison (area-weighted)
+    f_area = fg.get("cell_area")
     print(f"\n--- Parent-child average comparison ---")
     f_child_avg = np.zeros_like(c_2d)
     for ci in range(n_c):
         ch = children.get(ci, [])
         if ch:
-            f_child_avg[ci] = f_2d[ch].mean(axis=0)
+            if f_area is not None and len(f_area) >= max(ch) + 1:
+                ch_areas = f_area[ch]
+                w = ch_areas / ch_areas.sum()
+                f_child_avg[ci] = np.sum(w[:, None] * f_2d[ch], axis=0)
+            else:
+                f_child_avg[ci] = f_2d[ch].mean(axis=0)
     diff_pc = c_2d - f_child_avg
     norm_pc = np.linalg.norm(diff_pc)
     norm_ref = np.linalg.norm(f_child_avg)
     snr_pc = 20 * np.log10(norm_ref / norm_pc) if norm_pc > 0 else float("inf")
+    var_ref = np.var(f_child_avg)
+    var_err = np.var(diff_pc)
+    vsnr_pc = 10 * np.log10(var_ref / var_err) if var_err > 0 else float("inf")
     print(f"RMSE: {np.sqrt(np.mean(diff_pc**2)):.6e}")
     print(f"||diff||: {norm_pc:.6e}")
     print(f"SNR (parent-child avg): {snr_pc:.1f} dB")
+    print(f"vSNR (parent-child avg): {vsnr_pc:.1f} dB")
+
+    # Area-weighted SNR
+    c_area = cg.get("cell_area")
+    if c_area is not None and len(c_area) >= n_c:
+        w = c_area[:n_c]
+        w = w / w.sum()  # normalize
+        # Area-weighted power SNR: 20*log10(||ref||_w / ||diff||_w)
+        w_3d = w[:, None]  # broadcast over levels
+        norm_ref_w = np.sqrt(np.sum(w_3d * f_child_avg**2))
+        norm_diff_w = np.sqrt(np.sum(w_3d * diff_pc**2))
+        snr_w = 20 * np.log10(norm_ref_w / norm_diff_w) if norm_diff_w > 0 else float("inf")
+        # Area-weighted variance SNR
+        mean_ref_w = np.sum(w_3d * f_child_avg) / f_child_avg.shape[1]
+        mean_err_w = np.sum(w_3d * diff_pc) / diff_pc.shape[1]
+        var_ref_w = np.sum(w_3d * (f_child_avg - mean_ref_w)**2)
+        var_err_w = np.sum(w_3d * (diff_pc - mean_err_w)**2)
+        vsnr_w = 10 * np.log10(var_ref_w / var_err_w) if var_err_w > 0 else float("inf")
+        print(f"SNR (area-weighted): {snr_w:.1f} dB")
+        print(f"vSNR (area-weighted): {vsnr_w:.1f} dB")
 
     print(f"\nFirst 5 coarse points at mid-level (parent-child avg):")
     for i in range(5):
@@ -455,7 +485,12 @@ def main():
             for ci in range(n_c):
                 ch = children.get(ci, [])
                 if ch:
-                    fc_avg[ci] = fc[ch].mean(axis=0)
+                    if f_area is not None and len(f_area) >= max(ch) + 1:
+                        ch_areas = f_area[ch]
+                        w = ch_areas / ch_areas.sum()
+                        fc_avg[ci] = np.sum(w[:, None] * fc[ch], axis=0)
+                    else:
+                        fc_avg[ci] = fc[ch].mean(axis=0)
             d = cc - fc_avg
             nd = np.linalg.norm(d)
             nr = np.linalg.norm(fc_avg)

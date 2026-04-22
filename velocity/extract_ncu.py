@@ -174,23 +174,95 @@ def shorten_kernel(name):
         name = 'cub::Reduce'
     return name.strip()
 
-def parse_file(path):
+def _ncu_default_rows(path):
+    """Parse default --csv output (one metric per row, col 12 = metric name)."""
     raw = subprocess.run(
         ['ncu', '-i', path, '--csv'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).stdout.decode()
     reader = csv.reader(raw.splitlines())
-    next(reader)
-
-    # First pass: collect the ordered list of (launch_id, kernel_base) pairs.
-    rows_by_id = OrderedDict()  # launch_id -> (kernel_base, [(row)])
-    all_rows = []
+    next(reader)  # skip header
+    rows = []
     for row in reader:
         if len(row) < 15:
             continue
         metric = row[12]
         if not metric.strip() or metric not in ALL_METRIC_NAMES:
             continue
+        rows.append(row)
+    return rows
+
+
+def _ncu_raw_rows(path):
+    """Parse --page raw output for raw-name metrics missing from default export.
+
+    The raw page puts metrics as column headers (cols 11+), with one row per
+    kernel launch.  We pivot this back into the same per-metric row format
+    used by the default export (20 columns, metric name in col 12).
+    """
+    # Collect raw metric names that are in ALL_METRIC_NAMES
+    raw_metrics = [m for m in ALL_METRIC_NAMES if '__' in m]
+    if not raw_metrics:
+        return []
+    raw = subprocess.run(
+        ['ncu', '-i', path, '--csv', '--page', 'raw',
+         '--metrics', ','.join(raw_metrics)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ).stdout.decode()
+    lines = raw.splitlines()
+    if len(lines) < 3:
+        return []
+    reader = csv.reader(lines)
+    header = next(reader)
+    units_row = next(reader)  # second row = units
+
+    # Find base columns and metric columns
+    # Base: ID(0)..CC(10), metrics start at 11
+    metric_cols = {}  # col_index -> (metric_name, unit)
+    for ci in range(11, len(header)):
+        name = header[ci].strip().strip('"')
+        if name in ALL_METRIC_NAMES:
+            unit = units_row[ci].strip().strip('"') if ci < len(units_row) else ""
+            metric_cols[ci] = (name, unit)
+
+    if not metric_cols:
+        return []
+
+    rows = []
+    for row in reader:
+        if len(row) < 11:
+            continue
+        # Build base columns matching the default 20-col format
+        base = row[:11]  # ID..CC
+        for ci, (mname, munit) in metric_cols.items():
+            val = row[ci] if ci < len(row) else ""
+            # Construct a 20-col row matching default format:
+            # 0-10: base, 11: SectionName(empty), 12: MetricName, 13: Unit, 14: Value,
+            # 15-19: empty rule fields
+            synth = base + ["", mname, munit, val, "", "", "", "", ""]
+            rows.append(synth)
+    return rows
+
+
+def parse_file(path):
+    default_rows = _ncu_default_rows(path)
+    raw_rows = _ncu_raw_rows(path)
+
+    # Deduplicate: if a metric already appeared in default, skip the raw version.
+    seen = set()
+    for row in default_rows:
+        seen.add((row[0], row[12]))  # (launch_id, metric_name)
+    for row in raw_rows:
+        key = (row[0], row[12])
+        if key not in seen:
+            default_rows.append(row)
+            seen.add(key)
+
+    # First pass: collect the ordered list of (launch_id, kernel_base) pairs.
+    rows_by_id = OrderedDict()  # launch_id -> (kernel_base, [(row)])
+    all_rows = []
+    for row in default_rows:
+        metric = row[12]
         launch_id = row[0]
         kernel_base = shorten_kernel(row[4])
         if kernel_base.startswith("cpy:"):
