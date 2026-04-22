@@ -131,6 +131,8 @@ if __name__ == "__main__":
                         help="Skip loop-conditional data-ref lifting")
     parser.add_argument("--no-condfuse", action="store_true",
                         help="Skip condition fusion/hoist")
+    parser.add_argument("--no-arrpriv", action="store_true",
+                        help="Skip array privatization")
     parser.add_argument("--start-from", type=str, default=None,
                         help="Start from a checkpoint (e.g. after_l2m)")
     args = parser.parse_args()
@@ -234,6 +236,14 @@ if __name__ == "__main__":
         if n2:
             print(f"LoopToMap (post-condfuse): converted {n2} more loops to maps")
         checkpoint(sdfg, "after_l2m2", out_dir)
+
+    # 9d. Array privatization — small transient arrays with external init used
+    #     as per-iteration scratch inside the remaining loops.  Correctness-
+    #     preserving rename + init clone; doesn't widen shapes.
+    if not args.no_arrpriv:
+        from ssa.array_privatization import privatize_arrays
+        privatize_arrays(sdfg)
+        checkpoint(sdfg, "after_arrpriv", out_dir)
 
     # 10. Simplify
     sdfg.simplify()
