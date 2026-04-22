@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <cstring>
+#include <algorithm>
 #include <filesystem>
 #include "h5_utils.h"
 #include "cloudsc_py.h"
@@ -38,9 +39,14 @@ int main(int argc, char** argv) {
     }
 
     int klon_native = 100;
+    int klev_native = 137;
     int klon = (klon_override > 0 ? klon_override : klon_native);
-    int klev = (klev_override > 0 ? klev_override : 137);
+    int klev = (klev_override > 0 ? klev_override : klev_native);
     int nclv = 5;
+    // Allocation must cover the HDF5's native extent so H5Dread(H5S_ALL) never
+    // overflows the buffer. Kernels iterate only up to `klev` (the logical
+    // runtime value); anything past that is dead data.
+    int klev_alloc = std::max(klev, klev_native);
     int kidia = 1, kfdia = 100;
     double ptsphy = 3600;
 
@@ -56,8 +62,8 @@ int main(int argc, char** argv) {
     std::cout << "Running CloudSC for " << num_steps << " steps." << std::endl;
 
     CloudSCData data = (klon > klon_native)
-        ? load_inputs_tiled(file_id, klon_native, klev, nclv, klon)
-        : load_inputs(file_id, klon, klev, nclv);
+        ? load_inputs_tiled(file_id, klon_native, klev_alloc, nclv, klon)
+        : load_inputs(file_id, klon, klev_alloc, nclv);
     if (file_id >= 0) H5Fclose(file_id);
 
     auto& [ktype, ldcum, pa, pap, paph, pccn, pclv, pcovptot, pdyna, pdyni, pdynl, pfcqlng, pfcqnng, pfcqrng, pfcqsng, pfhpsl, pfhpsn, pfplsl, pfplsn, pfsqif, pfsqitur, pfsqlf, pfsqltur, pfsqrf, pfsqsf, phrlw, phrsw, picrit_aer, plcrit_aer, plsm, plu, plude, pmfd, pmfu, pnice, pq, prainfrac_toprfz, pre_ice, psnde, psupsat, pt, pvervel, pvfa, pvfi, pvfl, tendency_loc_a, tendency_loc_cld, tendency_loc_q, tendency_loc_t, tendency_tmp_a, tendency_tmp_cld, tendency_tmp_q, tendency_tmp_t] = data;
