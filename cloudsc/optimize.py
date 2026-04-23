@@ -155,10 +155,13 @@ if __name__ == "__main__":
     start_from = args.start_from
     skip_steps = set()
     if start_from:
-        step_order = ["liftcond", "propagate", "unroll", "simplify1", "ssa",
-                      "isolate", "privatize", "expand", "arrexp", "l2m",
-                      "condfuse", "condhoist", "privatize2", "l2m2", "arrpriv",
-                      "mapfusion", "simplify"]
+        step_order = ["liftcond", "propagate",
+                      "ssa", "isolate", "privatize", "expand", "arrexp", "l2m",
+                      "unroll", "simplify1",
+                      "ssa2", "isolate2", "privatize2_a", "l2m2",
+                      "condfuse", "condhoist", "privatize2", "l2m3",
+                      "moveloopintomap", "arrpriv",
+                      "mapfusion", "mapcollapse", "simplify"]
         for step in step_order:
             skip_steps.add(step)
             if step == start_from.replace("after_", ""):
@@ -178,51 +181,77 @@ if __name__ == "__main__":
         propagate_constants(sdfg, SYMBOL_MAP)
         checkpoint(sdfg, "after_propagate", out_dir)
 
-    # 3. Unroll — unroll maps/loops with nclv-sized extents
-    if not args.no_unroll and "unroll" not in skip_steps:
-        unroll_loops(sdfg)
-        checkpoint(sdfg, "after_unroll", out_dir)
-
-    # 3b. Simplify after unroll (state fusion, dead code, etc.)
-    if "simplify1" not in skip_steps:
-        sdfg.simplify()
-        checkpoint(sdfg, "after_simplify1", out_dir)
-
-    # 4. SSA — split multi-write scalars into unique versions
+    # 3. SSA — split multi-write scalars into unique versions
     if not args.no_ssa and "ssa" not in skip_steps:
         ssa_result = ssa_transform(sdfg, only=only_ssa)
         print(f"SSA: {sum(len(v) for v in ssa_result.values())} versions "
               f"for {len(ssa_result)} variables")
         checkpoint(sdfg, "after_ssa", out_dir)
 
-    # 5. Loop variable isolation — unique itervar per LoopRegion
+    # 4. Loop variable isolation — unique itervar per LoopRegion
     if not args.no_isolate and "isolate" not in skip_steps:
         isolate_loop_variables(sdfg)
         checkpoint(sdfg, "after_isolate", out_dir)
 
-    # 6. Scalar privatization — fresh transients for loop-private scalars
+    # 5. Scalar privatization — fresh transients for loop-private scalars
     if not args.no_privatize and "privatize" not in skip_steps:
         privatize_scalars(sdfg)
         checkpoint(sdfg, "after_privatize", out_dir)
 
-    # 7. Scalar expansion — promote blocking scalars to arrays
+    # 6. Scalar expansion — promote blocking scalars to arrays
     if not args.no_expand and "expand" not in skip_steps:
         expand_scalars(sdfg, diagnose=True)
         checkpoint(sdfg, "after_expand", out_dir)
 
-    # 7b. Array expansion — widen small transients with a loop-itervar dim so
-    #     per-iteration "scratch" array writes stop looking like races.
+    # 7. Array expansion — widen small transients with a loop-itervar dim so
+    #    per-iteration "scratch" array writes stop looking like races.
     if not args.no_arrexp and "arrexp" not in skip_steps:
         from ssa.array_expansion import expand_arrays
         expand_arrays(sdfg)
         checkpoint(sdfg, "after_arrexp", out_dir)
 
-    # 8. LoopToMap — convert eligible control-flow loops into dataflow maps
+    # 8. LoopToMap (first pass) — catches rolled outer loops with concrete
+    #    bounds (jm/jn over NCLV=5 etc). Run BEFORE unroll to preserve
+    #    the loop structure where possible.
     if not args.no_l2m and "l2m" not in skip_steps:
         n = loop_to_map(sdfg)
         n += loop_to_map(sdfg)
-        print(f"LoopToMap: converted {n} loops to maps")
+        print(f"LoopToMap (pre-unroll): converted {n} loops to maps")
         checkpoint(sdfg, "after_l2m", out_dir)
+
+    # 9. Unroll — what l2m couldn't convert (loops with loop-carried
+    #    dependencies, small-body per-iteration scratch, etc.)
+    if not args.no_unroll and "unroll" not in skip_steps:
+        unroll_loops(sdfg)
+        checkpoint(sdfg, "after_unroll", out_dir)
+
+    # 9b. Simplify after unroll (state fusion, dead code, etc.)
+    if "simplify1" not in skip_steps:
+        sdfg.simplify()
+        checkpoint(sdfg, "after_simplify1", out_dir)
+
+    # 10. SSA round 2 — catch multi-writes created by unroll.
+    if not args.no_ssa and "ssa2" not in skip_steps:
+        ssa_result = ssa_transform(sdfg, only=only_ssa)
+        print(f"SSA#2: {sum(len(v) for v in ssa_result.values())} versions "
+              f"for {len(ssa_result)} variables")
+        checkpoint(sdfg, "after_ssa2", out_dir)
+
+    if not args.no_isolate and "isolate2" not in skip_steps:
+        isolate_loop_variables(sdfg)
+        checkpoint(sdfg, "after_isolate2", out_dir)
+
+    if not args.no_privatize and "privatize2_a" not in skip_steps:
+        privatize_scalars(sdfg)
+        checkpoint(sdfg, "after_privatize2_a", out_dir)
+
+    # 11. LoopToMap (second pass) — catches unrolled per-iteration scratches
+    #     that the first pass couldn't see.
+    if not args.no_l2m and "l2m2" not in skip_steps:
+        n = loop_to_map(sdfg)
+        n += loop_to_map(sdfg)
+        print(f"LoopToMap (post-unroll): converted {n} loops to maps")
+        checkpoint(sdfg, "after_l2m2", out_dir)
 
     # 9. Condition fusion — merge consecutive/nested ConditionalBlocks
     if not args.no_condfuse and "condfuse" not in skip_steps:
@@ -245,12 +274,49 @@ if __name__ == "__main__":
             privatize_scalars(sdfg)
         checkpoint(sdfg, "after_privatize2", out_dir)
 
-    # 9c. Another round of LoopToMap after condition fusion/hoist
-    if not args.no_l2m and "l2m2" not in skip_steps:
+    # 12c. Another round of LoopToMap after condition fusion/hoist
+    if not args.no_l2m and "l2m3" not in skip_steps:
         n2 = loop_to_map(sdfg)
         if n2:
             print(f"LoopToMap (post-condfuse): converted {n2} more loops to maps")
-        checkpoint(sdfg, "after_l2m2", out_dir)
+        checkpoint(sdfg, "after_l2m3", out_dir)
+
+    # 12d. MoveLoopIntoMap — push remaining sequential outer loops inside
+    #      their parallel child maps (e.g. accumulator jn loops around jl
+    #      maps). Eliminates kernel-launch-per-iteration sources without
+    #      needing WCR annotation; each map thread handles its own
+    #      sequential range intra-thread.
+    if not args.no_l2m and "moveloopintomap" not in skip_steps:
+        from dace.sdfg.state import LoopRegion as _LR
+        from dace.transformation.interstate import MoveLoopIntoMap
+        _mm_pat = list(MoveLoopIntoMap.expressions()[0].nodes())
+        def _apply_mlim(sd_root):
+            moved = 0
+            for sd in sd_root.all_sdfgs_recursive():
+                sd.reset_cfg_list()
+                for cfg in sd.all_control_flow_regions():
+                    for blk in list(cfg.nodes()):
+                        if not isinstance(blk, _LR):
+                            continue
+                        xform = MoveLoopIntoMap()
+                        try:
+                            xform.setup_match(sd, cfg.cfg_id, -1,
+                                              {_mm_pat[0]: cfg.node_id(blk)}, 0)
+                            if xform.can_be_applied(cfg, 0, sd):
+                                xform.apply(cfg, sd)
+                                moved += 1
+                        except Exception:
+                            continue
+            return moved
+        n_mlim = 0
+        while True:
+            k = _apply_mlim(sdfg)
+            if not k:
+                break
+            n_mlim += k
+        if n_mlim:
+            print(f"MoveLoopIntoMap: moved {n_mlim} loops into maps")
+        checkpoint(sdfg, "after_moveloopintomap", out_dir)
 
     # 9d. Array privatization — small transient arrays with external init used
     #     as per-iteration scratch inside the remaining loops.  Correctness-
@@ -290,6 +356,22 @@ if __name__ == "__main__":
                          if isinstance(n, nd.MapEntry))
         print(f"MapFusion: {n_mf} fusions applied ({before_maps} -> {after_maps} maps)")
         checkpoint(sdfg, "after_mapfusion", out_dir)
+
+    # 9f. MapCollapse — collapse nested map(i){map(j){...}} into map(i,j){...}
+    #     so codegen emits multi-dim grid/block instead of nested launches.
+    if "mapcollapse" not in skip_steps:
+        from dace.transformation.dataflow import MapCollapse
+        before_maps = sum(1 for sd in sdfg.all_sdfgs_recursive()
+                          for st in sd.all_states()
+                          for n in st.nodes()
+                          if isinstance(n, nd.MapEntry))
+        n_mc = sdfg.apply_transformations_repeated(MapCollapse, validate=False)
+        after_maps = sum(1 for sd in sdfg.all_sdfgs_recursive()
+                         for st in sd.all_states()
+                         for n in st.nodes()
+                         if isinstance(n, nd.MapEntry))
+        print(f"MapCollapse: {n_mc} collapses applied ({before_maps} -> {after_maps} maps)")
+        checkpoint(sdfg, "after_mapcollapse", out_dir)
 
     # 10. Simplify
     if "simplify" not in skip_steps:

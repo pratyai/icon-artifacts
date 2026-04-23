@@ -101,14 +101,18 @@ def rename_nested_sdfg_connectors(state: SDFGState, old_name: str, new_name: str
                         # Rename the descriptor
                         desc = n.sdfg.arrays.pop(old_name)
                         n.sdfg.add_datadesc(new_name, desc)
-                        
+
                         # Surgically update all references inside the nested SDFG
                         # Update AccessNodes
                         for sd_state in n.sdfg.states():
                             for sd_node in sd_state.nodes():
                                 if isinstance(sd_node, nd.AccessNode) and sd_node.data == old_name:
                                     sd_node.data = new_name
-                        
+                            # Update memlet data references in this state's edges
+                            for sd_edge in sd_state.edges():
+                                if sd_edge.data is not None and sd_edge.data.data == old_name:
+                                    sd_edge.data.data = new_name
+
                         # Update metadata
                         update_metadata(n.sdfg, {old_name: new_name}, recursive=True)
                         for edge, _ in n.sdfg.all_edges_recursive():

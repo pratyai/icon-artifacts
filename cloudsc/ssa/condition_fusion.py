@@ -272,9 +272,37 @@ def _is_hoistable(cb: ConditionalBlock, loop: LoopRegion) -> bool:
     """Check if a CB's conditions are loop-invariant (safe to hoist above the loop).
 
     Conditions must not depend on the loop variable or anything written in the loop.
+
+    This includes symbols ASSIGNED on interstate edges inside the loop whose
+    RHS references anything in the loop's data write_set (transitively). Such
+    symbols are re-bound each iteration via a lift from a loop-written data
+    container (e.g. `lift_data_refs_in_conditions` creates
+    `____tmp265_cond = __tmp265` with __tmp265 written inside the loop).
+    Missing this makes the condition *look* invariant while it actually
+    tracks a per-iteration data change.
     """
     itervar = loop.loop_variable
     _, write_set = loop.read_and_write_sets()
+
+    # Transitively extend write_set with interstate-edge assignment targets
+    # whose RHS references something already effectively written.
+    write_set = set(write_set)
+    changed = True
+    while changed:
+        changed = False
+        for edge, _ in loop.all_edges_recursive():
+            if not isinstance(edge.data, dace.InterstateEdge):
+                continue
+            for tgt, rhs in edge.data.assignments.items():
+                if tgt in write_set:
+                    continue
+                try:
+                    rhs_syms = {str(s) for s in sym.pystr_to_symbolic(rhs).free_symbols}
+                except Exception:
+                    rhs_syms = set()
+                if rhs_syms & write_set:
+                    write_set.add(tgt)
+                    changed = True
 
     for cond, _ in cb.branches:
         if cond is None:
