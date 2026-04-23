@@ -507,89 +507,75 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
     from dace.sdfg.state import SDFGState
     wrapped_total = 0
 
-    def _all_states(root_sdfg):
-        seen = []
-        for sd in root_sdfg.all_sdfgs_recursive():
-            for cfg in sd.all_control_flow_regions():
-                for blk in cfg.nodes():
-                    if isinstance(blk, SDFGState):
-                        seen.append(blk)
-        return seen
-
-    for state in _all_states(sdfg):
-        scope = state.scope_dict()
-        # Build list of tasklets that write directly to an AccessNode whose
-        # data is dual-access (has a gpu_ sibling) and are not already inside
-        # a map scope.
-        loose_tasklets = []
-        for nd in list(state.nodes()):
-            if not isinstance(nd, nodes.Tasklet):
-                continue
-            if scope[nd] is not None:
-                continue
-            writes_dual = False
-            for e in state.out_edges(nd):
-                if not isinstance(e.dst, nodes.AccessNode):
+    for sd in sdfg.all_sdfgs_recursive():
+        for state in [n for n in sd.nodes() if isinstance(n, SDFGState)]:
+            scope = state.scope_dict()
+            # Build list of tasklets that write directly to an AccessNode whose
+            # data is dual-access (has a gpu_ sibling) and are not already inside
+            # a map scope.
+            loose_tasklets = []
+            for nd in list(state.nodes()):
+                if not isinstance(nd, nodes.Tasklet):
                     continue
-                dname = e.dst.data
-                if dname in dual_names:
-                    writes_dual = True; break
-                # Also match if AccessNode was already renamed to gpu_X
-                # (loose tasklet whose output was touched by _rename_in_gpu_maps).
-                if dname.startswith("gpu_") and dname[len("gpu_"):] in dual_names:
-                    writes_dual = True; break
-            if writes_dual:
-                loose_tasklets.append(nd)
-
-        for gcode in loose_tasklets:
-            # Rewrite this tasklet's output AccessNodes (and memlets) to gpu_X.
-            # Accept either:
-            #   - e.dst.data is a host name in dual_names (first renamer for this AN), or
-            #   - e.dst.data is already gpu_X where X is in dual_names (another
-            #     tasklet already renamed the AN; we just update the memlet).
-            for e in list(state.out_edges(gcode)):
-                if not isinstance(e.dst, nodes.AccessNode):
+                if scope[nd] is not None:
                     continue
-                dname = e.dst.data
-                if dname in dual_names:
-                    host = dname
-                    gpu_name = f"gpu_{host}"
-                    if gpu_name not in sdfg.arrays:
+                writes_dual = False
+                for e in state.out_edges(nd):
+                    if isinstance(e.dst, nodes.AccessNode) and e.dst.data in dual_names:
+                        writes_dual = True
+                        break
+                if writes_dual:
+                    loose_tasklets.append(nd)
+
+            for gcode in loose_tasklets:
+                # Rewrite this tasklet's output AccessNodes (and memlets) to gpu_X.
+                # Accept either:
+                #   - e.dst.data is a host name in dual_names (first renamer for this AN), or
+                #   - e.dst.data is already gpu_X where X is in dual_names (another
+                #     tasklet already renamed the AN; we just update the memlet).
+                for e in list(state.out_edges(gcode)):
+                    if not isinstance(e.dst, nodes.AccessNode):
                         continue
-                    e.dst.data = gpu_name
-                elif dname.startswith("gpu_") and dname[4:] in dual_names:
-                    host = dname[4:]
-                    gpu_name = dname  # already renamed
-                else:
-                    continue
-                if e.data is not None and e.data.data == host:
-                    e.data.data = gpu_name
-            # Wrap in size-1 GPU map (ported from GPUTransformSDFG step 7).
-            me, mx = state.add_map(
-                gcode.label + '_gmap',
-                {gcode.label + '__gmapi': '0:1'},
-                schedule=dtypes.ScheduleType.GPU_Device,
-            )
-            in_edges = list(state.in_edges(gcode))
-            out_edges = list(state.out_edges(gcode))
-            me.in_connectors = {('IN_' + e.dst_conn): None for e in in_edges if e.dst_conn}
-            me.out_connectors = {('OUT_' + e.dst_conn): None for e in in_edges if e.dst_conn}
-            mx.in_connectors = {('IN_' + e.src_conn): None for e in out_edges if e.src_conn}
-            mx.out_connectors = {('OUT_' + e.src_conn): None for e in out_edges if e.src_conn}
+                    dname = e.dst.data
+                    if dname in dual_names:
+                        host = dname
+                        gpu_name = f"gpu_{host}"
+                        if gpu_name not in sdfg.arrays:
+                            continue
+                        e.dst.data = gpu_name
+                    elif dname.startswith("gpu_") and dname[4:] in dual_names:
+                        host = dname[4:]
+                        gpu_name = dname  # already renamed
+                    else:
+                        continue
+                    if e.data is not None and e.data.data == host:
+                        e.data.data = gpu_name
+                # Wrap in size-1 GPU map (ported from GPUTransformSDFG step 7).
+                me, mx = state.add_map(
+                    gcode.label + '_gmap',
+                    {gcode.label + '__gmapi': '0:1'},
+                    schedule=dtypes.ScheduleType.GPU_Device,
+                )
+                in_edges = list(state.in_edges(gcode))
+                out_edges = list(state.out_edges(gcode))
+                me.in_connectors = {('IN_' + e.dst_conn): None for e in in_edges if e.dst_conn}
+                me.out_connectors = {('OUT_' + e.dst_conn): None for e in in_edges if e.dst_conn}
+                mx.in_connectors = {('IN_' + e.src_conn): None for e in out_edges if e.src_conn}
+                mx.out_connectors = {('OUT_' + e.src_conn): None for e in out_edges if e.src_conn}
 
-            for e in in_edges:
-                state.remove_edge(e)
-                state.add_edge(e.src, e.src_conn, me, 'IN_' + e.dst_conn, e.data)
-                state.add_edge(me, 'OUT_' + e.dst_conn, e.dst, e.dst_conn, copy.deepcopy(e.data))
-            for e in out_edges:
-                state.remove_edge(e)
-                state.add_edge(e.src, e.src_conn, mx, 'IN_' + e.src_conn, e.data)
-                state.add_edge(mx, 'OUT_' + e.src_conn, e.dst, e.dst_conn, copy.deepcopy(e.data))
+                for e in in_edges:
+                    state.remove_edge(e)
+                    state.add_edge(e.src, e.src_conn, me, 'IN_' + e.dst_conn, e.data)
+                    state.add_edge(me, 'OUT_' + e.dst_conn, e.dst, e.dst_conn, copy.deepcopy(e.data))
+                for e in out_edges:
+                    state.remove_edge(e)
+                    state.add_edge(e.src, e.src_conn, mx, 'IN_' + e.src_conn, e.data)
+                    state.add_edge(mx, 'OUT_' + e.src_conn, e.dst, e.dst_conn, copy.deepcopy(e.data))
 
-            if len(in_edges) == 0:
-                state.add_nedge(me, gcode, dace.Memlet())
+                if len(in_edges) == 0:
+                    state.add_nedge(me, gcode, dace.Memlet())
 
-            wrapped_total += 1
+                wrapped_total += 1
 
     if verbose or wrapped_total:
         print(f"  Wrapped {wrapped_total} loose host tasklets as size-1 GPU maps")
