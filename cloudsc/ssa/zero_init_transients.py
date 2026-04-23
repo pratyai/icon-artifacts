@@ -100,11 +100,11 @@ def zero_init_uninitialized_transients(sdfg: dace.SDFG) -> int:
         uninit = _uninitialized_transients(sd)
         if not uninit:
             continue
-        # Promote lifetime to Persistent so CUDA codegen declares+allocates the
-        # transient in program init — avoids "Variable not defined" at the point
-        # a kernel prototype tries to reference it before any other kernel has
-        # triggered scope-level allocation.
+        # Promote lifetime to SDFG so the transient is declared once at the
+        # enclosing SDFG scope — avoids CUDA "Variable not defined" at kernel
+        # prototype time without forcing program-init allocation (which would
+        # try to reference per-call symbols like kidia/kfdia in the shape).
         for nm in uninit:
-            sd.arrays[nm].lifetime = dtypes.AllocationLifetime.Persistent
+            sd.arrays[nm].lifetime = dtypes.AllocationLifetime.Global
         total += len(uninit)
     return total
