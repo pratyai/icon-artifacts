@@ -217,6 +217,13 @@ if __name__ == "__main__":
         n = loop_to_map(sdfg)
         n += loop_to_map(sdfg)
         print(f"LoopToMap (pre-unroll): converted {n} loops to maps")
+        # LoopToMap wraps loop bodies in NSDFGs, moving writes to outer
+        # transients out of sight at top-level. Promote their lifetime to
+        # Persistent so CUDA codegen declares them at program init.
+        from ssa.zero_init_transients import zero_init_uninitialized_transients
+        nz = zero_init_uninitialized_transients(sdfg)
+        if nz:
+            print(f"Zero-initialized {nz} uninitialized transients")
         checkpoint(sdfg, "after_l2m", out_dir)
 
     # 9. Unroll — what l2m couldn't convert (loops with loop-carried

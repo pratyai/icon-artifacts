@@ -70,7 +70,7 @@ Resume from a checkpoint: `python optimize.py <input> --start-from after_l2m`.
 
 ```bash
 # CPU — one pipeline run per precision; precisions coexist
-OPT=build/sdfgz/cloudsc_pydace_simplified_symbolic_opt.sdfgz
+OPT=cloudsc_pydace_simplified_symbolic_opt.sdfgz  # committed at repo root; always the canonical input
 python cloudsc_cpu_pipeline.py --sdfg $OPT --release --lowprec fp64
 ./recompile.cpu.f64.sh                                    # -> build/bin/cloudsc_cpu_bin.f64
 python cloudsc_cpu_pipeline.py --sdfg $OPT --release --lowprec fp32
@@ -125,28 +125,44 @@ LOWER_NOTHING=1  python cloudsc_gpu_pipeline.py --lowprec fp16
 ```bash
 python optimize.py cloudsc_pydace_simplified_symbolic.sdfgz
 # -> build/sdfgz/cloudsc_pydace_simplified_symbolic_opt.sdfgz
-# -> build/sdfgz/after_{liftcond,propagate,unroll,simplify1,ssa,isolate,privatize,expand,l2m,condfuse,condhoist,privatize2,l2m2,simplify}.sdfgz
+# -> build/sdfgz/after_{liftcond,propagate,ssa,isolate,privatize,expand,
+#                       arrexp,l2m,unroll,simplify1,ssa2,isolate2,
+#                       privatize2_a,l2m2,condfuse,condhoist,privatize2,
+#                       l2m3,moveloopintomap,arrpriv,mapfusion,
+#                       mapcollapse,simplify}.sdfgz
 ```
+
+Pre-unroll `l2m` runs first (catches rolled outer NCLV-sized loops as maps before
+unroll flattens them); unroll then handles what l2m couldn't. After condfuse,
+`MoveLoopIntoMap` pushes accumulator loops inside their child parallel maps,
+`MapFusion` merges chains, and `MapCollapse` flattens nested maps into multi-dim.
+Final result on `cloudsc_pydace_simplified_symbolic.sdfgz`: 359 → ~210 maps,
+fp64 numerics PASS at tol=1e-10.
 
 Resume from a checkpoint with `--start-from after_l2m`.
 
+**Only the repo-root `cloudsc_pydace_simplified_symbolic_opt.sdfgz` is tracked.**
+The file `build/sdfgz/cloudsc_pydace_simplified_symbolic_opt.sdfgz` is a scratch
+copy produced by each `optimize.py` run and is likely stale after `git pull`.
+Always use the root path for `--sdfg ...` in the build pipelines below —
+`git pull` is enough, no `optimize.py` re-run required if nothing changed.
+
 ## Kernel fusion (current state)
 
-MapFusion / StateFusion are **not** applied in `optimize.py`. Status:
+Both fusion + collapse are wired into `optimize.py`. Status:
 
-- `optimize.py:checkpoint()` calls `sdfg.reset_cfg_list()` as hygiene — a DaCe bug
-  where `cfg_list[cfg_id]` returns a stale region otherwise causes
-  pattern-matching to crash on nested `LoopRegion` states (`KeyError: SDFGState (...)`).
-- **`MapFusionVertical`** reaches its apply stage after the DMR consolidation fix
-  in dace-cloudsc. It fuses ~10 pairs on `after_simplify.sdfgz` before hitting a
-  separate bug: NestedSDFG inout connectors in a *different* state end up with
-  mismatched in/out data names (`zldifdt` vs `__map_fusion_zldifdt`). Root cause
-  looks like shared inner-SDFG objects across top-level states; fix is
-  non-trivial. Not enabled in the pipeline yet.
-- **`StateFusion`** runs without crashing after `reset_cfg_list()` but rejects
-  0 pairs in strict mode. Rejections are legitimate conservative flags: e.g.
-  states that both write to `ztp1`/`zqsmix` trigger a read-write hazard at
-  `state_fusion.py:384` because `_check_all_paths` can't prove the overlapping
-  writes are non-conflicting. Permissive mode would fuse them but is unsafe.
-
-Revisit fusion when the above is resolved upstream.
+- **`MapFusionVertical`**: applied via `optimize.py` after `arrpriv`.
+  Requires three fixes in dace-cloudsc (`pratyai/support-half`):
+  - `51103da8b` — DMR consolidation
+  - `9f7c8397d` — split mismatched inout connectors post-fusion
+  - `0246bd1d8` — reject itervar-independent producer subsets (race fix)
+  - `c5be0363b` — partition reads into RMW vs pass-through for pointwise check
+  Currently fuses ~9 pairs on cloudsc; the remaining `zqlhs` chain (~70 maps in
+  one state) is blocked by the dual-role issue (zqlhs is both intermediate and
+  pass-through within the same scope). Documented in `MEMORY.md` shelved section.
+- **`MapCollapse`**: runs after MapFusion, collapses ~32 nested-map pairs into
+  multi-dim maps for better GPU grid/block utilization.
+- **`MoveLoopIntoMap`**: runs after `l2m3`, pushes 2 sequential outer loops
+  (e.g., jn accumulators around jl maps) inside the parallel map scope so each
+  thread handles its own sequential range — eliminates kernel-launch-per-iteration
+  for those loops.
