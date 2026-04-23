@@ -106,5 +106,6 @@ def zero_init_uninitialized_transients(sdfg: dace.SDFG) -> int:
         # try to reference per-call symbols like kidia/kfdia in the shape).
         for nm in uninit:
             sd.arrays[nm].lifetime = dtypes.AllocationLifetime.Global
+        _insert_zero_init_state(sd, uninit)
         total += len(uninit)
     return total

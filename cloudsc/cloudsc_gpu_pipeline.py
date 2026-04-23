@@ -201,6 +201,15 @@ def main():
     from gpu_offload import gpu_offload
     gpu_offload(sdfg, verbose=args.verbose)
 
+    # 1b. Zero-init transients that are read before any write. CUDA codegen
+    #     needs the declaration hoisted for kernel prototypes, and the init
+    #     state keeps per-call semantics (Global lifetime alone would leak
+    #     values across invocations).
+    from ssa.zero_init_transients import zero_init_uninitialized_transients
+    nz = zero_init_uninitialized_transients(sdfg)
+    if nz:
+        print(f"Zero-initialized {nz} uninitialized transients")
+
     # 2. Precision Lowering
     print(f"Applying precision lowering: {args.lowprec}")
     from lowprec import apply_lowprec
