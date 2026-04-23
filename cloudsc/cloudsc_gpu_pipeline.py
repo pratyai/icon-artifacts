@@ -196,19 +196,20 @@ def main():
     sdfg.build_folder = str(codegen_dir / sdfg.name)
     print(f"SDFG build folder set to: {sdfg.build_folder}")
 
-    # 1. GPU Offloading (Your custom logic)
-    print("Applying GPU offloading...")
-    from gpu_offload import gpu_offload
-    gpu_offload(sdfg, verbose=args.verbose)
-
-    # 1b. Zero-init transients that are read before any write. CUDA codegen
-    #     needs the declaration hoisted for kernel prototypes, and the init
-    #     state keeps per-call semantics (Global lifetime alone would leak
-    #     values across invocations).
+    # 0b. Zero-init transients that are read before any write. Must run
+    #     BEFORE gpu_offload so the newly-inserted init state and its maps
+    #     get the same GPU schedule/device-memory treatment as everything
+    #     else; otherwise we'd be zeroing host memory while kernels read
+    #     device memory.
     from ssa.zero_init_transients import zero_init_uninitialized_transients
     nz = zero_init_uninitialized_transients(sdfg)
     if nz:
         print(f"Zero-initialized {nz} uninitialized transients")
+
+    # 1. GPU Offloading (Your custom logic)
+    print("Applying GPU offloading...")
+    from gpu_offload import gpu_offload
+    gpu_offload(sdfg, verbose=args.verbose)
 
     # 2. Precision Lowering
     print(f"Applying precision lowering: {args.lowprec}")
