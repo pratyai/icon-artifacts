@@ -1,22 +1,39 @@
 """gpu_offload.py — Transform a CPU-optimized SDFG for GPU execution.
 
-Creates gpu_ copies of non-transient arrays, adds H2D/D2H copy states,
-sets GPU schedules on outermost Maps, and renames references inside
-GPU-scheduled scopes to use GPU arrays.
+Bespoke 9-step pipeline:
+  1. Classify arrays (host-accessed / gpu-accessed / dual).
+  2. Create gpu_<name> siblings for non-transients and dual-access transients.
+  3. Set GPU schedule on outermost maps that touch gpu-relevant arrays.
+  4. Add one H2D copy-in state.
+  5. Rename references inside GPU map scopes to use gpu_<name>.
+  6. Wrap loose host tasklets writing dual-access arrays as size-1 GPU maps
+     (in their original position — preserves ordering of writes).
+  7. Add one D2H copy-out state.
+  8. Flip remaining transient arrays to GPU_Global storage.
+  9. Transify non-transient scalars written inside GPU kernels.
+ 10. Propagate missing data/symbols through NestedSDFGs.
 
-Usage:
-    python gpu_offload.py --sdfg cloudsc_opt.sdfgz -o cloudsc_gpu.sdfgz
+Checkpoints are always on and go to out_dir (default build/sdfgz/), matching
+optimize.py's convention. No __main__ — invoke via cloudsc_gpu_pipeline.py.
 """
 
 from __future__ import annotations
 
-import argparse
 import copy
+import os
 import re
 from typing import Set
 
 import dace
 from dace import dtypes, nodes
+
+
+def checkpoint(sdfg: dace.SDFG, name: str, out_dir: str):
+    """Save a checkpoint SDFG into out_dir. Mirrors optimize.py's helper."""
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, f"{name}.sdfgz")
+    sdfg.save(path, compress=True)
+    print(f"  checkpoint: {path}")
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +126,7 @@ def _find_gpu_accessed_arrays(sdfg: dace.SDFG) -> Set[str]:
 
 def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
     """Partition SDFG data into categories for GPU offloading."""
-    
+
     # Identify which arrays are written anywhere
     written = set()
     for state in sdfg.all_states():
@@ -129,13 +146,13 @@ def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
     gpu_accessed = _find_gpu_accessed_arrays(sdfg)
     dual_access = host_accessed & gpu_accessed
 
-    non_trans_arrays = [] # Needs gpu_ sibling and H2D/D2H
-    trans_arrays = []     # Change storage directly to GPU_Global
+    non_trans_arrays = []  # Needs gpu_ sibling and H2D/D2H
+    trans_arrays = []      # Change storage directly to GPU_Global
 
     for name, desc in sdfg.arrays.items():
         if isinstance(desc, dace.data.Scalar) and name not in written:
-            continue # Read-only scalars are passed by value
-        
+            continue  # Read-only scalars are passed by value
+
         if not isinstance(desc, dace.data.Array) and not isinstance(desc, dace.data.Scalar):
             continue
 
@@ -145,7 +162,7 @@ def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
         else:
             # Transients
             if name in dual_access:
-                # If accessed on BOTH host and GPU, it's safer to treat it like a 
+                # If accessed on BOTH host and GPU, treat it like a
                 # non-transient: keep the host one and create a gpu_ sibling.
                 non_trans_arrays.append(name)
             elif name in gpu_accessed:
@@ -201,8 +218,6 @@ def _create_gpu_descriptors(sdfg: dace.SDFG, array_names: list[str], verbose: bo
 
 def _add_h2d_state(sdfg: dace.SDFG, array_names: list[str]):
     """Add a start state that copies non-transient arrays to GPU if used in GPU maps."""
-    # We copy IF it is accessed by a GPU map AND is not a transient
-    # (transients are computed inside the SDFG — copying before computation gives garbage)
     gpu_accessed = _find_gpu_accessed_arrays(sdfg)
     to_copy = [n for n in array_names
                if n in gpu_accessed and not sdfg.arrays[n].transient]
@@ -220,7 +235,6 @@ def _add_h2d_state(sdfg: dace.SDFG, array_names: list[str]):
         h2d_state.add_edge(src, None, dst, None,
                            dace.Memlet.from_array(name, gpu_desc))
 
-    # Verification: Every array in to_copy should have an outgoing edge in h2d_state
     actual_copied = {e.src.data for e in h2d_state.edges() if isinstance(e.src, nodes.AccessNode)}
     for name in to_copy:
         assert name in actual_copied, f"Array {name} was not added to H2D copy state"
@@ -230,12 +244,6 @@ def _add_h2d_state(sdfg: dace.SDFG, array_names: list[str]):
 
 def _add_d2h_state(sdfg: dace.SDFG, written_arrays: list[str]):
     """Add a sink state that copies written arrays back from GPU."""
-    # Find which gpu_* AccessNodes are written anywhere (including inside
-    # NSDFGs) — these need D2H whenever the host-side twin may later be
-    # read. The earlier filter `orig in written_arrays` only covered arrays
-    # the classifier flagged as dual-access-written; it missed transients
-    # the classifier misclassified as host-only because their GPU writes
-    # live inside NSDFG-proxied connectors.
     gpu_written = set()
     for sd in sdfg.all_sdfgs_recursive():
         for state in sd.states():
@@ -243,13 +251,8 @@ def _add_d2h_state(sdfg: dace.SDFG, written_arrays: list[str]):
                 if isinstance(node, nodes.AccessNode) and node.data.startswith("gpu_"):
                     if state.in_degree(node) > 0:
                         orig = node.data[4:]
-                        # The host twin must exist as an outer-SDFG array.
                         if orig in sdfg.arrays:
                             gpu_written.add(orig)
-    # (No host-read filter — be inclusive: any array that has a gpu_* twin
-    # being written deserves a D2H, because the host-side twin could be
-    # referenced later either by generated code we can't trivially detect,
-    # or by the enclosing caller if the array is non-transient.)
 
     sinks = sdfg.sink_nodes()
     d2h_state = sdfg.add_state("copy_out_d2h")
@@ -265,7 +268,6 @@ def _add_d2h_state(sdfg: dace.SDFG, written_arrays: list[str]):
         d2h_state.add_edge(src, None, dst, None,
                            dace.Memlet.from_array(gpu_name, gpu_desc))
 
-    # Verification
     actual_copied = {e.dst.data for e in d2h_state.edges() if isinstance(e.dst, nodes.AccessNode)}
     for name in gpu_written:
         assert name in actual_copied, f"Array {name} was not added to D2H copy state"
@@ -322,7 +324,6 @@ def _rename_in_gpu_maps(sdfg: dace.SDFG, gpu_arrays: Set[str], verbose: bool):
             inner_nodes.add(node)
             inner_nodes.add(map_exit)
 
-            # Include AccessNodes connected to MapEntry inputs and MapExit outputs
             for e in state.in_edges(node):
                 if isinstance(e.src, nodes.AccessNode):
                     inner_nodes.add(e.src)
@@ -330,7 +331,6 @@ def _rename_in_gpu_maps(sdfg: dace.SDFG, gpu_arrays: Set[str], verbose: bool):
                 if isinstance(e.dst, nodes.AccessNode):
                     inner_nodes.add(e.dst)
 
-            # Collect all edges touching inner nodes
             inner_edges = set()
             for n in inner_nodes:
                 for e in state.in_edges(n):
@@ -342,7 +342,6 @@ def _rename_in_gpu_maps(sdfg: dace.SDFG, gpu_arrays: Set[str], verbose: bool):
             _rename_access_nodes(inner_nodes, gpu_arrays)
             _rename_nsdfg_connectors(sdfg, state, inner_nodes, gpu_arrays)
 
-            # Verification: Check no stragglers
             for n in inner_nodes:
                 if isinstance(n, nodes.AccessNode) and n.data in gpu_arrays:
                     raise AssertionError(f"AccessNode for {n.data} was not renamed in GPU map {node.map.label}")
@@ -373,7 +372,6 @@ def _rename_nsdfg_connectors(sdfg, state, inner_nodes, gpu_arrays):
         if not isinstance(node, nodes.NestedSDFG):
             continue
 
-        # Rename in-connectors
         for old_conn in list(node.in_connectors):
             if old_conn in gpu_arrays:
                 new_conn = f"gpu_{old_conn}"
@@ -385,7 +383,6 @@ def _rename_nsdfg_connectors(sdfg, state, inner_nodes, gpu_arrays):
                     if e.dst_conn == old_conn:
                         e._dst_conn = new_conn
 
-        # Rename out-connectors
         for old_conn in list(node.out_connectors):
             if old_conn in gpu_arrays:
                 new_conn = f"gpu_{old_conn}"
@@ -397,7 +394,6 @@ def _rename_nsdfg_connectors(sdfg, state, inner_nodes, gpu_arrays):
                     if e.src_conn == old_conn:
                         e._src_conn = new_conn
 
-        # Recurse into the nested SDFG
         _rename_in_nested_sdfg(node.sdfg, gpu_arrays)
 
 
@@ -421,7 +417,6 @@ def _rename_in_nested_sdfg(nsdfg, gpu_arrays):
         _rename_access_nodes(all_nodes, gpu_arrays)
         _rename_nsdfg_connectors(nsdfg, state, all_nodes, gpu_arrays)
 
-    # Rename on interstate edges
     for edge in nsdfg.all_interstate_edges():
         if edge.data.assignments:
             new_asgn = {}
@@ -436,73 +431,13 @@ def _rename_in_nested_sdfg(nsdfg, gpu_arrays):
 
 
 # ---------------------------------------------------------------------------
-# Step 6b: Redirect loose tasklet writes of dual-access transients
+# Step 6b: Wrap loose host tasklets writing dual-access arrays into size-1
+#          GPU maps (in place). Preserves relative ordering of writes.
 # ---------------------------------------------------------------------------
 
-def _is_map_boundary(state, nd):
-    """Check if an AccessNode is a boundary node feeding into/out of a map."""
-    for e in state.out_edges(nd):
-        if isinstance(e.dst, nodes.MapEntry):
-            return True
-    for e in state.in_edges(nd):
-        if isinstance(e.src, nodes.MapExit):
-            return True
-    return False
-
-
-def _find_loose_nodes(state):
-    """Find all nodes at top scope that are NOT part of any map scope."""
-    scope = state.scope_dict()
-    loose = set()
-    for nd in state.nodes():
-        if scope[nd] is not None:
-            continue  # Inside a map
-        if isinstance(nd, (nodes.MapEntry, nodes.MapExit)):
-            continue
-        if isinstance(nd, nodes.AccessNode) and _is_map_boundary(state, nd):
-            continue
-        loose.add(nd)
-    return loose
-
-
-def _extract_loose_into(state, target_state):
-    """Move all loose nodes (and their inter-edges) from state into target_state.
-
-    Returns the set of moved nodes, or empty set if nothing moved.
-    """
-    loose = _find_loose_nodes(state)
-    if not loose:
-        return set()
-
-    # Collect edges between loose nodes before removing anything
-    loose_edges = []
-    for e in state.edges():
-        if e.src in loose and e.dst in loose:
-            loose_edges.append((e.src, e.src_conn, e.dst, e.dst_conn,
-                                copy.deepcopy(e.data)))
-
-    # Add to target
-    for nd in loose:
-        target_state.add_node(nd)
-    for src, sc, dst, dc, data in loose_edges:
-        target_state.add_edge(src, sc, dst, dc, data)
-
-    # Remove from original
-    for nd in loose:
-        state.remove_node(nd)
-
-    return loose
-
-
 def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: bool):
-    """For each host-scheduled tasklet whose output AccessNode targets a
-    dual-access (gpu_-sibling) array, rename the output access to gpu_X and
-    wrap the tasklet in a size-1 GPU_Device map — in its ORIGINAL state and
-    position in control flow.
-
-    This preserves the relative ordering of writes to dual-access arrays,
-    unlike the prior hoisting approach which moved all loose host writes to
-    a single `host_precompute` state at the start.
+    """Wrap each loose host tasklet whose output AccessNode targets a
+    dual-access array in a size-1 GPU map, in its original state and position.
     """
     from dace.sdfg.state import SDFGState
     wrapped_total = 0
@@ -510,9 +445,6 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
     for sd in sdfg.all_sdfgs_recursive():
         for state in [n for n in sd.nodes() if isinstance(n, SDFGState)]:
             scope = state.scope_dict()
-            # Build list of tasklets that write directly to an AccessNode whose
-            # data is dual-access (has a gpu_ sibling) and are not already inside
-            # a map scope.
             loose_tasklets = []
             for nd in list(state.nodes()):
                 if not isinstance(nd, nodes.Tasklet):
@@ -528,11 +460,6 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
                     loose_tasklets.append(nd)
 
             for gcode in loose_tasklets:
-                # Rewrite this tasklet's output AccessNodes (and memlets) to gpu_X.
-                # Accept either:
-                #   - e.dst.data is a host name in dual_names (first renamer for this AN), or
-                #   - e.dst.data is already gpu_X where X is in dual_names (another
-                #     tasklet already renamed the AN; we just update the memlet).
                 for e in list(state.out_edges(gcode)):
                     if not isinstance(e.dst, nodes.AccessNode):
                         continue
@@ -545,12 +472,12 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
                         e.dst.data = gpu_name
                     elif dname.startswith("gpu_") and dname[4:] in dual_names:
                         host = dname[4:]
-                        gpu_name = dname  # already renamed
+                        gpu_name = dname
                     else:
                         continue
                     if e.data is not None and e.data.data == host:
                         e.data.data = gpu_name
-                # Wrap in size-1 GPU map (ported from GPUTransformSDFG step 7).
+
                 me, mx = state.add_map(
                     gcode.label + '_gmap',
                     {gcode.label + '__gmapi': '0:1'},
@@ -581,6 +508,7 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
         print(f"  Wrapped {wrapped_total} loose host tasklets as size-1 GPU maps")
     return wrapped_total
 
+
 # ---------------------------------------------------------------------------
 # Step 7: Set GPU storage for transient arrays
 # ---------------------------------------------------------------------------
@@ -597,13 +525,11 @@ def _set_transient_storage(sdfg: dace.SDFG, trans_arrays: list[str], verbose: bo
             desc.storage = dtypes.StorageType.Register
             count += 1
 
-    # Recurse into NestedSDFGs
     for state in sdfg.all_states():
         for node in state.nodes():
             if isinstance(node, nodes.NestedSDFG):
                 count += _set_nsdfg_gpu_storage(node.sdfg)
 
-    # Verification: No transient should be CPU_Pinned (illegal access cause)
     for name, desc in sdfg.arrays.items():
         if desc.transient:
             assert desc.storage != dtypes.StorageType.CPU_Pinned, f"Transient {name} was promoted to CPU_Pinned"
@@ -647,7 +573,7 @@ def _transify_gpu_scalars(sdfg: dace.SDFG, verbose: bool):
                 continue
             if desc.transient:
                 continue
-            
+
             written_in_gpu = False
             for st in current_sdfg.all_states():
                 scope = st.scope_dict()
@@ -664,13 +590,13 @@ def _transify_gpu_scalars(sdfg: dace.SDFG, verbose: bool):
                                     outermost = scope[outermost]
                                 if isinstance(outermost, nodes.MapEntry) and outermost.map.schedule == dtypes.ScheduleType.GPU_Device:
                                     is_gpu_write = True
-                        
+
                         if is_gpu_write and any(not e.data.is_empty() for e in st.in_edges(nd)):
                             written_in_gpu = True
                             break
                 if written_in_gpu:
                     break
-            
+
             if written_in_gpu:
                 if f"gpu_{name}" not in sdfg.arrays:
                     desc.transient = True
@@ -702,52 +628,32 @@ def _transify_gpu_scalars(sdfg: dace.SDFG, verbose: bool):
 # Main pipeline
 # ---------------------------------------------------------------------------
 
-def gpu_offload(sdfg: dace.SDFG, verbose: bool = False):
-    """Apply GPU offloading transforms to the SDFG."""
+def gpu_offload(sdfg: dace.SDFG, verbose: bool = False, out_dir: str = "build/sdfgz"):
+    """Apply GPU offloading transforms to the SDFG. Checkpoints after each
+    step into `out_dir` (default build/sdfgz/), following optimize.py's
+    convention."""
     print("GPU offloading...")
+    checkpoint(sdfg, "gpu_entry", out_dir)
 
-    # Optional per-stage checkpointing for diagnostics: set
-    # GPU_OFFLOAD_CKPT_DIR=/some/path to get <NN_tag>.sdfgz snapshots.
-    import os as _os
-    from pathlib import Path as _Path
-    _ckpt_dir = _os.environ.get("GPU_OFFLOAD_CKPT_DIR")
-    if _ckpt_dir:
-        _Path(_ckpt_dir).mkdir(parents=True, exist_ok=True)
-    def _ckpt(tag):
-        if _ckpt_dir:
-            sdfg.save(f"{_ckpt_dir}/{tag}.sdfgz", compress=True)
-    _ckpt("00_entry")
-
-    # 1. Classify
     non_trans, written, trans, interstate = _classify_arrays(sdfg, verbose)
-    _ckpt("01_after_classify")
+    checkpoint(sdfg, "after_gpu_classify", out_dir)
 
-    # 2. Create GPU descriptors for non-transient and dual-access arrays
     _create_gpu_descriptors(sdfg, non_trans, verbose)
-    _ckpt("02_after_descriptors")
+    checkpoint(sdfg, "after_gpu_descriptors", out_dir)
 
-    # 3. GPU schedules — only for maps that touch GPU arrays
     gpu_array_set = set(non_trans) | set(trans)
     _set_gpu_schedules(sdfg, gpu_array_set, verbose)
-    _ckpt("03_after_schedules")
+    checkpoint(sdfg, "after_gpu_schedules", out_dir)
 
-    # 4. H2D copy-in state
     _add_h2d_state(sdfg, non_trans)
-    _ckpt("04_after_h2d")
+    checkpoint(sdfg, "after_gpu_h2d", out_dir)
 
-    # 5. Rename non-transient references inside GPU map scopes.
     gpu_arrays = _get_gpu_rename_set(sdfg)
     _rename_in_gpu_maps(sdfg, gpu_arrays, verbose)
-    _ckpt("05_after_rename")
+    checkpoint(sdfg, "after_gpu_rename", out_dir)
 
-    # 6. Wrap loose host tasklets writing dual-access arrays as size-1 GPU
-    #    maps (in place). Replaces the prior hoisting into host_precompute,
-    #    which broke the relative ordering of writes (e.g., "final override"
-    #    tasklets that semantically run AFTER GPU kernels were being pushed
-    #    to the top).
     from gpu_classifier import classify
     _classification = classify(sdfg)
-    # Target set: host-side array names whose gpu_ sibling is dual-access.
     _dual_names = set()
     for _nm, _role in _classification.array_roles.items():
         if _nm.startswith("gpu_") and _role.is_dual:
@@ -757,44 +663,18 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False):
         elif _role.is_dual and f"gpu_{_nm}" in sdfg.arrays:
             _dual_names.add(_nm)
     _wrap_loose_host_tasklets_on_gpu(sdfg, _dual_names, verbose)
-    _ckpt("06_after_wrap_loose")
+    checkpoint(sdfg, "after_gpu_wrap_loose", out_dir)
 
-    # 7. D2H copy-out state
     _add_d2h_state(sdfg, written)
-    _ckpt("07_after_d2h")
+    checkpoint(sdfg, "after_gpu_d2h", out_dir)
 
-    # 7. Move transient arrays to GPU storage
     _set_transient_storage(sdfg, trans, verbose)
 
-    # 8. Transify non-transient scalars written inside GPU kernels
     _transify_gpu_scalars(sdfg, verbose)
 
-    # 9. Propagate missing symbols and data through the hierarchy
     from utils.add_missing_symbols import add_missing_data_and_symbols_to_all_nsdfgs
     add_missing_data_and_symbols_to_all_nsdfgs(sdfg)
 
-    # Re-index CFG
     sdfg.reset_cfg_list()
+    checkpoint(sdfg, "after_gpu_finalize", out_dir)
     print("GPU offloading complete.")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="GPU offload for CloudSC SDFG")
-    parser.add_argument("--sdfg", type=str, required=True, help="Input SDFG file")
-    parser.add_argument("-o", "--output", type=str, default="cloudsc_gpu.sdfgz")
-    parser.add_argument("--verbose", action="store_true")
-    args = parser.parse_args()
-
-    print(f"Input:  {args.sdfg}")
-    print(f"Output: {args.output}")
-    sdfg = dace.SDFG.from_file(args.sdfg)
-
-    gpu_offload(sdfg, verbose=args.verbose)
-
-    sdfg.save(args.output, compress=True)
-    print(f"Saved to {args.output}")
-    sdfg.validate()

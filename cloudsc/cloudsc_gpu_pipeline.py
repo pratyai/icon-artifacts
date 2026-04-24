@@ -3,6 +3,7 @@ import os
 import shutil
 import argparse
 import subprocess
+import warnings
 from pathlib import Path
 
 from dace.codegen import codegen, compiler
@@ -13,6 +14,39 @@ from pipeline_utils import repl_in_file, stabilize_interface, modify_files_in_di
 dace.config.Config.set("compiler", "default_data_types", value="C")
 dace.config.Config.set("compiler", "cuda", "default_block_size", value="256,1,1")
 dace.config.Config.set("compiler", "cuda", "max_concurrent_streams", value="1")
+
+# Silence known-benign DaCe codegen warnings.
+# 1. "No `gpu_block_size` property specified" — we intentionally rely on the
+#    compiler.cuda.default_block_size config above.
+warnings.filterwarnings(
+    "ignore",
+    message=r"No `gpu_block_size` property specified",
+)
+# 2. "WARNING: Shadowing variable kidia/kfdia/..." comes from
+#    dace/codegen/dispatcher.py's DefinedMemlets.add() as a plain print().
+#    Monkey-patch it to drop those strings while leaving other stdout alone.
+try:
+    from dace.codegen.dispatcher import DefinedMemlets as _DM
+    _orig_add = _DM.add
+
+    def _silent_add(self, name, dtype, ctype, ancestor=0, allow_shadowing=False):
+        import builtins
+        real_print = builtins.print
+
+        def _filtered_print(*args, **kwargs):
+            if args and isinstance(args[0], str) and args[0].startswith("WARNING: Shadowing variable"):
+                return
+            return real_print(*args, **kwargs)
+
+        builtins.print = _filtered_print
+        try:
+            return _orig_add(self, name, dtype, ctype, ancestor, allow_shadowing)
+        finally:
+            builtins.print = real_print
+
+    _DM.add = _silent_add
+except Exception:
+    pass
 
 # --- Source Management ---
 
@@ -205,6 +239,8 @@ def main():
     nz = zero_init_uninitialized_transients(sdfg)
     if nz:
         print(f"Zero-initialized {nz} uninitialized transients")
+    from gpu_offload import checkpoint as _ckpt
+    _ckpt(sdfg, "after_zero_init", "build/sdfgz")
 
     # 1. GPU Offloading (Your custom logic)
     print("Applying GPU offloading...")
