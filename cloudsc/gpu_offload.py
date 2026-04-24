@@ -581,21 +581,33 @@ def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
             topo = list(cfg_analysis.blockorder_topological_sort(
                 cfr, recursive=False, ignore_nonstate_blocks=False))
             for blk in topo:
-                # Check if this block reads gpu_X with dirty host.
-                reads = _block_gpu_reads(blk, local_duals)
-                needed = {nm for nm in reads if dirty.get(nm, False)}
-                if needed:
-                    to_splice.append((cfr, blk, needed))
-                    for nm in needed:
-                        dirty[nm] = False
-                # Then apply writes in this block.
                 if isinstance(blk, SDFGState):
+                    # Reads trigger refresh only for states (before them).
+                    reads = _state_reads_gpu_dual(blk, local_duals)
+                    needed = {nm for nm in reads if dirty.get(nm, False)}
+                    if needed:
+                        to_splice.append((cfr, blk, needed))
+                        for nm in needed:
+                            dirty[nm] = False
+                    # Apply host writes in this state.
                     for nm in _state_writes_host_dual(blk, local_duals):
                         dirty[nm] = True
                 else:
+                    # Nested CFR — HOIST the refresh to before the CFR if its
+                    # reads need any dirty array. Do NOT pre-set dirty from
+                    # CFR's internal writes; instead, recurse with the current
+                    # dirty state, and propagate internal writes AFTER.
+                    inner_reads = _block_gpu_reads(blk, local_duals)
+                    needed = {nm for nm in inner_reads if dirty.get(nm, False)}
+                    if needed:
+                        to_splice.append((cfr, blk, needed))
+                        for nm in needed:
+                            dirty[nm] = False
+                    _scan(blk)
+                    # After the CFR, any host write anywhere inside it makes
+                    # host newer than gpu for siblings of this block.
                     for nm in _block_host_writes(blk, local_duals):
                         dirty[nm] = True
-                    _scan(blk)
 
         _scan(sd)
 
@@ -746,11 +758,19 @@ def _add_d2h_before_interstate_reads(sdfg: dace.SDFG, verbose: bool) -> int:
         dirty = {nm: False for nm in local_duals}
         to_splice = []  # list of (cfr, edge, refs)
 
+        def _cfr_reads_on_edges(blk, duals):
+            """Union of arrays read by any interstate edge inside `blk`
+            (or any descendant CFR)."""
+            if isinstance(blk, SDFGState):
+                return set()
+            refs = set()
+            for e in blk.all_interstate_edges():
+                refs |= _interstate_refs(e, duals)
+            return refs
+
         def _scan(cfr):
             # ConditionalBlock doesn't have a single start_block / dominator
-            # tree — its structure is (cond_i, branch_cfr_i) pairs. Iterate
-            # branches directly; the pass only needs to visit inner writers
-            # and inner out_edges, not dominator order at this level.
+            # tree — its structure is (cond_i, branch_cfr_i) pairs.
             if isinstance(cfr, ConditionalBlock):
                 for _cond, branch in cfr.branches:
                     _scan(branch)
@@ -762,11 +782,23 @@ def _add_d2h_before_interstate_reads(sdfg: dace.SDFG, verbose: bool) -> int:
                     for nm in _state_writes_gpu_dual(blk, local_duals):
                         dirty[nm] = True
                 else:
-                    # Nested CFR. Pre-set dirty for arrays any descendant
-                    # writes, so loop back-edges re-contaminate on iteration.
+                    # Nested CFR — HOIST the refresh to before the CFR if any
+                    # interstate edge inside it reads a currently-dirty array.
+                    # Then recurse WITHOUT pre-setting dirty from CFR's internal
+                    # writes, so the inner walk only inserts refreshes where the
+                    # inner dataflow actually requires them. After the CFR,
+                    # propagate its internal writes to outer dirty.
+                    inner_reads = _cfr_reads_on_edges(blk, local_duals)
+                    needed = {nm for nm in inner_reads if dirty.get(nm, False)}
+                    if needed:
+                        # Splice BEFORE blk. We represent it as a tuple with
+                        # `blk` instead of an edge; _splice handles both.
+                        to_splice.append((cfr, blk, needed))
+                        for nm in needed:
+                            dirty[nm] = False
+                    _scan(blk)
                     for nm in _block_writes(blk, local_duals):
                         dirty[nm] = True
-                    _scan(blk)
                 for e in cfr.out_edges(blk):
                     refs = _interstate_refs(e, local_duals)
                     needed = {nm for nm in refs if dirty.get(nm, False)}
@@ -777,9 +809,27 @@ def _add_d2h_before_interstate_reads(sdfg: dace.SDFG, verbose: bool) -> int:
 
         _scan(sd)
 
-        # Pass 2: mutation. Splice the collected edges.
-        for cfr, e, refs in to_splice:
-            _splice(cfr, e, refs, sd, n_added)
+        # Pass 2: mutation. Splice collected entries. An entry is either:
+        #   (cfr, InterstateEdge, refs)  -> splice a refresh on that edge
+        #   (cfr, block,           refs) -> add refresh state BEFORE that block
+        from dace.sdfg.state import SDFGState as _SS
+        from dace.sdfg.graph import Edge as _Edge
+        for cfr, target, refs in to_splice:
+            if isinstance(target, _Edge):
+                _splice(cfr, target, refs, sd, n_added)
+            else:
+                # Block target — insert refresh state before it.
+                new_state = cfr.add_state_before(
+                    target, f"refresh_host_before_{target.label[:24]}_{n_added}",
+                    is_start_block=False,
+                )
+                for host_nm in refs:
+                    gpu_nm = f"gpu_{host_nm}"
+                    src_an = new_state.add_access(gpu_nm)
+                    dst_an = new_state.add_access(host_nm)
+                    desc = sd.arrays[host_nm]
+                    new_state.add_edge(src_an, None, dst_an, None,
+                                       dace.Memlet.from_array(host_nm, desc))
             n_added += 1
 
     if verbose or n_added:
