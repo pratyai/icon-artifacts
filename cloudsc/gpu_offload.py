@@ -510,6 +510,284 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
 
 
 # ---------------------------------------------------------------------------
+# Step 6b: H2D before GPU reads of dual-access arrays that were written
+#          on the host side (symmetric to step 6c below).
+# ---------------------------------------------------------------------------
+
+def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
+    """For each dual-access array X (has both X and gpu_X descriptors),
+    if a host-side write to X has occurred since the last H2D, and we're
+    about to enter a state where gpu_X is READ, splice an H2D state
+    (X -> gpu_X) before the read state.
+
+    Two-pass: analysis collects (cfr, edge, refs); mutation splices.
+    """
+    from dace.sdfg.state import (
+        SDFGState, LoopRegion, ConditionalBlock,
+        ControlFlowRegion, AbstractControlFlowRegion,
+    )
+    from dace.sdfg.analysis import cfg as cfg_analysis
+
+    dual_names = {nm for nm in sdfg.arrays
+                  if not nm.startswith("gpu_") and f"gpu_{nm}" in sdfg.arrays}
+    if not dual_names:
+        if verbose:
+            print("  H2D after host writes: no dual-access arrays")
+        return 0
+
+    def _block_host_writes(blk, duals):
+        if isinstance(blk, SDFGState):
+            return _state_writes_host_dual(blk, duals)
+        written = set()
+        if isinstance(blk, (AbstractControlFlowRegion, ControlFlowRegion,
+                            LoopRegion, ConditionalBlock)):
+            for sub in blk.all_states():
+                written |= _state_writes_host_dual(sub, duals)
+        return written
+
+    def _block_gpu_reads(blk, duals):
+        if isinstance(blk, SDFGState):
+            return _state_reads_gpu_dual(blk, duals)
+        reads = set()
+        if isinstance(blk, (AbstractControlFlowRegion, ControlFlowRegion,
+                            LoopRegion, ConditionalBlock)):
+            for sub in blk.all_states():
+                reads |= _state_reads_gpu_dual(sub, duals)
+        return reads
+
+    def _splice_before(parent, blk, refs, sd, counter):
+        """Splice an H2D state on every incoming edge of `blk`."""
+        parent.add_state_before(blk, f"h2d_refresh_{blk.label[:24]}_{counter}",
+                                is_start_block=False)
+
+    n_added = 0
+
+    for sd in sdfg.all_sdfgs_recursive():
+        local_duals = {h for h in dual_names
+                       if h in sd.arrays and f"gpu_{h}" in sd.arrays}
+        if not local_duals:
+            continue
+
+        # dirty[X] = True means host X has newer data than gpu_X.
+        dirty = {nm: False for nm in local_duals}
+        # Collect (cfr, block, refs) to insert an H2D before that block.
+        to_splice = []
+
+        def _scan(cfr):
+            if isinstance(cfr, ConditionalBlock):
+                for _cond, branch in cfr.branches:
+                    _scan(branch)
+                return
+            topo = list(cfg_analysis.blockorder_topological_sort(
+                cfr, recursive=False, ignore_nonstate_blocks=False))
+            for blk in topo:
+                # Check if this block reads gpu_X with dirty host.
+                reads = _block_gpu_reads(blk, local_duals)
+                needed = {nm for nm in reads if dirty.get(nm, False)}
+                if needed:
+                    to_splice.append((cfr, blk, needed))
+                    for nm in needed:
+                        dirty[nm] = False
+                # Then apply writes in this block.
+                if isinstance(blk, SDFGState):
+                    for nm in _state_writes_host_dual(blk, local_duals):
+                        dirty[nm] = True
+                else:
+                    for nm in _block_host_writes(blk, local_duals):
+                        dirty[nm] = True
+                    _scan(blk)
+
+        _scan(sd)
+
+        for cfr, blk, refs in to_splice:
+            # Insert an H2D state BEFORE blk in cfr.
+            desc_map = {nm: sd.arrays[nm] for nm in refs}
+            new_state = cfr.add_state_before(
+                blk, f"h2d_refresh_{blk.label[:24]}_{n_added}",
+                is_start_block=False,
+            )
+            for host_nm, desc in desc_map.items():
+                gpu_nm = f"gpu_{host_nm}"
+                src_an = new_state.add_access(host_nm)
+                dst_an = new_state.add_access(gpu_nm)
+                new_state.add_edge(src_an, None, dst_an, None,
+                                   dace.Memlet.from_array(host_nm, desc))
+            n_added += 1
+
+    if verbose or n_added:
+        print(f"  H2D after host writes: {n_added} states inserted")
+    return n_added
+
+
+# ---------------------------------------------------------------------------
+# Step 6c: D2H before interstate host reads of dual-access arrays
+# ---------------------------------------------------------------------------
+
+def _state_writes_gpu_dual(state, dual_names):
+    """Return the subset of dual_names whose gpu_<name> sibling is written
+    (directly as an AccessNode-in-edge, or via an NSDFG out-connector) in
+    this state."""
+    written = set()
+    for nd in state.nodes():
+        if isinstance(nd, nodes.AccessNode) and nd.data.startswith("gpu_"):
+            host_nm = nd.data[len("gpu_"):]
+            if host_nm in dual_names and state.in_degree(nd) > 0:
+                written.add(host_nm)
+        if isinstance(nd, nodes.NestedSDFG):
+            for conn in nd.out_connectors:
+                if conn.startswith("gpu_"):
+                    host_nm = conn[len("gpu_"):]
+                    if host_nm in dual_names:
+                        written.add(host_nm)
+    return written
+
+
+def _state_writes_host_dual(state, dual_names):
+    """Names in dual_names whose HOST copy X is written on CPU in this state
+    (AccessNode at scope=None with in-edges)."""
+    sdict = state.scope_dict()
+    written = set()
+    for nd in state.nodes():
+        if isinstance(nd, nodes.AccessNode) and nd.data in dual_names:
+            if sdict.get(nd) is None and state.in_degree(nd) > 0:
+                written.add(nd.data)
+    return written
+
+
+def _state_reads_gpu_dual(state, dual_names):
+    """Names whose gpu_<name> sibling is READ in this state (by a kernel
+    or via an NSDFG in-connector)."""
+    reads = set()
+    for nd in state.nodes():
+        if isinstance(nd, nodes.AccessNode) and nd.data.startswith("gpu_"):
+            host_nm = nd.data[len("gpu_"):]
+            if host_nm in dual_names and state.out_degree(nd) > 0:
+                reads.add(host_nm)
+        if isinstance(nd, nodes.NestedSDFG):
+            for conn in nd.in_connectors:
+                if conn.startswith("gpu_"):
+                    host_nm = conn[len("gpu_"):]
+                    if host_nm in dual_names:
+                        reads.add(host_nm)
+    return reads
+
+
+def _add_d2h_before_interstate_reads(sdfg: dace.SDFG, verbose: bool) -> int:
+    """Insert D2H refresh states before host-interstate reads of dual-access
+    arrays, but ONLY when a GPU write to gpu_<name> has occurred since the
+    last refresh. Topological walk per CFR with a per-dual "dirty" flag.
+
+    Conservative for loops: if any state in a LoopRegion body writes gpu_<X>,
+    the dirty flag for <X> is re-set on every back-edge (i.e. every iteration
+    can cause a refresh on reads inside the body).
+    """
+    from dace.sdfg.state import SDFGState, LoopRegion, ConditionalBlock
+    from dace.sdfg.state import ControlFlowRegion, AbstractControlFlowRegion
+    from dace.sdfg.analysis import cfg as cfg_analysis
+
+    dual_names = {nm for nm in sdfg.arrays
+                  if not nm.startswith("gpu_") and f"gpu_{nm}" in sdfg.arrays}
+    if not dual_names:
+        if verbose:
+            print("  D2H interstate refresh: no dual-access arrays")
+        return 0
+
+    n_added = 0
+
+    def _interstate_refs(edge, duals):
+        refs = set()
+        sources = []
+        if edge.data.condition is not None:
+            sources.append(edge.data.condition.as_string)
+        for v in edge.data.assignments.values():
+            sources.append(str(v))
+        joined = "\n".join(sources)
+        for nm in duals:
+            if re.search(r"\b" + re.escape(nm) + r"\b", joined):
+                refs.add(nm)
+        return refs
+
+    def _block_writes(blk, duals):
+        """Union of gpu_<X> writes across all states reachable inside `blk`."""
+        written = set()
+        if isinstance(blk, SDFGState):
+            written |= _state_writes_gpu_dual(blk, duals)
+        elif isinstance(blk, (AbstractControlFlowRegion, ControlFlowRegion,
+                              LoopRegion, ConditionalBlock)):
+            for sub in blk.all_states():
+                written |= _state_writes_gpu_dual(sub, duals)
+        return written
+
+    def _splice(parent, e, refs, sd, counter):
+        refresh_state = parent.add_state(
+            f"refresh_host_{e.src.label[:24]}_{counter}"
+        )
+        for host_nm in refs:
+            gpu_nm = f"gpu_{host_nm}"
+            src_an = refresh_state.add_access(gpu_nm)
+            dst_an = refresh_state.add_access(host_nm)
+            desc = sd.arrays[host_nm]
+            refresh_state.add_edge(src_an, None, dst_an, None,
+                                   dace.Memlet.from_array(host_nm, desc))
+        cond = e.data.condition
+        asgn = dict(e.data.assignments)
+        parent.remove_edge(e)
+        parent.add_edge(e.src, refresh_state, dace.InterstateEdge(condition=cond))
+        parent.add_edge(refresh_state, e.dst, dace.InterstateEdge(assignments=asgn))
+
+    for sd in sdfg.all_sdfgs_recursive():
+        local_duals = {h for h in dual_names
+                       if h in sd.arrays and f"gpu_{h}" in sd.arrays}
+        if not local_duals:
+            continue
+
+        # Pass 1: analysis. Walk CFRs recursively with a shared dirty dict
+        # and collect (cfr, edge, refs) tuples that need refresh. No mutation.
+        dirty = {nm: False for nm in local_duals}
+        to_splice = []  # list of (cfr, edge, refs)
+
+        def _scan(cfr):
+            # ConditionalBlock doesn't have a single start_block / dominator
+            # tree — its structure is (cond_i, branch_cfr_i) pairs. Iterate
+            # branches directly; the pass only needs to visit inner writers
+            # and inner out_edges, not dominator order at this level.
+            if isinstance(cfr, ConditionalBlock):
+                for _cond, branch in cfr.branches:
+                    _scan(branch)
+                return
+            topo = list(cfg_analysis.blockorder_topological_sort(
+                cfr, recursive=False, ignore_nonstate_blocks=False))
+            for blk in topo:
+                if isinstance(blk, SDFGState):
+                    for nm in _state_writes_gpu_dual(blk, local_duals):
+                        dirty[nm] = True
+                else:
+                    # Nested CFR. Pre-set dirty for arrays any descendant
+                    # writes, so loop back-edges re-contaminate on iteration.
+                    for nm in _block_writes(blk, local_duals):
+                        dirty[nm] = True
+                    _scan(blk)
+                for e in cfr.out_edges(blk):
+                    refs = _interstate_refs(e, local_duals)
+                    needed = {nm for nm in refs if dirty.get(nm, False)}
+                    if needed:
+                        to_splice.append((cfr, e, needed))
+                        for nm in needed:
+                            dirty[nm] = False
+
+        _scan(sd)
+
+        # Pass 2: mutation. Splice the collected edges.
+        for cfr, e, refs in to_splice:
+            _splice(cfr, e, refs, sd, n_added)
+            n_added += 1
+
+    if verbose or n_added:
+        print(f"  D2H interstate refresh: {n_added} states inserted")
+    return n_added
+
+
+# ---------------------------------------------------------------------------
 # Step 7: Set GPU storage for transient arrays
 # ---------------------------------------------------------------------------
 
@@ -664,6 +942,12 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False, out_dir: str = "build/sd
             _dual_names.add(_nm)
     _wrap_loose_host_tasklets_on_gpu(sdfg, _dual_names, verbose)
     checkpoint(sdfg, "after_gpu_wrap_loose", out_dir)
+
+    _add_h2d_after_host_writes(sdfg, verbose)
+    checkpoint(sdfg, "after_gpu_h2d_refresh", out_dir)
+
+    _add_d2h_before_interstate_reads(sdfg, verbose)
+    checkpoint(sdfg, "after_gpu_interstate_refresh", out_dir)
 
     _add_d2h_state(sdfg, written)
     checkpoint(sdfg, "after_gpu_d2h", out_dir)
