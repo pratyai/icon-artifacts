@@ -124,6 +124,72 @@ def _find_gpu_accessed_arrays(sdfg: dace.SDFG) -> Set[str]:
     return gpu_accessed
 
 
+def _find_init_only_transients(sdfg: dace.SDFG, dual_access: Set[str]) -> Set[str]:
+    """Return the subset of `dual_access` whose host-side writes are ALL
+    topologically before any reads. Such arrays are 'init-only': a single
+    H2D after the last init writer is sufficient, no GPU computation of the
+    value is needed and no D2H ever needs to fire.
+
+    Detection at the top-level SDFG only, with reads/writes counted block-by-
+    block (recursing into CFRs to find writes/reads anywhere inside). An
+    array is init-only iff `last_writer_idx < first_reader_idx`.
+    """
+    from dace.sdfg.state import (
+        SDFGState, LoopRegion, ConditionalBlock,
+        ControlFlowRegion, AbstractControlFlowRegion,
+    )
+    from dace.sdfg.analysis import cfg as cfg_analysis
+
+    if not dual_access:
+        return set()
+
+    topo = list(cfg_analysis.blockorder_topological_sort(
+        sdfg, recursive=False, ignore_nonstate_blocks=False))
+
+    def _block_w_r(blk, names):
+        """Return (writes, reads) for `names` across all states reachable
+        inside blk (block itself if it's a state, else recursively)."""
+        w, r = set(), set()
+        if isinstance(blk, SDFGState):
+            states = [blk]
+        elif isinstance(blk, (AbstractControlFlowRegion, ControlFlowRegion,
+                              LoopRegion, ConditionalBlock)):
+            states = list(blk.all_states())
+        else:
+            return w, r
+        for st in states:
+            for nd in st.nodes():
+                if isinstance(nd, nodes.AccessNode) and nd.data in names:
+                    if st.in_degree(nd) > 0:
+                        w.add(nd.data)
+                    if st.out_degree(nd) > 0:
+                        r.add(nd.data)
+                if isinstance(nd, nodes.NestedSDFG):
+                    for c in nd.in_connectors:
+                        if c in names:
+                            r.add(c)
+                    for c in nd.out_connectors:
+                        if c in names:
+                            w.add(c)
+        return w, r
+
+    last_write = {nm: -1 for nm in dual_access}
+    first_read = {nm: len(topo) for nm in dual_access}
+    for i, blk in enumerate(topo):
+        w, r = _block_w_r(blk, dual_access)
+        for nm in w:
+            if i > last_write[nm]:
+                last_write[nm] = i
+        for nm in r:
+            if i < first_read[nm]:
+                first_read[nm] = i
+
+    init_only = {nm for nm in dual_access
+                 if last_write[nm] >= 0 and last_write[nm] < first_read[nm]
+                 and sdfg.arrays[nm].transient}
+    return init_only
+
+
 def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
     """Partition SDFG data into categories for GPU offloading."""
 
@@ -145,6 +211,12 @@ def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
     host_accessed = _find_host_accessed_arrays(sdfg)
     gpu_accessed = _find_gpu_accessed_arrays(sdfg)
     dual_access = host_accessed & gpu_accessed
+
+    # Init-only transients: dual-access arrays whose host writes are all
+    # topologically before any reads. Treated specially: keep their writers
+    # on host, do not GPU-promote their writer maps, do not wrap their loose
+    # tasklets. A single H2D after the last writer suffices.
+    init_only = _find_init_only_transients(sdfg, dual_access)
 
     non_trans_arrays = []  # Needs gpu_ sibling and H2D/D2H
     trans_arrays = []      # Change storage directly to GPU_Global
@@ -184,9 +256,10 @@ def _classify_arrays(sdfg: dace.SDFG, verbose: bool):
         print(f"  Non-transient/Dual-access arrays: {len(non_trans_arrays)}")
         print(f"  Written (need D2H): {len(written_arrays)}")
         print(f"  GPU-only Transients: {len(trans_arrays)}")
+        print(f"  Init-only transients: {sorted(init_only)}")
         print(f"  Interstate-referenced: {interstate}")
 
-    return non_trans_arrays, written_arrays, trans_arrays, interstate
+    return non_trans_arrays, written_arrays, trans_arrays, interstate, init_only
 
 
 # ---------------------------------------------------------------------------
@@ -319,6 +392,11 @@ def _rename_in_gpu_maps(sdfg: dace.SDFG, gpu_arrays: Set[str], verbose: bool):
                 continue
             if scope[node] is not None:
                 continue  # not outermost
+            # Skip maps kept on CPU (e.g. init-only writers): renaming their
+            # boundary AccessNodes to gpu_<X> would silently route their
+            # writes to the GPU buffer.
+            if node.map.schedule != dtypes.ScheduleType.GPU_Device:
+                continue
             map_exit = state.exit_node(node)
             inner_nodes = set(state.all_nodes_between(node, map_exit))
             inner_nodes.add(node)
@@ -652,13 +730,30 @@ def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
 
 def _state_writes_gpu_dual(state, dual_names):
     """Return the subset of dual_names whose gpu_<name> sibling is written
-    (directly as an AccessNode-in-edge, or via an NSDFG out-connector) in
-    this state."""
+    on the GPU in this state (real GPU computation only — pure host->gpu
+    copy in-edges are excluded so an H2D state isn't counted as a GPU write).
+
+    A real GPU write is any AccessNode-in-edge or NSDFG out-connector for
+    gpu_<X>, EXCEPT when the AccessNode's only in-edges all come from an
+    AccessNode of the matching host name X (the H2D copy pattern: host X
+    -> gpu_X). The host-side data is already current in that case, so a
+    downstream interstate read of X needs no D2H.
+    """
     written = set()
     for nd in state.nodes():
         if isinstance(nd, nodes.AccessNode) and nd.data.startswith("gpu_"):
             host_nm = nd.data[len("gpu_"):]
-            if host_nm in dual_names and state.in_degree(nd) > 0:
+            if host_nm not in dual_names:
+                continue
+            in_edges = state.in_edges(nd)
+            if not in_edges:
+                continue
+            # Pure H2D pattern: every in-edge sources from AccessNode(host_nm).
+            is_pure_h2d = all(
+                isinstance(e.src, nodes.AccessNode) and e.src.data == host_nm
+                for e in in_edges
+            )
+            if not is_pure_h2d:
                 written.add(host_nm)
         if isinstance(nd, nodes.NestedSDFG):
             for conn in nd.out_connectors:
@@ -869,8 +964,23 @@ def _set_transient_storage(sdfg: dace.SDFG, trans_arrays: list[str], verbose: bo
             count += 1
 
     for state in sdfg.all_states():
+        scope = state.scope_dict()
         for node in state.nodes():
-            if isinstance(node, nodes.NestedSDFG):
+            if not isinstance(node, nodes.NestedSDFG):
+                continue
+            # Only promote inner descriptors if the NSDFG is inside a
+            # GPU-scheduled scope. CPU-scheduled scopes (e.g. the init-only
+            # writers we kept on CPU) need their inner NSDFG descriptors
+            # to stay host-storage to match the parent's connector storage.
+            parent = scope[node]
+            in_gpu_scope = False
+            while parent is not None:
+                if (isinstance(parent, nodes.MapEntry)
+                        and parent.map.schedule == dtypes.ScheduleType.GPU_Device):
+                    in_gpu_scope = True
+                    break
+                parent = scope[parent]
+            if in_gpu_scope:
                 count += _set_nsdfg_gpu_storage(node.sdfg)
 
     for name, desc in sdfg.arrays.items():
@@ -978,13 +1088,16 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False, out_dir: str = "build/sd
     print("GPU offloading...")
     checkpoint(sdfg, "gpu_entry", out_dir)
 
-    non_trans, written, trans, interstate = _classify_arrays(sdfg, verbose)
+    non_trans, written, trans, interstate, init_only = _classify_arrays(sdfg, verbose)
     checkpoint(sdfg, "after_gpu_classify", out_dir)
 
     _create_gpu_descriptors(sdfg, non_trans, verbose)
     checkpoint(sdfg, "after_gpu_descriptors", out_dir)
 
-    gpu_array_set = set(non_trans) | set(trans)
+    # Init-only transients are excluded from GPU-promotion drivers: their
+    # writer maps stay on CPU, their loose tasklets stay on CPU, and the
+    # H2D-after-write pass emits a single H2D for them.
+    gpu_array_set = (set(non_trans) | set(trans)) - init_only
     _set_gpu_schedules(sdfg, gpu_array_set, verbose)
     checkpoint(sdfg, "after_gpu_schedules", out_dir)
 
@@ -1005,6 +1118,9 @@ def gpu_offload(sdfg: dace.SDFG, verbose: bool = False, out_dir: str = "build/sd
                 _dual_names.add(_host)
         elif _role.is_dual and f"gpu_{_nm}" in sdfg.arrays:
             _dual_names.add(_nm)
+    # Don't wrap loose tasklets that write init-only arrays — keep their
+    # writes on host so a single H2D suffices and no D2H is needed.
+    _dual_names -= init_only
     _wrap_loose_host_tasklets_on_gpu(sdfg, _dual_names, verbose)
     checkpoint(sdfg, "after_gpu_wrap_loose", out_dir)
 
