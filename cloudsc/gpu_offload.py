@@ -516,11 +516,18 @@ def _wrap_loose_host_tasklets_on_gpu(sdfg: dace.SDFG, dual_names: set, verbose: 
 
 def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
     """For each dual-access array X (has both X and gpu_X descriptors),
-    if a host-side write to X has occurred since the last H2D, and we're
-    about to enter a state where gpu_X is READ, splice an H2D state
-    (X -> gpu_X) before the read state.
+    insert an H2D state (X -> gpu_X) right after the LATEST host write to
+    X — but only if a downstream GPU read of gpu_X actually occurs.
 
-    Two-pass: analysis collects (cfr, edge, refs); mutation splices.
+    Earliest-correct placement:
+      * Multiple host writes before the first GPU read collapse to ONE H2D,
+        anchored at the last write.
+      * A host write inside a nested CFR with the next read OUTSIDE it
+        anchors at the CFR boundary, so the H2D fires once after the loop
+        rather than per iteration.
+      * Write -> read -> write -> read yields two refreshes (one each).
+
+    Two-pass: analysis records (anchor_block, refs); mutation splices.
     """
     from dace.sdfg.state import (
         SDFGState, LoopRegion, ConditionalBlock,
@@ -555,11 +562,6 @@ def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
                 reads |= _state_reads_gpu_dual(sub, duals)
         return reads
 
-    def _splice_before(parent, blk, refs, sd, counter):
-        """Splice an H2D state on every incoming edge of `blk`."""
-        parent.add_state_before(blk, f"h2d_refresh_{blk.label[:24]}_{counter}",
-                                is_start_block=False)
-
     n_added = 0
 
     for sd in sdfg.all_sdfgs_recursive():
@@ -568,10 +570,28 @@ def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
         if not local_duals:
             continue
 
-        # dirty[X] = True means host X has newer data than gpu_X.
-        dirty = {nm: False for nm in local_duals}
-        # Collect (cfr, block, refs) to insert an H2D before that block.
-        to_splice = []
+        # pending_pos[X] = block immediately after which an H2D should fire
+        # to refresh gpu_X.  None when X is currently in sync.  Overwriting
+        # collapses redundant H2Ds — only the latest pending anchor survives.
+        pending_pos = {nm: None for nm in local_duals}
+        # Collected (anchor_block, set_of_array_names) tuples; the splice
+        # inserts a new state after `anchor_block` in `anchor_block.parent_graph`.
+        to_splice_after = []
+
+        def _flush(refs):
+            """For each name in refs that has a pending anchor, schedule a
+            splice after that anchor and clear the pending entry. Multiple
+            arrays sharing the same anchor are batched into one new state."""
+            by_anchor = {}  # id(anchor) -> (anchor, set)
+            for nm in refs:
+                anchor = pending_pos.get(nm)
+                if anchor is None:
+                    continue
+                slot = by_anchor.setdefault(id(anchor), (anchor, set()))
+                slot[1].add(nm)
+                pending_pos[nm] = None
+            for _, (anchor, names) in by_anchor.items():
+                to_splice_after.append((anchor, names))
 
         def _scan(cfr):
             if isinstance(cfr, ConditionalBlock):
@@ -582,44 +602,39 @@ def _add_h2d_after_host_writes(sdfg: dace.SDFG, verbose: bool) -> int:
                 cfr, recursive=False, ignore_nonstate_blocks=False))
             for blk in topo:
                 if isinstance(blk, SDFGState):
-                    # Reads trigger refresh only for states (before them).
+                    # Flush any pending H2Ds for arrays this state reads on GPU.
                     reads = _state_reads_gpu_dual(blk, local_duals)
-                    needed = {nm for nm in reads if dirty.get(nm, False)}
-                    if needed:
-                        to_splice.append((cfr, blk, needed))
-                        for nm in needed:
-                            dirty[nm] = False
-                    # Apply host writes in this state.
+                    if reads:
+                        _flush(reads)
+                    # Then record host writes at this state as the new anchor.
                     for nm in _state_writes_host_dual(blk, local_duals):
-                        dirty[nm] = True
+                        pending_pos[nm] = blk
                 else:
-                    # Nested CFR — HOIST the refresh to before the CFR if its
-                    # reads need any dirty array. Do NOT pre-set dirty from
-                    # CFR's internal writes; instead, recurse with the current
-                    # dirty state, and propagate internal writes AFTER.
+                    # Nested CFR. If any read inside refers to a pending
+                    # array, flush BEFORE recursing — so the H2D anchors at
+                    # the most recent outer write, not at a per-iteration
+                    # position inside the CFR.
                     inner_reads = _block_gpu_reads(blk, local_duals)
-                    needed = {nm for nm in inner_reads if dirty.get(nm, False)}
-                    if needed:
-                        to_splice.append((cfr, blk, needed))
-                        for nm in needed:
-                            dirty[nm] = False
+                    if inner_reads:
+                        _flush(inner_reads)
                     _scan(blk)
-                    # After the CFR, any host write anywhere inside it makes
-                    # host newer than gpu for siblings of this block.
+                    # After the CFR, collapse any internal writes to a
+                    # single anchor at the CFR boundary itself, so the
+                    # H2D fires once after the loop instead of per-iteration.
                     for nm in _block_host_writes(blk, local_duals):
-                        dirty[nm] = True
+                        pending_pos[nm] = blk
 
         _scan(sd)
 
-        for cfr, blk, refs in to_splice:
-            # Insert an H2D state BEFORE blk in cfr.
-            desc_map = {nm: sd.arrays[nm] for nm in refs}
-            new_state = cfr.add_state_before(
-                blk, f"h2d_refresh_{blk.label[:24]}_{n_added}",
-                is_start_block=False,
+        # Mutation: insert refresh state AFTER each anchor block.
+        for anchor, refs in to_splice_after:
+            parent = anchor.parent_graph
+            new_state = parent.add_state_after(
+                anchor, f"h2d_after_{anchor.label[:24]}_{n_added}",
             )
-            for host_nm, desc in desc_map.items():
+            for host_nm in refs:
                 gpu_nm = f"gpu_{host_nm}"
+                desc = sd.arrays[host_nm]
                 src_an = new_state.add_access(host_nm)
                 dst_an = new_state.add_access(gpu_nm)
                 new_state.add_edge(src_an, None, dst_an, None,
