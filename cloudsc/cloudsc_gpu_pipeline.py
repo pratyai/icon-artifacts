@@ -230,17 +230,15 @@ def main():
     sdfg.build_folder = str(codegen_dir / sdfg.name)
     print(f"SDFG build folder set to: {sdfg.build_folder}")
 
-    # 0b. Zero-init transients that are read before any write. Must run
-    #     BEFORE gpu_offload so the newly-inserted init state and its maps
-    #     get the same GPU schedule/device-memory treatment as everything
-    #     else; otherwise we'd be zeroing host memory while kernels read
-    #     device memory.
-    from ssa.zero_init_transients import zero_init_uninitialized_transients
-    nz = zero_init_uninitialized_transients(sdfg)
-    if nz:
-        print(f"Zero-initialized {nz} uninitialized transients")
+    # zero_init_transients used to run here as a workaround for a CUDA
+    # codegen bug ("Variable not defined" for transients whose first access
+    # is a read). Root-caused and fixed in
+    # dace-cloudsc/dace/codegen/targets/cuda.py:declare_array — it now
+    # registers the variable in defined_vars at the declaration scope, so
+    # downstream kernel lookups can find it. The synthetic-zero-write
+    # workaround is no longer needed.
     from gpu_offload import checkpoint as _ckpt
-    _ckpt(sdfg, "after_zero_init", "build/sdfgz")
+    _ckpt(sdfg, "before_gpu_offload", "build/sdfgz")
 
     # 1. GPU Offloading (Your custom logic)
     print("Applying GPU offloading...")
