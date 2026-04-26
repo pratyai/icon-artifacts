@@ -177,23 +177,32 @@ def inject_host_timer_around_compute(file_path: Path):
         end_of_last += 1
     end_of_last += 1  # insertion happens AFTER this line
 
+    # Variables must live at function scope: the first kernel call may land
+    # inside a nested { } block (a ConditionalBlock branch) and start would
+    # otherwise be unreachable from the stop site.
+    decl_block = (
+        "    std::chrono::high_resolution_clock::time_point cloudsc_compute_t_start;\n"
+        "    std::chrono::high_resolution_clock::time_point cloudsc_compute_t_stop;\n"
+    )
     start_block = (
         "    cudaStreamSynchronize(__state->gpu_context->streams[0]);\n"
-        "    auto cloudsc_compute_t_start = std::chrono::high_resolution_clock::now();\n"
+        "    cloudsc_compute_t_start = std::chrono::high_resolution_clock::now();\n"
     )
     stop_block = (
         "    cudaStreamSynchronize(__state->gpu_context->streams[0]);\n"
+        "    cloudsc_compute_t_stop = std::chrono::high_resolution_clock::now();\n"
         "    {\n"
-        "        auto cloudsc_compute_t_stop = std::chrono::high_resolution_clock::now();\n"
         "        double cloudsc_compute_us = std::chrono::duration<double, std::micro>(\n"
         "            cloudsc_compute_t_stop - cloudsc_compute_t_start).count();\n"
         "        std::cerr << \"[cloudsc] H2D->D2H wall time: \" << cloudsc_compute_us << \" us\\n\";\n"
         "    }\n"
     )
 
-    # Insert in reverse order so the first index isn't shifted by the second.
+    # Insert in reverse order so earlier indices aren't shifted by later
+    # insertions.
     lines.insert(end_of_last, stop_block)
     lines.insert(first_kernel, start_block)
+    lines.insert(body_start, decl_block)
 
     out = "".join(lines)
     if "#include <chrono>" not in out:
