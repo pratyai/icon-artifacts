@@ -247,6 +247,16 @@ def main():
     from gpu_offload import gpu_offload
     gpu_offload(sdfg, verbose=args.verbose)
 
+    # 1b. Collapse constant-assignment and contiguous-copy GPU kernels into
+    #     cudaMemset / cudaMemcpy library nodes. Turns the zero-init maps
+    #     from zero_init_transients and the size-1 constant-write wrappers
+    #     into native memory ops instead of per-element kernel launches.
+    print("Converting assignment/copy kernels to memset/memcpy...")
+    from dace.transformation.passes.assignment_and_copy_kernel_to_memset_and_memcpy \
+        import AssignmentAndCopyKernelToMemsetAndMemcpy
+    AssignmentAndCopyKernelToMemsetAndMemcpy().apply_pass(sdfg, {})
+    _ckpt(sdfg, "after_memset_memcpy", "build/sdfgz")
+
     # 2. Precision Lowering
     print(f"Applying precision lowering: {args.lowprec}")
     from lowprec import apply_lowprec
