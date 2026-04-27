@@ -245,6 +245,15 @@ def main():
     from gpu_offload import gpu_offload
     gpu_offload(sdfg, verbose=args.verbose)
 
+    # 1a. Loop fission by carried-dependency: split sequential loops whose
+    #     body has both loop-carried (prefix-sum-like) computation AND
+    #     level-local computation. Lifts the level-local part to a parallel
+    #     Map[jl, jk], leaving only the carried prefix-sum in the seq loop.
+    print("Applying loop fission by carried-deps...")
+    from ssa.loop_fission_carried import apply_all as _fission_apply
+    _fission_apply(sdfg)
+    _ckpt(sdfg, "after_loop_fission_carried", "build/sdfgz")
+
     # 1b. Collapse constant-assignment and contiguous-copy GPU kernels into
     #     cudaMemset / cudaMemcpy library nodes. Turns the zero-init maps
     #     from zero_init_transients and the size-1 constant-write wrappers
