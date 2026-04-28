@@ -209,7 +209,7 @@ inline CloudSCData load_inputs_tiled(hid_t file_id, int klon_native, int klev,
     tile_d(d.plsm, k1);
     tile_d(d.prainfrac_toprfz, k1);
 
-    tile_d(d.pa, k2);         tile_d(d.pap, k2);        tile_d(d.paph, k2);
+    tile_d(d.pa, k2);         tile_d(d.pap, k2);        tile_d(d.paph, k2p);
     tile_d(d.pccn, k2);       tile_d(d.pcovptot, k2);
     tile_d(d.pdyna, k2);      tile_d(d.pdyni, k2);      tile_d(d.pdynl, k2);
     tile_d(d.phrlw, k2);      tile_d(d.phrsw, k2);
@@ -270,7 +270,7 @@ inline CloudSCData load_inputs_resized(hid_t file_id, int klon, int klev, int nc
     rep_i_1d(d.ktype); rep_i_1d(d.ldcum);
     rep_d_1d(d.plsm); rep_d_1d(d.prainfrac_toprfz);
 
-    rep_d_k(d.pa);         rep_d_k(d.pap);        rep_d_k(d.paph);
+    rep_d_k(d.pa);         rep_d_k(d.pap);        rep_d_kp(d.paph);
     rep_d_k(d.pccn);       rep_d_k(d.pcovptot);
     rep_d_k(d.pdyna);      rep_d_k(d.pdyni);      rep_d_k(d.pdynl);
     rep_d_k(d.phrlw);      rep_d_k(d.phrsw);
@@ -305,7 +305,7 @@ inline void save_outputs(hid_t out_id, const CloudSCData& d, int klon, int klev,
     save_h5_array_int(out_id, "LDCUM", d.ldcum, klon, klon);
     save_h5_array_double(out_id, "PA", d.pa, (size_t)klon * klev, klev, klon, nclv);
     save_h5_array_double(out_id, "PAP", d.pap, (size_t)klon * klev, klev, klon, nclv);
-    save_h5_array_double(out_id, "PAPH", d.paph, (size_t)klon * klev, klev, klon, nclv);
+    save_h5_array_double(out_id, "PAPH", d.paph, (size_t)klon * (klev + 1), klev, klon, nclv);
     save_h5_array_double(out_id, "PCCN", d.pccn, (size_t)klon * klev, klev, klon, nclv);
     save_h5_array_double(out_id, "PCLV", d.pclv, (size_t)klon * klev, klev, klon, nclv);
     save_h5_array_double(out_id, "PCOVPTOT", d.pcovptot, (size_t)klon * klev, klev, klon, nclv);
