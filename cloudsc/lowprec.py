@@ -821,13 +821,14 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
     # sdfg.remove_node(rb)
     # print(f"  Removed ReturnBlock: {rb.label}")
 
-    # Exclusion list: arrays/scalars that must stay fp64.
-    # Everything NOT in this set gets lowered.
+    # In fp16 mode, these entries are lowered to fp32 instead of fp16 (they
+    # need at least fp32 precision per sensitivity testing).  In other
+    # modes (fp32, fp64) they take the target dtype like everything else.
     # TODO: scan SDFG for scalars used in ConditionalBlock branch conditions —
     #   these can cause large errors even when per-variable sensitivity is high,
     #   because correlated fp32 rounding on BOTH sides of a comparison flips
     #   branches that one-at-a-time perturbation can't detect (e.g. yrecldp_ramin).
-    _LOWERING_EXCLUDE = {
+    _FP16_LOWER_TO_FP32 = {
         # === CRITICAL LOCAL (SNR < 20 dB) ===
         "za",  # -65.3 dB
         "zlcust",  # -26.3 dB
@@ -1261,9 +1262,75 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
                 and arr.transient):
                 all_nested_scalars.append((nsdfg, name, arr))
 
+    def is_fp32_in_fp16_mode(name):
+        return (name in _FP16_LOWER_TO_FP32
+                or any(name.startswith(ex + "_") for ex in _FP16_LOWER_TO_FP32))
+
     def is_excluded(name):
-        return (name in _LOWERING_EXCLUDE
-                or any(name.startswith(ex + "_") for ex in _LOWERING_EXCLUDE))
+        # In fp16 mode the FORCE_FP32 entries are handled by a separate
+        # pre-pass with target=fp32, so the main fp16 pass skips them.
+        # In fp32 mode they're lowered to fp32 along with everything else
+        # (no exclusion).
+        if external_dtype == dace.float16:
+            return is_fp32_in_fp16_mode(name)
+        return False
+
+    # --- Pre-pass for fp16 mode: lower FORCE_FP32 entries to fp32 first ---
+    # In fp16 mode the FORCE_FP32 entries need at least fp32 precision per
+    # sensitivity testing.  Run boundary cast / direct lowering for them
+    # with target=fp32, then the main fp16 pass excludes them.
+    if external_dtype == dace.float16:
+        fp32fp16_bc_targets = [n for n in all_non_transient
+                         if is_fp32_in_fp16_mode(n) and f"gpu_{n}" not in sdfg.arrays]
+        fp32fp16_ps_targets = [n for n in all_param_scalars
+                         if is_fp32_in_fp16_mode(n) and f"gpu_{n}" not in sdfg.arrays]
+        if fp32fp16_bc_targets or fp32fp16_ps_targets:
+            print(f"FP16 pre-pass: CPU boundary cast → fp32 for "
+                  f"{len(fp32fp16_bc_targets)} arrays, {len(fp32fp16_ps_targets)} scalars")
+            inject_cpu_boundary_cast(sdfg, fp32fp16_bc_targets, dace.float32,
+                                     scalar_names=fp32fp16_ps_targets)
+
+        fp32fp16_gpu_bc_targets = [n for n in all_non_transient
+                             if is_fp32_in_fp16_mode(n) and f"gpu_{n}" in sdfg.arrays]
+        if fp32fp16_gpu_bc_targets:
+            print(f"FP16 pre-pass: GPU boundary cast → fp32 for "
+                  f"{len(fp32fp16_gpu_bc_targets)} arrays")
+            inject_gpu_boundary_cast(sdfg, fp32fp16_gpu_bc_targets, dace.float32)
+
+        fp32fp16_gpu_bc_set = set(f"gpu_{n}" for n in fp32fp16_gpu_bc_targets)
+        fp32fp16_ta_targets = [n for n in all_transient_arrays
+                         if is_fp32_in_fp16_mode(n) and n not in fp32fp16_gpu_bc_set]
+        if fp32fp16_ta_targets:
+            print(f"FP16 pre-pass: lowering {len(fp32fp16_ta_targets)} "
+                  f"transient arrays → fp32")
+            for name in fp32fp16_ta_targets:
+                _propagate_dtype(sdfg, name, dace.float32)
+
+        # Top-level transient scalars derived from FORCE_FP32 names → fp32.
+        fp32fp16_lowered = set(fp32fp16_bc_targets) | set(fp32fp16_ta_targets) | set(fp32fp16_gpu_bc_targets)
+
+        def is_derived_from_fp32fp16(name):
+            for arr_name in fp32fp16_lowered:
+                if name == arr_name or name.startswith(arr_name + "_"):
+                    return True
+            return False
+
+        fp32fp16_ts_count = 0
+        for name in all_top_scalars:
+            if is_derived_from_fp32fp16(name):
+                sdfg.arrays[name].dtype = dace.float32
+                fp32fp16_ts_count += 1
+        if fp32fp16_ts_count:
+            print(f"FP16 pre-pass: lowered {fp32fp16_ts_count} top-level transient scalars → fp32")
+
+        # Nested transient scalars derived from FORCE_FP32 → fp32.
+        fp32fp16_ns_count = 0
+        for nsdfg, name, arr in all_nested_scalars:
+            if is_derived_from_fp32fp16(name) and arr.dtype == dace.float64:
+                arr.dtype = dace.float32
+                fp32fp16_ns_count += 1
+        if fp32fp16_ns_count:
+            print(f"FP16 pre-pass: lowered {fp32fp16_ns_count} nested transient scalars → fp32")
 
     # --- Apply: lower everything not excluded ---
 
@@ -1286,7 +1353,8 @@ def apply_lowprec(sdfg: dace.SDFG, lowprec: str):
     #  - gpu_ arrays handled by inject_gpu_boundary_cast (dtype already set)
     #  - gpu_ arrays whose host counterpart is excluded (must stay fp64 for raw memcpy)
     _gpu_bc_set = set(f"gpu_{n}" for n in gpu_bc_targets) if gpu_bc_targets else set()
-    _gpu_excluded = set(f"gpu_{n}" for n in _LOWERING_EXCLUDE if f"gpu_{n}" in sdfg.arrays)
+    _gpu_excluded = set(f"gpu_{n}" for n in _FP16_LOWER_TO_FP32
+                        if external_dtype == dace.float16 and f"gpu_{n}" in sdfg.arrays)
     ta_targets = [n for n in all_transient_arrays
                   if not is_excluded(n) and n not in _gpu_bc_set and n not in _gpu_excluded]
     if ta_targets:
