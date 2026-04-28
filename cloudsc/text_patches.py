@@ -185,11 +185,11 @@ def inject_host_timer_around_compute(file_path: Path):
         "    std::chrono::high_resolution_clock::time_point cloudsc_compute_t_stop;\n"
     )
     start_block = (
-        "    cudaStreamSynchronize(__state->gpu_context->streams[0]);\n"
+        "    cudaDeviceSynchronize();\n"
         "    cloudsc_compute_t_start = std::chrono::high_resolution_clock::now();\n"
     )
     stop_block = (
-        "    cudaStreamSynchronize(__state->gpu_context->streams[0]);\n"
+        "    cudaDeviceSynchronize();\n"
         "    cloudsc_compute_t_stop = std::chrono::high_resolution_clock::now();\n"
         "    {\n"
         "        double cloudsc_compute_us = std::chrono::duration<double, std::micro>(\n"
