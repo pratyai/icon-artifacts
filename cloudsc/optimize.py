@@ -225,8 +225,24 @@ if __name__ == "__main__":
         unroll_loops(sdfg)
         checkpoint(sdfg, "after_unroll", out_dir)
 
+    # 9a. Fold literal-int comparisons + constant arithmetic in conditions
+    #     and interstate-edge assignments left over after unroll +
+    #     propagate_constants (e.g. (1 == 2) -> False, iphase[(2-1)] ->
+    #     iphase[1]).  Lets the next simplify() drop dead branches.
+    if "cond_simplify" not in skip_steps:
+        from ssa.simplify_conditions import simplify_conditions
+        simplify_conditions(sdfg, verbose=False)
+        checkpoint(sdfg, "after_cond_simplify", out_dir)
+
     # 9b. Simplify after unroll (state fusion, dead code, etc.)
     if "simplify1" not in skip_steps:
+        sdfg.simplify()
+        # simplify() inlines NSDFGs whose conditions have been specialised
+        # against the unrolled/propagated symbol values, surfacing fresh
+        # literal-int patterns like (1 == 2) that didn't exist before.
+        # Refold + simplify again to drop the resulting dead branches.
+        from ssa.simplify_conditions import simplify_conditions
+        simplify_conditions(sdfg, verbose=False)
         sdfg.simplify()
         checkpoint(sdfg, "after_simplify1", out_dir)
 
