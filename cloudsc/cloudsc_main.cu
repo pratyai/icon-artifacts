@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
     for(int i=1; i<argc; ++i) {
         std::string a = argv[i];
         if(a == "--save") save_output = true;
+        else if(a == "--no-save") save_output = false;
         else if(a.rfind("--reps=", 0) == 0) num_reps = std::stoi(a.substr(7));
         else if(a == "--reps" && i+1 < argc) num_reps = std::stoi(argv[++i]);
         else if(a.rfind("--klon=", 0) == 0) klon_override = std::stoi(a.substr(7));

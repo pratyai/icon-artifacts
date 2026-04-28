@@ -517,10 +517,14 @@ def _build_and_install_lifted_phase(cand, outer_state, outer_sdfg,
     jl_range_str = str(outer_map_entry.map.range)  # falls back; better to use range tuple
     jl_lo, jl_hi, _ = outer_map_entry.map.range[0]
     jk_var = cand.loop.loop_variable
+    # Iterator order matters for GPU codegen: DaCe maps the LAST iter to
+    # block.x (with default block size 256), and earlier iters to grid.y/z
+    # (capped at 65535).  Put jk (small, ~klev=138) first so klon lands on
+    # the threaded axis where it can scale past 65535.
     me, mx = lifted_state.add_map(
         name=f"lifted_{cand.loop.label}",
-        ndrange={jl_var: f"{jl_lo}:{jl_hi + 1}",
-                 jk_var: f"{start}:{end}"},
+        ndrange={jk_var: f"{start}:{end}",
+                 jl_var: f"{jl_lo}:{jl_hi + 1}"},
         schedule=dtypes.ScheduleType.GPU_Device,
     )
     me.map.schedule = dtypes.ScheduleType.GPU_Device
