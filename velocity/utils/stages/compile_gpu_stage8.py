@@ -719,8 +719,7 @@ def optimization_action(sdfg):
 
     # Apply transformations
     inverse_strides(sdfg, "gpu_levmask")
-    if not (options["lowprec"].startswith("bfp") and bfp_targets):
-        sdfg.validate()  # skip when BFP — nested SDFG descriptors mismatch
+    sdfg.validate()
 
     if options["reduce_bitwidth"]:
         sdfg = downcast_to_minimal_bitwidth(sdfg)
@@ -766,8 +765,7 @@ def optimization_action(sdfg):
     # Sync first
     insert_synchronization_for_profiling(sdfg)
     insert_timers_for_profiling(sdfg)
-    if not (options["lowprec"].startswith("bfp") and bfp_targets):
-        sdfg.validate()  # skip when BFP — nested SDFG descriptors mismatch
+    sdfg.validate()
 
     if options["profile"]:
         create_profile_sdfg(sdfg)
