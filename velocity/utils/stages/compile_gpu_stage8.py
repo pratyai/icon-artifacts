@@ -46,7 +46,11 @@ from utils.assignment_and_copy_kernel_to_memset_and_memcpy import (
 )
 from utils.create_profile_sdfg import create_profile_sdfg
 from utils.boundary_cast import inject_boundary_cast, inject_gpu_boundary_cast, _propagate_dtype
-from utils.bfp_compression import inject_bfp_packing
+from utils.bfp_compression import (
+    inject_bfp_packing,
+    inject_gpu_bfp_encode,
+    discover_gpu_bfp_transient_candidates,
+)
 
 STAGE_ID = 8
 WORKLOG_FILE = "stage8_lowering.log"
@@ -716,6 +720,38 @@ def optimization_action(sdfg):
         # Store for text-level patching in compile_if_propagated_sdfgs.py
         global BFP_PACKED
         BFP_PACKED = list(bfp_targets)
+
+        # GPU-side BFP encode for transients: auto-discover fp64 GPU transients
+        # with covering full-array writes and no RMW. Inherits the same
+        # exclusion set used for fp16 lowering (the w_concorr chain that
+        # underflows fp16, plus borderline / ruled-out sensitivity arrays)
+        # plus output struct prefixes plus arrays the CPU BFP path already
+        # owns.
+        _bfp_already = set(bfp_targets) | {f"gpu_{n}" for n in bfp_targets}
+        _bare_locked = (
+            set(SENSITIVITY_RULED_OUT) | set(SENSITIVITY_BORDERLINE)
+        )
+        _gpu_locked = {f"gpu_{n}" for n in _bare_locked} | _bare_locked
+        _excluded_for_bfp = (
+            set(_FP32_OVERRIDE) | set(_INTEGRATION_EXCLUDE)
+            | _bfp_already | _gpu_locked
+        )
+        _excluded_prefixes = ("gpu___CG_p_diag__", "gpu___CG_p_prog__")
+        transient_targets = discover_gpu_bfp_transient_candidates(
+            sdfg,
+            excluded_names=_excluded_for_bfp,
+            excluded_prefixes=_excluded_prefixes,
+        )
+        if transient_targets:
+            print(f"GPU-BFP transients ({len(transient_targets)}): {transient_targets}")
+            inject_gpu_bfp_encode(sdfg, transient_targets, mantissa_bits=bfp_mantissa_bits)
+            for name in transient_targets:
+                pname = f"{name}_bfp"
+                if pname in sdfg.arrays:
+                    sdfg.arrays[pname].debuginfo = dace.dtypes.DebugInfo(
+                        start_line=0, end_line=0, filename="BFP_PACKED"
+                    )
+            BFP_PACKED.extend(transient_targets)
 
     # Apply transformations
     inverse_strides(sdfg, "gpu_levmask")
