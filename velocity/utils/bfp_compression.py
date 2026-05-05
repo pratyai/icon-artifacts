@@ -478,3 +478,577 @@ def _replace_h2d_with_bfp_pack(
     )
 
     print(f"    Added BFP pack Map ({num_blocks} blocks) + H2D edge")
+
+
+# ---------------------------------------------------------------------------
+# GPU-side BFP encode for transients with covering full-array writes.
+# Phase 1: per-thread one-block encode (simple; warp-cooperative is a Phase 2
+# optimization). Bit-format identical to CPU pack — existing decode shims
+# work unchanged.
+# ---------------------------------------------------------------------------
+
+
+def _find_covering_write_states(sdfg: dace.SDFG, gpu_name: str):
+    """Return list of (containing_sdfg, state, access_node) tuples for every
+    AccessNode that has a full-array covering in-edge for gpu_name.
+
+    Restricted to the top-level SDFG for Phase 1 — nested-SDFG producers
+    require descriptor pass-through plumbing not handled here.
+    """
+    if gpu_name not in sdfg.arrays:
+        return []
+    arr = sdfg.arrays[gpu_name]
+    full_subset = ", ".join(f"0:{s}" for s in arr.shape)
+    out = []
+    for state in sdfg.states():
+        for node in state.nodes():
+            if not isinstance(node, nodes.AccessNode) or node.data != gpu_name:
+                continue
+            in_e = state.in_edges(node)
+            if not in_e:
+                continue
+            for e in in_e:
+                if e.data is None or e.data.subset is None:
+                    continue
+                if str(e.data.subset) == full_subset:
+                    out.append((sdfg, state, node))
+                    break
+    return out
+
+
+def _add_gpu_bfp_encode_state(
+    sdfg: dace.SDFG,
+    after_state,
+    gpu_name: str,
+    packed_name: str,
+    orig_dtype,
+    total_elems,
+    packed_size,
+    num_blocks,
+    block_bytes,
+    mantissa_bits: int,
+):
+    """Insert a new state right after `after_state` containing a GPU encode
+    Map: reads `gpu_name` (full-array), writes `packed_name` (one block per
+    Map iteration). Bit-format identical to the CPU pack tasklet."""
+    # Pick a unique label.
+    base = f"bfp_encode_{gpu_name}"
+    existing = {s.label for s in sdfg.states()}
+    label = base
+    suffix = 0
+    while label in existing:
+        suffix += 1
+        label = f"{base}_{suffix}"
+    encode_state = sdfg.add_state_after(after_state, label=label)
+
+    src_an = encode_state.add_access(gpu_name)
+    dst_an = encode_state.add_access(packed_name)
+
+    n_blocks_str = symbolic.symstr(num_blocks)
+    map_entry, map_exit = encode_state.add_map(
+        f"bfp_encode_map_{gpu_name}",
+        {"__bfp_block": f"0:{n_blocks_str}"},
+        schedule=dtypes.ScheduleType.GPU_Device,
+    )
+
+    n_expr_c = symbolic.symstr(total_elems)
+    tasklet = encode_state.add_tasklet(
+        name=f"bfp_encode_tasklet_{gpu_name}",
+        inputs={"_src"},
+        outputs={"_dst"},
+        code=_bfp_pack_block_code(mantissa_bits).replace(
+            "__bfp_N", f"((int64_t)({n_expr_c}))"
+        ),
+        language=dtypes.Language.CPP,
+    )
+
+    src_in = f"IN_{gpu_name}"
+    src_out = f"OUT_{gpu_name}"
+    dst_in = f"IN_{packed_name}"
+    dst_out = f"OUT_{packed_name}"
+    map_entry.add_in_connector(src_in)
+    map_entry.add_out_connector(src_out)
+    map_exit.add_in_connector(dst_in)
+    map_exit.add_out_connector(dst_out)
+
+    encode_state.add_edge(
+        src_an, None, map_entry, src_in,
+        dace.Memlet.from_array(gpu_name, sdfg.arrays[gpu_name]),
+    )
+    encode_state.add_edge(
+        map_entry, src_out, tasklet, "_src",
+        dace.Memlet.from_array(gpu_name, sdfg.arrays[gpu_name]),
+    )
+    block_sym = symbolic.symbol("__bfp_block")
+    encode_state.add_edge(
+        tasklet, "_dst", map_exit, dst_in,
+        dace.Memlet(
+            data=packed_name,
+            subset=f"{block_sym * block_bytes}:{block_sym * block_bytes + block_bytes}",
+        ),
+    )
+    encode_state.add_edge(
+        map_exit, dst_out, dst_an, None,
+        dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name]),
+    )
+    return encode_state
+
+
+def _repoint_consumer_reads_to_packed(
+    sdfg: dace.SDFG,
+    gpu_name: str,
+    packed_name: str,
+    skip_states: set,
+    packed_size,
+    orig_strides,
+    orig_dtype,
+    mantissa_bits: int,
+):
+    """For every memlet in any state outside `skip_states` whose data is
+    `gpu_name`, repoint to `packed_name`:
+    - Scalar reads into Tasklets: replace with BFP decode shim.
+    - Range memlets: rewrite data field + flatten subset to 1D [0:packed_size].
+    Producer in-edges (writes to gpu_name) are left untouched.
+    """
+    flatten_count = 0
+    decode_count = 0
+    rename_count = 0
+    for state in sdfg.all_states():
+        if state in skip_states:
+            continue
+        # Step 1: rename consumer-side AccessNodes (no in-edges → pure read).
+        for node in list(state.nodes()):
+            if not isinstance(node, nodes.AccessNode) or node.data != gpu_name:
+                continue
+            if state.in_edges(node):
+                # Has writes → this is a producer or RMW; not handled here.
+                continue
+            node.data = packed_name
+            rename_count += 1
+        # Step 2: repoint memlets / install decode shims.
+        for edge in list(state.edges()):
+            if edge.data is None or edge.data.data != gpu_name:
+                continue
+            # Producer-side write (memlet flows INTO an AN named gpu_name).
+            if isinstance(edge.dst, nodes.AccessNode) and edge.dst.data == gpu_name:
+                continue
+            subset = edge.data.subset
+            if subset is None:
+                continue
+            is_scalar = len(subset) > 0 and all(r[0] == r[1] for r in subset)
+            if is_scalar and isinstance(edge.dst, nodes.Tasklet):
+                indices = [r[0] for r in subset]
+                flat_idx = sum(idx * stride for idx, stride in zip(indices, orig_strides))
+                _insert_bfp_decode_shim(
+                    state, edge, packed_name, packed_size, flat_idx,
+                    orig_dtype, mantissa_bits=mantissa_bits,
+                )
+                decode_count += 1
+            else:
+                edge.data.data = packed_name
+                edge.data.subset = subsets.Range([(0, packed_size - 1, 1)])
+                flatten_count += 1
+    if rename_count:
+        print(f"    Renamed {rename_count} consumer AccessNode(s) to {packed_name}")
+    if flatten_count:
+        print(f"    Repointed {flatten_count} range memlets to {packed_name}")
+    if decode_count:
+        print(f"    Inserted {decode_count} decode shims reading {packed_name}")
+
+
+def _add_gpu_bfp_encode_inplace(
+    sdfg: dace.SDFG,
+    state,
+    src_an,
+    gpu_name: str,
+    packed_name: str,
+    total_elems,
+    packed_size,
+    num_blocks,
+    block_bytes,
+    mantissa_bits: int,
+):
+    """Insert encode subgraph into the SAME state, reading from `src_an`
+    (an existing AccessNode for gpu_name) and writing to a new AccessNode
+    for `packed_name`. Returns the packed AccessNode.
+    """
+    dst_an = state.add_access(packed_name)
+    n_blocks_str = symbolic.symstr(num_blocks)
+    map_entry, map_exit = state.add_map(
+        f"bfp_encode_map_{gpu_name}",
+        {"__bfp_block": f"0:{n_blocks_str}"},
+        schedule=dtypes.ScheduleType.GPU_Device,
+    )
+    n_expr_c = symbolic.symstr(total_elems)
+    tasklet = state.add_tasklet(
+        name=f"bfp_encode_tasklet_{gpu_name}",
+        inputs={"_src"},
+        outputs={"_dst"},
+        code=_bfp_pack_block_code(mantissa_bits).replace(
+            "__bfp_N", f"((int64_t)({n_expr_c}))"
+        ),
+        language=dtypes.Language.CPP,
+    )
+    src_in = f"IN_{gpu_name}"
+    src_out = f"OUT_{gpu_name}"
+    dst_in = f"IN_{packed_name}"
+    dst_out = f"OUT_{packed_name}"
+    map_entry.add_in_connector(src_in)
+    map_entry.add_out_connector(src_out)
+    map_exit.add_in_connector(dst_in)
+    map_exit.add_out_connector(dst_out)
+    state.add_edge(
+        src_an, None, map_entry, src_in,
+        dace.Memlet.from_array(gpu_name, sdfg.arrays[gpu_name]),
+    )
+    state.add_edge(
+        map_entry, src_out, tasklet, "_src",
+        dace.Memlet.from_array(gpu_name, sdfg.arrays[gpu_name]),
+    )
+    block_sym = symbolic.symbol("__bfp_block")
+    state.add_edge(
+        tasklet, "_dst", map_exit, dst_in,
+        dace.Memlet(
+            data=packed_name,
+            subset=f"{block_sym * block_bytes}:{block_sym * block_bytes + block_bytes}",
+        ),
+    )
+    state.add_edge(
+        map_exit, dst_out, dst_an, None,
+        dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name]),
+    )
+    return dst_an
+
+
+def _retarget_sdfg_recursive(
+    sdfg: dace.SDFG,
+    gpu_name: str,
+    packed_name: str,
+    packed_size,
+    orig_strides,
+    orig_dtype,
+    mantissa_bits: int,
+):
+    """Apply gpu_name → packed_name rename + uint8 retype + memlet flatten +
+    decode shims throughout this SDFG and all nested SDFGs recursively.
+    Each NSDFG node carrying gpu_name as a connector also has its connector
+    renamed.
+    """
+    if gpu_name in sdfg.arrays:
+        sdfg.replace(gpu_name, packed_name)
+        desc = sdfg.arrays[packed_name]
+        desc.dtype = dace.uint8
+        desc.shape = (packed_size,)
+        desc.strides = (1,)
+        desc.offset = [0]
+        desc.total_size = packed_size
+        desc.debuginfo = dace.dtypes.DebugInfo(
+            start_line=0, end_line=0, filename="BFP_PACKED"
+        )
+        _update_memlets_and_insert_decode(
+            sdfg, packed_name, packed_size, orig_strides, orig_dtype,
+            mantissa_bits=mantissa_bits,
+        )
+
+    for state in sdfg.states():
+        for n in state.nodes():
+            if not isinstance(n, nodes.NestedSDFG):
+                continue
+            # If this NSDFG node has gpu_name as a connector, rename it.
+            if gpu_name in n.in_connectors:
+                n.remove_in_connector(gpu_name)
+                n.add_in_connector(packed_name)
+                # Also update edges that targeted dst_conn=gpu_name.
+                for edge in list(state.in_edges(n)):
+                    if edge.dst_conn == gpu_name:
+                        edge.dst_conn = packed_name
+            if gpu_name in n.out_connectors:
+                n.remove_out_connector(gpu_name)
+                n.add_out_connector(packed_name)
+                for edge in list(state.out_edges(n)):
+                    if edge.src_conn == gpu_name:
+                        edge.src_conn = packed_name
+            # Recurse into the inner SDFG.
+            if packed_name in n.sdfg.arrays or gpu_name in n.sdfg.arrays:
+                _retarget_sdfg_recursive(
+                    n.sdfg, gpu_name, packed_name, packed_size,
+                    orig_strides, orig_dtype, mantissa_bits,
+                )
+        # Also rename MapEntry/MapExit connectors (IN_X / OUT_X) where X is
+        # the array name. DaCe sometimes uses the array name as the connector
+        # suffix; the symbolic IN_7 cases don't need this.
+        for n in state.nodes():
+            if isinstance(n, (nodes.MapEntry, nodes.MapExit)):
+                in_old = f"IN_{gpu_name}"
+                out_old = f"OUT_{gpu_name}"
+                in_new = f"IN_{packed_name}"
+                out_new = f"OUT_{packed_name}"
+                if in_old in n.in_connectors:
+                    n.remove_in_connector(in_old)
+                    n.add_in_connector(in_new)
+                    for e in list(state.in_edges(n)):
+                        if e.dst_conn == in_old:
+                            e.dst_conn = in_new
+                if out_old in n.out_connectors:
+                    n.remove_out_connector(out_old)
+                    n.add_out_connector(out_new)
+                    for e in list(state.out_edges(n)):
+                        if e.src_conn == out_old:
+                            e.src_conn = out_new
+
+
+def _retarget_consumer_nsdfg(
+    parent_state, nsdfg_node, gpu_name: str, packed_name: str,
+    packed_size, orig_strides, orig_dtype, mantissa_bits: int,
+):
+    """For a NestedSDFG that consumes gpu_name (input connector only):
+    1. Inside the inner SDFG, replace gpu_name → packed_name everywhere.
+    2. Update the inner array descriptor: dtype=uint8, shape=(packed_size,).
+    3. Tag for text patcher (BFP_PACKED debuginfo).
+    4. Rename in_connector at the NSDFG node from gpu_name to packed_name.
+    5. Update the parent edge feeding this connector: change dst_conn.
+    The parent-side AN/MapEntry rewiring is left to the caller — they need
+    to know what the new source AN should be (the packed AN).
+    """
+    inner = nsdfg_node.sdfg
+    if gpu_name not in inner.arrays:
+        # Inner SDFG doesn't actually have this array — skip rename.
+        return False
+    if gpu_name not in nsdfg_node.in_connectors:
+        return False
+    if gpu_name in nsdfg_node.out_connectors:
+        # Producer too — out of scope for pure-consumer redirect.
+        return False
+
+    _retarget_sdfg_recursive(
+        inner, gpu_name, packed_name, packed_size, orig_strides, orig_dtype,
+        mantissa_bits,
+    )
+
+    # Rename connector on the NestedSDFG node.
+    nsdfg_node.remove_in_connector(gpu_name)
+    nsdfg_node.add_in_connector(packed_name)
+
+    # Update the parent edge that feeds this NSDFG's connector.
+    for edge in list(parent_state.in_edges(nsdfg_node)):
+        if edge.dst_conn == gpu_name:
+            edge.dst_conn = packed_name
+    return True
+
+
+def discover_gpu_bfp_transient_candidates(
+    sdfg: dace.SDFG,
+    excluded_names: Iterable[str] = (),
+    excluded_prefixes: Iterable[str] = (),
+) -> list[str]:
+    """Return top-level fp64 GPU transient array names that are safe to BFP
+    encode. A candidate must:
+      - be a top-level fp64 GPU transient,
+      - have at least one covering full-array write,
+      - have no kernel-level RMW in any top-level state (in-edge + out-edge
+        to a non-AccessNode dst),
+      - not appear as both input AND output connector on any NestedSDFG
+        anywhere in the SDFG (NSDFG-level RMW),
+      - not be in `excluded_names`,
+      - not match any `excluded_prefixes` (e.g. output-struct prefixes).
+    """
+    excluded = set(excluded_names)
+    out = []
+    for name, arr in sdfg.arrays.items():
+        if not isinstance(arr, dace.data.Array):
+            continue
+        if arr.dtype != dace.float64:
+            continue
+        if not arr.transient:
+            continue
+        if arr.storage != dtypes.StorageType.GPU_Global:
+            continue
+        if name in excluded:
+            continue
+        if any(name.startswith(p) for p in excluded_prefixes):
+            continue
+
+        full_subset = ", ".join(f"0:{s}" for s in arr.shape)
+        has_covering = False
+        rmw = False
+        for state in sdfg.states():
+            ans = [n for n in state.nodes()
+                   if isinstance(n, nodes.AccessNode) and n.data == name]
+            if not ans:
+                continue
+            for an in ans:
+                in_e = state.in_edges(an)
+                out_e = state.out_edges(an)
+                if in_e:
+                    for e in in_e:
+                        if e.data and e.data.subset is not None and str(e.data.subset) == full_subset:
+                            has_covering = True
+                if in_e and out_e:
+                    for e in out_e:
+                        if not isinstance(e.dst, nodes.AccessNode):
+                            rmw = True
+                            break
+            if rmw:
+                break
+
+        if rmw or not has_covering:
+            continue
+
+        # NSDFG-level RMW: any nested SDFG node with this array as both in
+        # and out connector means the consumer also writes back — encode
+        # placement gets ambiguous, exclude.
+        for nsdfg in sdfg.all_sdfgs_recursive():
+            for state in nsdfg.states():
+                for n in state.nodes():
+                    if not isinstance(n, nodes.NestedSDFG):
+                        continue
+                    if name in n.in_connectors and name in n.out_connectors:
+                        rmw = True
+                        break
+                if rmw:
+                    break
+            if rmw:
+                break
+        if rmw:
+            continue
+
+        out.append(name)
+    return sorted(out)
+
+
+def inject_gpu_bfp_encode(
+    sdfg: dace.SDFG,
+    gpu_names: Union[str, Iterable[str]],
+    mantissa_bits: int = 16,
+) -> dace.SDFG:
+    """Add GPU-side BFP encode for transient arrays with covering full-array
+    writes. For each `gpu_<name>`:
+    1. Add packed transient `gpu_<name>_bfp: uint8[packed_size]` (GPU_Global).
+    2. In each state with a covering full-array write, insert encode subgraph
+       in-place after the producer AccessNode → produces a packed AccessNode.
+    3. Retarget every consumer NestedSDFG (in_conn only, not out) to read the
+       packed array: rename inner array via sdfg.replace, change descriptor,
+       rename connector, redirect parent edge.
+    4. For top-level (non-NSDFG) consumers, repoint memlets / install decode
+       shims. Producer edges remain on gpu_<name> so encode can read them.
+    """
+    if isinstance(gpu_names, str):
+        gpu_names = [gpu_names]
+
+    for gpu_name in gpu_names:
+        if gpu_name not in sdfg.arrays:
+            print(f"  GPU-BFP: {gpu_name} not in SDFG, skipping")
+            continue
+        arr = sdfg.arrays[gpu_name]
+        if not isinstance(arr, dace.data.Array):
+            print(f"  GPU-BFP: {gpu_name} is not an Array, skipping")
+            continue
+
+        producers = _find_covering_write_states(sdfg, gpu_name)
+        if not producers:
+            print(f"  GPU-BFP: no covering-write producer found for {gpu_name}, skipping")
+            continue
+
+        orig_dtype = arr.dtype
+        orig_strides = tuple(arr.strides)
+        total_elems = _total_elems(arr)
+        packed_size = _packed_size_expr(total_elems, mantissa_bits)
+        num_blocks = (total_elems + BFP_BLOCK_SIZE - 1) // BFP_BLOCK_SIZE
+        block_bytes = _bfp_block_bytes(mantissa_bits)
+
+        packed_name = f"{gpu_name}_bfp"
+        if packed_name in sdfg.arrays:
+            print(f"  GPU-BFP: {packed_name} already exists, skipping {gpu_name}")
+            continue
+
+        print(
+            f"  GPU-BFP{mantissa_bits}: encoding {gpu_name} from {orig_dtype}{tuple(arr.shape)} "
+            f"-> uint8[{packed_size}] ({len(producers)} producer state(s))"
+        )
+
+        sdfg.add_array(
+            packed_name,
+            shape=(packed_size,),
+            dtype=dace.uint8,
+            strides=(1,),
+            transient=True,
+            storage=dtypes.StorageType.GPU_Global,
+        )
+
+        # 1. Insert encode subgraph in EACH producer state — produces a
+        # packed AccessNode in the same state. Returns the packed AN.
+        packed_ans_by_state = {}
+        for owning_sdfg, prod_state, prod_an in producers:
+            packed_an = _add_gpu_bfp_encode_inplace(
+                owning_sdfg, prod_state, prod_an,
+                gpu_name, packed_name,
+                total_elems, packed_size, num_blocks, block_bytes,
+                mantissa_bits,
+            )
+            packed_ans_by_state[prod_state] = packed_an
+            print(f"    Encode subgraph added in {prod_state.label} (packed AN created)")
+
+        # 2. In each producer state, retarget consumer NSDFGs that take
+        # gpu_name as input (and not output). They should now consume the
+        # packed AN via a new edge through the existing MapEntry.
+        retargeted_nsdfgs = 0
+        for prod_state, packed_an in packed_ans_by_state.items():
+            for n in list(prod_state.nodes()):
+                if not isinstance(n, nodes.NestedSDFG):
+                    continue
+                if gpu_name not in n.in_connectors or gpu_name in n.out_connectors:
+                    continue
+                # Find the chain: AN(gpu_name) → MapEntry(IN_X→OUT_X) → NSDFG.in[gpu_name]
+                me_in_edges = [e for e in prod_state.in_edges(n) if e.dst_conn == gpu_name]
+                if not me_in_edges:
+                    continue
+                # The edge feeding the NSDFG is from a MapEntry's OUT_X.
+                me_out_edge = me_in_edges[0]
+                if not isinstance(me_out_edge.src, nodes.MapEntry):
+                    # Unusual layout — direct AN-to-NSDFG. Just retarget the
+                    # NSDFG and redirect the edge.
+                    if _retarget_consumer_nsdfg(prod_state, n, gpu_name, packed_name, packed_size, orig_strides, orig_dtype, mantissa_bits):
+                        # Redirect the edge to come from packed_an
+                        me_out_edge.data = dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name])
+                        # Reroute via the graph machinery
+                        prod_state.remove_edge(me_out_edge)
+                        prod_state.add_edge(packed_an, None, n, packed_name,
+                                            dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name]))
+                        retargeted_nsdfgs += 1
+                    continue
+
+                map_entry = me_out_edge.src
+                map_out_conn = me_out_edge.src_conn  # e.g. OUT_7
+                # Find the matching IN_X feeding this MapEntry.
+                map_in_conn = "IN_" + map_out_conn[len("OUT_"):]
+                an_to_me_edges = [e for e in prod_state.in_edges(map_entry)
+                                  if e.dst_conn == map_in_conn]
+                if not an_to_me_edges:
+                    continue
+                an_to_me_edge = an_to_me_edges[0]
+
+                # Step a: retarget the NSDFG inner / connector.
+                if not _retarget_consumer_nsdfg(prod_state, n, gpu_name, packed_name, packed_size, orig_strides, orig_dtype, mantissa_bits):
+                    continue
+                # Step b: change the memlet on me_out_edge to packed.
+                me_out_edge.data = dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name])
+                # Step c: rewire AN→ME edge to come from packed_an.
+                prod_state.remove_edge(an_to_me_edge)
+                prod_state.add_edge(
+                    packed_an, None, map_entry, map_in_conn,
+                    dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name]),
+                )
+                retargeted_nsdfgs += 1
+        if retargeted_nsdfgs:
+            print(f"    Retargeted {retargeted_nsdfgs} consumer NestedSDFG(s) to {packed_name}")
+
+        # 3. For non-NSDFG consumers (top-level reads outside producer states):
+        # use the existing repoint-and-decode-shim machinery, skipping
+        # producer states.
+        skip_states = set(packed_ans_by_state.keys())
+        _repoint_consumer_reads_to_packed(
+            sdfg, gpu_name, packed_name, skip_states,
+            packed_size, orig_strides, orig_dtype, mantissa_bits,
+        )
+
+    return sdfg
