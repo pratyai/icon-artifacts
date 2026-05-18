@@ -790,24 +790,16 @@ def _add_gpu_bfp_encode_inplace(
     """
     dst_an = state.add_access(packed_name)
     n_blocks_str = symbolic.symstr(num_blocks)
-    # 2-D Map. DaCe assigns the LAST iter to the X dim (innermost = fastest
-    # varying). We need __bfp_block on X because num_blocks can exceed the
-    # gridDim.y limit (65535 = 2^16-1). gridDim.x supports 2^31-1.
-    # With block_size=(1,32,1):
-    #   __bfp_block (last → X): blockDim.x=1 → blockIdx.x=__bfp_block,
-    #                           gridDim.x=num_blocks (huge OK).
-    #   __lane      (first → Y): blockDim.y=32 → threadIdx.y=__lane,
-    #                            gridDim.y=1.
-    # 32 threads per CUDA block (all in Y) form a single warp; their linear
-    # thread index = threadIdx.y, so warp shuffles index by __lane.
+    # Simple GPU encode: one CUDA thread per BFP block. Each thread does the
+    # serial 32-element pack (same body as the CPU encoder). Maps to default
+    # GPU block size (256 threads = 256 BFP blocks per CUDA block).
     map_entry, map_exit = state.add_map(
         f"bfp_encode_map_{gpu_name}",
-        {"__lane": "0:32", "__bfp_block": f"0:{n_blocks_str}"},
+        {"__bfp_block": f"0:{n_blocks_str}"},
         schedule=dtypes.ScheduleType.GPU_Device,
     )
-    map_entry.map.gpu_block_size = (1, 32, 1)
     n_expr_c = symbolic.symstr(total_elems)
-    tasklet_code = _bfp_pack_warp_code(mantissa_bits).replace(
+    tasklet_code = _bfp_pack_block_code(mantissa_bits).replace(
         "__bfp_N", f"((int64_t)({n_expr_c}))"
     )
     tasklet = state.add_tasklet(
@@ -833,10 +825,8 @@ def _add_gpu_bfp_encode_inplace(
         map_entry, src_out, tasklet, "_src",
         dace.Memlet.from_array(gpu_name, sdfg.arrays[gpu_name]),
     )
-    # Tasklet → map_exit memlet: 32 lanes cooperate to write the per-block
-    # range of `block_bytes` bytes. Each lane writes a distinct byte (or
-    # 2-byte pair for bfp16); lane 0 also writes the leading exponent byte.
-    # Express as the per-block range, parametric on __bfp_block only.
+    # Tasklet → map_exit memlet: each thread writes the per-block range of
+    # `block_bytes` bytes (1 exponent + 32 mantissas).
     block_sym = symbolic.symbol("__bfp_block")
     state.add_edge(
         tasklet, "_dst", map_exit, dst_in,
