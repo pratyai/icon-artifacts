@@ -1077,7 +1077,9 @@ def compile_if_propagated_sdfgs(
                         rpath_dirs.append(d)
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
-    rpath_flags = " ".join(f"-Wl,-rpath,{d}" for d in rpath_dirs)
+    # nvcc rejects `-Wl,...`; use `-Xlinker -rpath -Xlinker <dir>` for it.
+    rpath_flags_nvcc = " ".join(f"-Xlinker -rpath -Xlinker {d}" for d in rpath_dirs)
+    rpath_flags_cxx = " ".join(f"-Wl,-rpath,{d}" for d in rpath_dirs)
 
     if gpu:
         num = os.getenv("GENCODE_NUMBER", 0)
@@ -1109,7 +1111,7 @@ def compile_if_propagated_sdfgs(
         flags += f' -DLOWPREC_TAG=\\"{lowprec_tag}\\"'
 
         out_file = output_name or ("libvelocity_gpu.so" if lib else "velocity_gpu")
-        cmd = f"nvcc {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags} -lsqlite3 -lz -lzstd -o {out_file}"
+        cmd = f"nvcc {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags_nvcc} -lsqlite3 -lz -lzstd -o {out_file}"
     else:
         dbg = "-g" if debuginfo else ""
         if release:
@@ -1118,7 +1120,7 @@ def compile_if_propagated_sdfgs(
             flags = f"-DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unknown-pragmas -O0 -ggdb -fsanitize=address,undefined -fno-omit-frame-pointer {dbg}"
 
         out_file = output_name or ("libvelocity_cpu.so" if lib else "velocity_cpu")
-        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags} -lsqlite3 -lz -o {out_file}"
+        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags_cxx} -lsqlite3 -lz -o {out_file}"
 
     if gpu:
         Path(ptx_dir).mkdir(parents=True, exist_ok=True)
