@@ -1057,6 +1057,7 @@ def compile_if_propagated_sdfgs(
     import subprocess
 
     extra_libs = ""
+    rpath_dirs: list[str] = []
     for lib_name in ["sqlite3", "zlib", "libzstd"]:
         try:
             cflags = subprocess.check_output(
@@ -1067,8 +1068,16 @@ def compile_if_propagated_sdfgs(
             ).strip()
             base_inc += f" {cflags}"
             extra_libs += f" {lflags}"
+            # Bake the Spack/module lib dirs into the binary as RUNPATH so
+            # the runtime loader finds them without LD_LIBRARY_PATH.
+            for tok in lflags.split():
+                if tok.startswith("-L"):
+                    d = tok[2:]
+                    if d and d not in rpath_dirs:
+                        rpath_dirs.append(d)
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
+    rpath_flags = " ".join(f"-Wl,-rpath,{d}" for d in rpath_dirs)
 
     if gpu:
         num = os.getenv("GENCODE_NUMBER", 0)
@@ -1100,7 +1109,7 @@ def compile_if_propagated_sdfgs(
         flags += f' -DLOWPREC_TAG=\\"{lowprec_tag}\\"'
 
         out_file = output_name or ("libvelocity_gpu.so" if lib else "velocity_gpu")
-        cmd = f"nvcc {' '.join(sources)} {base_inc} {flags} {extra_libs} -lsqlite3 -lz -lzstd -o {out_file}"
+        cmd = f"nvcc {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags} -lsqlite3 -lz -lzstd -o {out_file}"
     else:
         dbg = "-g" if debuginfo else ""
         if release:
@@ -1109,7 +1118,7 @@ def compile_if_propagated_sdfgs(
             flags = f"-DDACE_VELOCITY_DEBUG -std=c++20 -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -Wno-unknown-pragmas -O0 -ggdb -fsanitize=address,undefined -fno-omit-frame-pointer {dbg}"
 
         out_file = output_name or ("libvelocity_cpu.so" if lib else "velocity_cpu")
-        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} -lsqlite3 -lz -o {out_file}"
+        cmd = f"c++ {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags} -lsqlite3 -lz -o {out_file}"
 
     if gpu:
         Path(ptx_dir).mkdir(parents=True, exist_ok=True)
