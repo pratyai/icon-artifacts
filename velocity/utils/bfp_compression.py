@@ -42,6 +42,7 @@ def _update_memlets_and_insert_decode(
     orig_strides,
     orig_dtype,
     mantissa_bits: int = 16,
+    decode_dtype=None,
 ):
     """Update memlets for a BFP-packed array, inserting decode shims at scalar reads.
 
@@ -49,7 +50,14 @@ def _update_memlets_and_insert_decode(
     3D subsets. This function:
     - Scalar memlets into Tasklets: insert a BFP decode shim tasklet
     - Range/other memlets: flatten to 1D [0:packed_size]
+
+    `decode_dtype` (optional) overrides the cast type at the decode shim's
+    output. Defaults to `orig_dtype` (preserves the original scalar type).
+    Pass `external_dtype` (e.g. fp32) to keep consumer locals in the lowered
+    precision and avoid silent fp64 promotion.
     """
+    if decode_dtype is None:
+        decode_dtype = orig_dtype
     flatten_count = 0
     decode_count = 0
     for state in sdfg.all_states():
@@ -74,7 +82,7 @@ def _update_memlets_and_insert_decode(
                     gpu_name,
                     packed_size,
                     flat_idx,
-                    orig_dtype,
+                    decode_dtype,
                     mantissa_bits=mantissa_bits,
                 )
                 decode_count += 1
@@ -307,6 +315,7 @@ def inject_bfp_packing(
     sdfg: dace.SDFG,
     array_names: Union[str, Iterable[str]],
     mantissa_bits: int = 16,
+    decode_dtype=None,
 ) -> dace.SDFG:
     """Transform selected arrays to BFP uint8 packed format on GPU.
 
@@ -318,6 +327,9 @@ def inject_bfp_packing(
     5. Removes D2H edge (read-only data)
 
     mantissa_bits: 16 for bfp16/bfp32, 8 for bfp8.
+    decode_dtype:  optional cast type for the decode shim's output (defaults
+                   to each array's original dtype). Pass the lowered dtype
+                   (e.g. fp32) so consumer locals don't auto-promote to fp64.
     """
     if isinstance(array_names, str):
         array_names = [array_names]
@@ -333,7 +345,10 @@ def inject_bfp_packing(
             print(f"  BFP: {gpu_name} not found in SDFG {sdfg.name}, skipping.")
             continue
 
-        _inject_bfp_for_array(sdfg, cpu_name, gpu_name, mantissa_bits=mantissa_bits)
+        _inject_bfp_for_array(
+            sdfg, cpu_name, gpu_name, mantissa_bits=mantissa_bits,
+            decode_dtype=decode_dtype,
+        )
 
     # Skip validation — nested SDFGs still have the original double[3D]
     # descriptors. The type/shape mismatch is fixed at text level by
@@ -342,7 +357,8 @@ def inject_bfp_packing(
 
 
 def _inject_bfp_for_array(
-    sdfg: dace.SDFG, cpu_name: str, gpu_name: str, mantissa_bits: int = 16
+    sdfg: dace.SDFG, cpu_name: str, gpu_name: str, mantissa_bits: int = 16,
+    decode_dtype=None,
 ):
     """Apply BFP packing for a single array pair."""
     cpu_arr = sdfg.arrays[cpu_name]
@@ -372,7 +388,18 @@ def _inject_bfp_for_array(
         storage=dtypes.StorageType.CPU_Heap,
     )
 
-    # Step 2: Change GPU array to uint8[packed_size] in top-level SDFG
+    # Step 2a: Propagate the consumer-facing dtype (decode_dtype, e.g. fp32)
+    # through nested-SDFG inner descriptors. This makes DaCe emit local vars
+    # of the lowered type ("float c = ..." instead of "double c = ...") in
+    # the consumer kernels. Done BEFORE the top-level uint8 retype so it
+    # doesn't propagate uint8 (which would be wrong for consumer locals).
+    # The text patcher then replaces the parameter type (float* → uint8_t*)
+    # to match the actual allocation.
+    if decode_dtype is not None and decode_dtype != orig_dtype:
+        from utils.boundary_cast import _propagate_dtype
+        _propagate_dtype(sdfg, gpu_name, decode_dtype)
+
+    # Step 2b: Change GPU array to uint8[packed_size] in top-level SDFG
     gpu_arr.dtype = dace.uint8
     gpu_arr.shape = (packed_size,)
     gpu_arr.strides = (1,)
@@ -393,6 +420,7 @@ def _inject_bfp_for_array(
         orig_strides,
         orig_dtype,
         mantissa_bits=mantissa_bits,
+        decode_dtype=decode_dtype,
     )
 
     # Step 3: Find and replace H2D edge, remove D2H edge
@@ -680,6 +708,7 @@ def _repoint_consumer_reads_to_packed(
     orig_strides,
     orig_dtype,
     mantissa_bits: int,
+    decode_dtype=None,
 ):
     """For every memlet in any state outside `skip_states` whose data is
     `gpu_name`, repoint to `packed_name`:
@@ -727,7 +756,8 @@ def _repoint_consumer_reads_to_packed(
                 flat_idx = sum(idx * stride for idx, stride in zip(indices, orig_strides))
                 _insert_bfp_decode_shim(
                     state, edge, packed_name, packed_size, flat_idx,
-                    orig_dtype, mantissa_bits=mantissa_bits,
+                    decode_dtype if decode_dtype is not None else orig_dtype,
+                    mantissa_bits=mantissa_bits,
                 )
                 decode_count += 1
             else:
@@ -760,14 +790,22 @@ def _add_gpu_bfp_encode_inplace(
     """
     dst_an = state.add_access(packed_name)
     n_blocks_str = symbolic.symstr(num_blocks)
-    # 2-D Map: outer __bfp_block ↔ blockIdx.x (one CUDA block per BFP block),
-    # inner __lane ↔ threadIdx.x (one warp per BFP block, 32 lanes cooperate).
+    # 2-D Map. DaCe assigns the LAST iter to the X dim (innermost = fastest
+    # varying). We need __bfp_block on X because num_blocks can exceed the
+    # gridDim.y limit (65535 = 2^16-1). gridDim.x supports 2^31-1.
+    # With block_size=(1,32,1):
+    #   __bfp_block (last → X): blockDim.x=1 → blockIdx.x=__bfp_block,
+    #                           gridDim.x=num_blocks (huge OK).
+    #   __lane      (first → Y): blockDim.y=32 → threadIdx.y=__lane,
+    #                            gridDim.y=1.
+    # 32 threads per CUDA block (all in Y) form a single warp; their linear
+    # thread index = threadIdx.y, so warp shuffles index by __lane.
     map_entry, map_exit = state.add_map(
         f"bfp_encode_map_{gpu_name}",
-        {"__bfp_block": f"0:{n_blocks_str}", "__lane": "0:32"},
+        {"__lane": "0:32", "__bfp_block": f"0:{n_blocks_str}"},
         schedule=dtypes.ScheduleType.GPU_Device,
     )
-    map_entry.map.gpu_block_size = (32, 1, 1)
+    map_entry.map.gpu_block_size = (1, 32, 1)
     n_expr_c = symbolic.symstr(total_elems)
     tasklet_code = _bfp_pack_warp_code(mantissa_bits).replace(
         "__bfp_N", f"((int64_t)({n_expr_c}))"
@@ -822,6 +860,7 @@ def _retarget_sdfg_recursive(
     orig_strides,
     orig_dtype,
     mantissa_bits: int,
+    decode_dtype=None,
 ):
     """Apply gpu_name → packed_name rename + uint8 retype + memlet flatten +
     decode shims throughout this SDFG and all nested SDFGs recursively.
@@ -841,7 +880,7 @@ def _retarget_sdfg_recursive(
         )
         _update_memlets_and_insert_decode(
             sdfg, packed_name, packed_size, orig_strides, orig_dtype,
-            mantissa_bits=mantissa_bits,
+            mantissa_bits=mantissa_bits, decode_dtype=decode_dtype,
         )
 
     for state in sdfg.states():
@@ -894,6 +933,7 @@ def _retarget_sdfg_recursive(
 def _retarget_consumer_nsdfg(
     parent_state, nsdfg_node, gpu_name: str, packed_name: str,
     packed_size, orig_strides, orig_dtype, mantissa_bits: int,
+    decode_dtype=None,
 ):
     """For a NestedSDFG that consumes gpu_name (input connector only):
     1. Inside the inner SDFG, replace gpu_name → packed_name everywhere.
@@ -916,7 +956,7 @@ def _retarget_consumer_nsdfg(
 
     _retarget_sdfg_recursive(
         inner, gpu_name, packed_name, packed_size, orig_strides, orig_dtype,
-        mantissa_bits,
+        mantissa_bits, decode_dtype=decode_dtype,
     )
 
     # Rename connector on the NestedSDFG node.
@@ -1018,6 +1058,7 @@ def inject_gpu_bfp_encode(
     sdfg: dace.SDFG,
     gpu_names: Union[str, Iterable[str]],
     mantissa_bits: int = 16,
+    decode_dtype=None,
 ) -> dace.SDFG:
     """Add GPU-side BFP encode for transient arrays with covering full-array
     writes. For each `gpu_<name>`:
@@ -1105,7 +1146,7 @@ def inject_gpu_bfp_encode(
                 if not isinstance(me_out_edge.src, nodes.MapEntry):
                     # Unusual layout — direct AN-to-NSDFG. Just retarget the
                     # NSDFG and redirect the edge.
-                    if _retarget_consumer_nsdfg(prod_state, n, gpu_name, packed_name, packed_size, orig_strides, orig_dtype, mantissa_bits):
+                    if _retarget_consumer_nsdfg(prod_state, n, gpu_name, packed_name, packed_size, orig_strides, orig_dtype, mantissa_bits, decode_dtype=decode_dtype):
                         # Redirect the edge to come from packed_an
                         me_out_edge.data = dace.Memlet.from_array(packed_name, sdfg.arrays[packed_name])
                         # Reroute via the graph machinery
@@ -1147,6 +1188,7 @@ def inject_gpu_bfp_encode(
         _repoint_consumer_reads_to_packed(
             sdfg, gpu_name, packed_name, skip_states,
             packed_size, orig_strides, orig_dtype, mantissa_bits,
+            decode_dtype=decode_dtype,
         )
 
     return sdfg
