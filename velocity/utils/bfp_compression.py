@@ -616,12 +616,17 @@ def _repoint_consumer_reads_to_packed(
     for state in sdfg.all_states():
         if state in skip_states:
             continue
-        # Step 1: rename consumer-side AccessNodes (no in-edges → pure read).
+        # Step 1: rename consumer-side AccessNodes (no in-edges → pure read,
+        # AND no AN→AN out-edges — those feed D2H/transient copies that need
+        # the fp64 form).
         for node in list(state.nodes()):
             if not isinstance(node, nodes.AccessNode) or node.data != gpu_name:
                 continue
             if state.in_edges(node):
                 # Has writes → this is a producer or RMW; not handled here.
+                continue
+            if any(isinstance(e.dst, nodes.AccessNode) for e in state.out_edges(node)):
+                # Feeds a D2H or transient copy — must stay fp64.
                 continue
             node.data = packed_name
             rename_count += 1
@@ -631,6 +636,10 @@ def _repoint_consumer_reads_to_packed(
                 continue
             # Producer-side write (memlet flows INTO an AN named gpu_name).
             if isinstance(edge.dst, nodes.AccessNode) and edge.dst.data == gpu_name:
+                continue
+            # AN-to-AN copy (D2H or transient-to-transient): the destination
+            # needs the fp64 form, leave the source on gpu_name.
+            if isinstance(edge.dst, nodes.AccessNode) and edge.dst.data != gpu_name:
                 continue
             subset = edge.data.subset
             if subset is None:
@@ -893,6 +902,10 @@ def discover_gpu_bfp_transient_candidates(
 
         if rmw or not has_covering:
             continue
+        # NOTE: D2H out-edges (AN(gpu_name) → AN(host_name)) are tolerated.
+        # The original fp64 buffer stays alive for both D2H copies and the
+        # encoder source; only consumer NSDFGs that take this array as input
+        # get retargeted to read the packed buffer.
 
         # NSDFG-level RMW: any nested SDFG node with this array as both in
         # and out connector means the consumer also writes back — encode
