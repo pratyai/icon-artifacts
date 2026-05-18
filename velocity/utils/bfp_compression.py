@@ -166,6 +166,83 @@ def _insert_bfp_decode_shim(
 # ---------------------------------------------------------------------------
 
 
+def _bfp_pack_warp_code(mantissa_bits: int = 16) -> str:
+    """GPU warp-cooperative BFP encode: one warp = one BFP block, 32 lanes
+    cooperate via __shfl_xor_sync. The 2-D Map iter (__bfp_block, __lane)
+    must be set up with gpu_block_size=(32,1,1) so:
+      - outer iter __bfp_block ↔ blockIdx.x
+      - inner iter __lane      ↔ threadIdx.x (0..31)
+
+    Bit format identical to _bfp_pack_block_code (the CPU encoder). Reads
+    from full source array _src and writes to full packed buffer _dst.
+    Both __bfp_N (total source elements) and __bfp_BB (block_bytes) are
+    placeholder tokens substituted by the caller.
+    """
+    bias = mantissa_bits - 1
+    mant_min = -(1 << (mantissa_bits - 1))
+    mant_max = (1 << (mantissa_bits - 1)) - 1
+    mbytes = mantissa_bits // 8
+
+    # _dst is the per-block pointer (memlet subset = [block*BB : (block+1)*BB]),
+    # so we use offsets relative to the block start (just like the CPU encoder).
+    if mantissa_bits == 16:
+        store_mant = (
+            f"    int16_t mant = (int16_t)q;\n"
+            f"    memcpy(_dst + 1 + (int64_t)__lane * 2, &mant, sizeof(int16_t));"
+        )
+    else:
+        store_mant = (
+            f"    _dst[1 + (int64_t)__lane] = (uint8_t)(int8_t)q;"
+        )
+
+    return f"""
+// Warp-cooperative BFP encode ({mantissa_bits}-bit mantissa).
+// One warp per BFP block; 32 lanes cooperate.  Each lane handles its own
+// element (or contributes 0 if past the end of the array).  _dst is the
+// per-block pointer (memlet pre-offsets by __bfp_block * __bfp_BB).
+int64_t elem_idx = (int64_t)__bfp_block * 32 + (int64_t)__lane;
+bool active = elem_idx < __bfp_N;
+
+double v = active ? _src[elem_idx] : 0.0;
+float vabs = fabsf((float)v);
+
+// Butterfly warp reduce-max.  ALL 32 lanes must participate (mask=0xffffffff).
+// Inactive lanes contributed 0, which doesn't perturb the max.
+#pragma unroll
+for (int o = 16; o > 0; o >>= 1) {{
+    float t = __shfl_xor_sync(0xffffffff, vabs, o);
+    if (t > vabs) vabs = t;
+}}
+float max_abs = vabs;  // post-reduce, all lanes hold the same value
+
+int shared_exp;
+if (max_abs == 0.0f) {{
+    shared_exp = 0;
+}} else {{
+    int fexp;
+    frexpf(max_abs, &fexp);
+    shared_exp = fexp + {bias};
+}}
+if (shared_exp < -128) shared_exp = -128;
+if (shared_exp >  127) shared_exp =  127;
+
+// Lane 0 writes the shared exponent byte at offset 0 of this block.
+if (__lane == 0) {{
+    _dst[0] = (uint8_t)(int8_t)shared_exp;
+}}
+
+// Per-lane quantization.  Padding lanes hold v=0, quantize to 0, write 0 —
+// matches the CPU encoder's explicit zero-padding loop.
+float scale = ldexpf(1.0f, -(shared_exp - {bias}));
+float scaled = (float)v * scale;
+int32_t q = (int32_t)roundf(scaled);
+if (q < {mant_min}) q = {mant_min};
+if (q >  {mant_max}) q =  {mant_max};
+
+{store_mant}
+"""
+
+
 def _bfp_pack_block_code(mantissa_bits: int = 16) -> str:
     """Generate C code for packing one BFP block."""
     bias = mantissa_bits - 1
@@ -683,19 +760,23 @@ def _add_gpu_bfp_encode_inplace(
     """
     dst_an = state.add_access(packed_name)
     n_blocks_str = symbolic.symstr(num_blocks)
+    # 2-D Map: outer __bfp_block ↔ blockIdx.x (one CUDA block per BFP block),
+    # inner __lane ↔ threadIdx.x (one warp per BFP block, 32 lanes cooperate).
     map_entry, map_exit = state.add_map(
         f"bfp_encode_map_{gpu_name}",
-        {"__bfp_block": f"0:{n_blocks_str}"},
+        {"__bfp_block": f"0:{n_blocks_str}", "__lane": "0:32"},
         schedule=dtypes.ScheduleType.GPU_Device,
     )
+    map_entry.map.gpu_block_size = (32, 1, 1)
     n_expr_c = symbolic.symstr(total_elems)
+    tasklet_code = _bfp_pack_warp_code(mantissa_bits).replace(
+        "__bfp_N", f"((int64_t)({n_expr_c}))"
+    )
     tasklet = state.add_tasklet(
         name=f"bfp_encode_tasklet_{gpu_name}",
         inputs={"_src"},
         outputs={"_dst"},
-        code=_bfp_pack_block_code(mantissa_bits).replace(
-            "__bfp_N", f"((int64_t)({n_expr_c}))"
-        ),
+        code=tasklet_code,
         language=dtypes.Language.CPP,
     )
     src_in = f"IN_{gpu_name}"
@@ -714,6 +795,10 @@ def _add_gpu_bfp_encode_inplace(
         map_entry, src_out, tasklet, "_src",
         dace.Memlet.from_array(gpu_name, sdfg.arrays[gpu_name]),
     )
+    # Tasklet → map_exit memlet: 32 lanes cooperate to write the per-block
+    # range of `block_bytes` bytes. Each lane writes a distinct byte (or
+    # 2-byte pair for bfp16); lane 0 also writes the leading exponent byte.
+    # Express as the per-block range, parametric on __bfp_block only.
     block_sym = symbolic.symbol("__bfp_block")
     state.add_edge(
         tasklet, "_dst", map_exit, dst_in,
