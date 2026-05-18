@@ -542,17 +542,18 @@ def patch_bfp_reads(
       - `gpu_NAME[(index)]` → `bfp_decode<BS, MB>(gpu_NAME, (int)(index))`
     """
     for gpu_name in bfp_gpu_names:
-        # 1. Fix parameter / declaration types (more robust regex for double*)
-        # Matches: double* gpu_NAME, const double * __restrict__ gpu_NAME, etc.
+        # 1. Fix parameter / declaration types. Matches either double* or
+        # float* (since BFP inner descriptors may be set to fp32 to make
+        # consumer locals fp32 — the param sig still needs to be uint8_t*).
         code = re.sub(
-            rf"(const\s+)?double\s*\*\s*(__restrict__\s+)?{re.escape(gpu_name)}\b",
+            rf"(const\s+)?(?:double|float)\s*\*\s*(__restrict__\s+)?{re.escape(gpu_name)}\b",
             f"const uint8_t *__restrict__ {gpu_name}",
             code,
         )
 
-        # 1b. Fix pointer casts: (double *)(&gpu_NAME[...]) → &gpu_NAME[...]
+        # 1b. Fix pointer casts: (double*) or (float*) → uint8_t*.
         code = re.sub(
-            rf"\(double\s*\*\)\s*\(\s*&{re.escape(gpu_name)}\b",
+            rf"\((?:double|float)\s*\*\)\s*\(\s*&{re.escape(gpu_name)}\b",
             f"(const uint8_t *)(&{gpu_name}",
             code,
         )
