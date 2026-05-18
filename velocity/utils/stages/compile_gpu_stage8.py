@@ -407,7 +407,12 @@ def optimization_action(sdfg):
         "f32": dace.float32,
         "f64": dace.float64,
         "f16": dace.float16,
-        "bfp8": dace.float16,
+        # For bfp modes, `external_dtype` is the dtype used for arrays NOT
+        # encoded via BFP (transients, output struct fields, etc.). Pick the
+        # least lossy float type that still matches the BFP mantissa
+        # precision: bfp8 has only 8 mantissa bits, so non-BFP arrays drop
+        # to fp32 (not fp16) to keep precision headroom on the fallback path.
+        "bfp8": dace.float32,
         "bfp16": dace.float16,
         "bfp32": dace.float32,
     }
@@ -436,6 +441,33 @@ def optimization_action(sdfg):
         "__CG_p_diag__m_w_concorr_c", "gpu___CG_p_diag__m_w_concorr_c",
     } if external_dtype == dace.float16 else set()
 
+    # In bfp mode, pre-discover GPU transients that we'll BFP-encode later.
+    # Must happen BEFORE the lowering candidates are computed so we can
+    # exclude them from the standard lowering path (otherwise they'd get
+    # dtype-changed to fp32 before the BFP discovery sees them as fp64).
+    # Important: exclude `gpu___CG_*` arrays — those are read-only struct
+    # inputs and belong to the CPU-side BFP path, not the GPU encoder.
+    bfp_transient_targets_pre: list[str] = []
+    if options["lowprec"].startswith("bfp"):
+        _bare_locked = set(SENSITIVITY_RULED_OUT) | set(SENSITIVITY_BORDERLINE)
+        _gpu_locked = {f"gpu_{n}" for n in _bare_locked} | _bare_locked
+        _excluded_for_bfp = (
+            set(_FP32_OVERRIDE) | set(_INTEGRATION_EXCLUDE) | _gpu_locked
+        )
+        _excluded_prefixes_bfp = (
+            "gpu___CG_",  # all __CG_* arrays handled by CPU-BFP path
+        )
+        bfp_transient_targets_pre = discover_gpu_bfp_transient_candidates(
+            sdfg,
+            excluded_names=_excluded_for_bfp,
+            excluded_prefixes=_excluded_prefixes_bfp,
+        )
+        if bfp_transient_targets_pre:
+            print(
+                f"  GPU-BFP transient pre-discovery: {len(bfp_transient_targets_pre)} "
+                f"arrays will stay fp64 for BFP encoding: {bfp_transient_targets_pre}"
+            )
+
     if options.get("lower_all"):
         # CFL scalar excluded — feeds the final CFL check which stays double.
         # CFL arrays (gpu_maxvcfl_arr, gpu_vcflmax, vcflmax) are now lowered
@@ -444,7 +476,15 @@ def optimization_action(sdfg):
             "maxvcfl",
         }
 
-        # Lower all float64 arrays in the SDFG
+        # Lower all float64 arrays in the SDFG (EXCLUDING ones earmarked for
+        # BFP transient encoding — those must stay fp64 so the encoder sees
+        # the right source dtype).  Also exclude the bare-name counterparts
+        # (e.g. `vcflmax` for `gpu_vcflmax`) since lowering a bare name
+        # propagates dtype to its gpu_ sibling.
+        _bfp_pre_set = set(bfp_transient_targets_pre)
+        for n in list(_bfp_pre_set):
+            if n.startswith("gpu_"):
+                _bfp_pre_set.add(n[len("gpu_"):])
         candidates = [
             name
             for name, arr in sdfg.arrays.items()
@@ -454,11 +494,14 @@ def optimization_action(sdfg):
             and name not in _CFL_EXCLUDE
             and name not in _INTEGRATION_EXCLUDE
             and name not in _FP32_OVERRIDE
+            and name not in _bfp_pre_set
         ]
 
-        if options["lowprec"].startswith("bfp"):
-            # In BFP mode, strictly limit lowering to BFP-compatible arrays.
-            # Everything else (transients, output structs) stays double.
+        if options["lowprec"].startswith("bfp") and external_dtype == dace.float16:
+            # bfp16 mode (fp16 external): restrict lowering to BFP-compatible
+            # arrays to avoid fp16 underflow on the fallback path.
+            # bfp8 / bfp32 use fp32 fallback (no underflow concern), so they
+            # take the full lower_all candidate list.
             _OUTPUT_CG_PREFIXES = ("__CG_p_diag__", "__CG_p_prog__")
             array_names = [
                 n
@@ -709,7 +752,10 @@ def optimization_action(sdfg):
     # pack Map, replace H2D edge with packed version.
     if options["lowprec"].startswith("bfp") and bfp_targets:
         bfp_mantissa_bits = {"bfp8": 8, "bfp16": 16, "bfp32": 16}[options["lowprec"]]
-        inject_bfp_packing(sdfg, bfp_targets, mantissa_bits=bfp_mantissa_bits)
+        inject_bfp_packing(
+            sdfg, bfp_targets, mantissa_bits=bfp_mantissa_bits,
+            decode_dtype=external_dtype,
+        )
         # TAG THE ARRAYS: mark them so the compiler knows they are BFP
         for name in bfp_targets:
             gpu_name = f"gpu_{name}"
@@ -721,30 +767,19 @@ def optimization_action(sdfg):
         global BFP_PACKED
         BFP_PACKED = list(bfp_targets)
 
-        # GPU-side BFP encode for transients: auto-discover fp64 GPU transients
-        # with covering full-array writes and no RMW. Inherits the same
-        # exclusion set used for fp16 lowering (the w_concorr chain that
-        # underflows fp16, plus borderline / ruled-out sensitivity arrays)
-        # plus output struct prefixes plus arrays the CPU BFP path already
-        # owns.
+        # Use the pre-discovered transient list (see top of optimize_action).
+        # CPU-side BFP packing above may have consumed some of the same names
+        # (gpu___CG_*) — those are now uint8 in the SDFG, so filter them out.
         _bfp_already = set(bfp_targets) | {f"gpu_{n}" for n in bfp_targets}
-        _bare_locked = (
-            set(SENSITIVITY_RULED_OUT) | set(SENSITIVITY_BORDERLINE)
-        )
-        _gpu_locked = {f"gpu_{n}" for n in _bare_locked} | _bare_locked
-        _excluded_for_bfp = (
-            set(_FP32_OVERRIDE) | set(_INTEGRATION_EXCLUDE)
-            | _bfp_already | _gpu_locked
-        )
-        _excluded_prefixes = ("gpu___CG_p_diag__", "gpu___CG_p_prog__")
-        transient_targets = discover_gpu_bfp_transient_candidates(
-            sdfg,
-            excluded_names=_excluded_for_bfp,
-            excluded_prefixes=_excluded_prefixes,
-        )
+        transient_targets = [
+            n for n in bfp_transient_targets_pre if n not in _bfp_already
+        ]
         if transient_targets:
             print(f"GPU-BFP transients ({len(transient_targets)}): {transient_targets}")
-            inject_gpu_bfp_encode(sdfg, transient_targets, mantissa_bits=bfp_mantissa_bits)
+            inject_gpu_bfp_encode(
+                sdfg, transient_targets, mantissa_bits=bfp_mantissa_bits,
+                decode_dtype=external_dtype,
+            )
             for name in transient_targets:
                 pname = f"{name}_bfp"
                 if pname in sdfg.arrays:
