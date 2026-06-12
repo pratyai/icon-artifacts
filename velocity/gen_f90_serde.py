@@ -675,7 +675,7 @@ def _generate_f90_c_glue_code(
                     [f"size(inp % {nx}, {int(d) + 1})" for d in sorted(dims)]
                 )
                 decl = f"{f90_type(basetx)}, allocatable, target, save :: a_{nx}({idx})"
-                init = f"if (initalloc .and. .not. allocated(a_{nx})) allocate(a_{nx}({size_call}))\n  a_{nx} = inp % {nx} ; out % m_{nx} = c_loc(a_{nx})"
+                init = f"if (initalloc .and. .not. allocated(a_{nx})) allocate(a_{nx}({size_call}))\n  if (initalloc) a_{nx} = inp % {nx}\n  out % m_{nx} = c_loc(a_{nx})"
 
             for k, v in sas.items():
                 dim_idx = int(k.split()[1]) + 1

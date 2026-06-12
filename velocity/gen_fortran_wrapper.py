@@ -469,6 +469,9 @@ def generate(all_params: dict[str, list[dict]], *,
     L.append("    REAL(c_double) :: c_dtime, c_dt_linintp_ubc")
     L.append("    REAL(c_double) :: c_max_vcfl_dyn")
     L.append("")
+    L.append("    ! First-call flag: constant structs marshal once (glue copy gating)")
+    L.append("    LOGICAL, SAVE :: vt_first_call = .TRUE.")
+    L.append("")
     # Hook: before call
     L.append("    ! --- START INSTRUMENTATION ---")
     L.append("    ! NOTE: If you modify this instrumentation, please update "
@@ -549,12 +552,15 @@ def generate(all_params: dict[str, list[dict]], *,
     L.append("    ! Fill C-compatible structs")
     L.append("    g_global%nproma = INT(nproma, c_int)")
     L.append("")
-    L.append("    ! Pack Fortran structs into C-compatible glue types")
-    L.append("    CALL ctor(p_patch, g_patch, .TRUE.)")
-    L.append("    CALL ctor(p_int, g_int, .TRUE.)")
+    L.append("    ! Pack Fortran structs into C-compatible glue types.")
+    L.append("    ! Constant structs (patch/int/metrics) marshal once (vt_first_call);")
+    L.append("    ! mutable inputs (prog/diag) re-copy every call.")
+    L.append("    CALL ctor(p_patch, g_patch, vt_first_call)")
+    L.append("    CALL ctor(p_int, g_int, vt_first_call)")
     L.append("    CALL ctor(p_prog, g_prog, .TRUE.)")
-    L.append("    CALL ctor(p_metrics, g_metrics, .TRUE.)")
+    L.append("    CALL ctor(p_metrics, g_metrics, vt_first_call)")
     L.append("    CALL ctor(p_diag, g_diag, .TRUE.)")
+    L.append("    vt_first_call = .FALSE.")
     L.append("")
 
     # Convert scalars
