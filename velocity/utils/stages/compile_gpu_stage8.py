@@ -427,10 +427,23 @@ def optimization_action(sdfg):
     # Must be excluded from lowering/boundary-cast to avoid schedule conflicts.
     _INTEGRATION_GPU_INPUTS = {"z_w_concorr_me", "z_kin_hor_e", "z_vt_ie"}
     _INTEGRATION_EXCLUDE = set()
-    if options["build_for_integration"]:
-        for n in _INTEGRATION_GPU_INPUTS:
-            _INTEGRATION_EXCLUDE.add(n)
-            _INTEGRATION_EXCLUDE.add(f"gpu_{n}")
+    # Exclude in BOTH standalone and integration so they lower the SAME set
+    # (z_* scratch inputs + ddt_* tendencies stay fp64). Keeps the standalone a
+    # faithful proxy of the integration lowprec compute (validated 2026-06-12:
+    # standalone b03 fp32 187->~150, b04 ~290->~230 toward integration 112/209).
+    for n in _INTEGRATION_GPU_INPUTS:
+        _INTEGRATION_EXCLUDE.add(n)
+        _INTEGRATION_EXCLUDE.add(f"gpu_{n}")
+    # Keep tendency outputs (ddt_*) at fp64 — drop their boundary cast.
+    # They are 4D (..., ntnd predictor/corrector); each call writes only
+    # one ntnd slice, so a whole-array fp64<->fpXX cast is load-bearing
+    # (it carries the other stage's slice through the round-trip) AND the
+    # single dominant cast cost (nsys: ~80 us/call, ~2x any other field).
+    # Excluding from lowering removes the cast entirely; the fpXX compute
+    # writes the fp64 array via a per-element store cast fused in-kernel.
+    for n in ("__CG_p_diag__m_ddt_vn_apc_pc", "__CG_p_diag__m_ddt_w_adv_pc"):
+        _INTEGRATION_EXCLUDE.add(n)
+        _INTEGRATION_EXCLUDE.add(f"gpu_{n}")
 
     # w_concorr chain: z_w_concorr_me values are O(1e-15..1e-17),
     # below FP16 min normal (~6e-8).  Keep the chain at FP32 to
