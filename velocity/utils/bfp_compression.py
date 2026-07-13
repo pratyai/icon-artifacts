@@ -203,25 +203,25 @@ def _bfp_pack_warp_code(mantissa_bits: int = 16) -> str:
             f"    _dst[1 + (int64_t)__lane] = (uint8_t)(int8_t)q;"
         )
 
+    # CUB WarpReduce: leaves the result only in lane 0, so broadcast back
+    # to all lanes with a single __shfl_sync. 8 warps per CUDA block → 8
+    # TempStorage slots indexed by threadIdx.y.
     return f"""
-// Warp-cooperative BFP encode ({mantissa_bits}-bit mantissa).
+// Warp-cooperative BFP encode ({mantissa_bits}-bit mantissa) using CUB.
 // One warp per BFP block; 32 lanes cooperate.  Each lane handles its own
 // element (or contributes 0 if past the end of the array).  _dst is the
-// per-block pointer (memlet pre-offsets by __bfp_block * __bfp_BB).
+// per-block pointer (memlet pre-offsets by __bfp_block * BLOCK_BYTES).
 int64_t elem_idx = (int64_t)__bfp_block * 32 + (int64_t)__lane;
 bool active = elem_idx < __bfp_N;
 
 double v = active ? _src[elem_idx] : 0.0;
 float vabs = fabsf((float)v);
 
-// Butterfly warp reduce-max.  ALL 32 lanes must participate (mask=0xffffffff).
-// Inactive lanes contributed 0, which doesn't perturb the max.
-#pragma unroll
-for (int o = 16; o > 0; o >>= 1) {{
-    float t = __shfl_xor_sync(0xffffffff, vabs, o);
-    if (t > vabs) vabs = t;
-}}
-float max_abs = vabs;  // post-reduce, all lanes hold the same value
+// CUB warp reduce-max.  Result only in lane 0, then broadcast to all lanes.
+typedef cub::WarpReduce<float, 32> WarpReduceF;
+__shared__ typename WarpReduceF::TempStorage __bfp_temp[8];
+float max_abs = WarpReduceF(__bfp_temp[threadIdx.y]).Reduce(vabs, cub::Max());
+max_abs = __shfl_sync(0xffffffff, max_abs, 0);
 
 int shared_exp;
 if (max_abs == 0.0f) {{
@@ -790,16 +790,23 @@ def _add_gpu_bfp_encode_inplace(
     """
     dst_an = state.add_access(packed_name)
     n_blocks_str = symbolic.symstr(num_blocks)
-    # Simple GPU encode: one CUDA thread per BFP block. Each thread does the
-    # serial 32-element pack (same body as the CPU encoder). Maps to default
-    # GPU block size (256 threads = 256 BFP blocks per CUDA block).
+    # Warp-cooperative encode: 32 threads share one BFP block (coalesced reads
+    # + warp shuffle reduce). 8 warps per CUDA block = 256 threads = good SM
+    # occupancy.
+    # Iter mapping (DaCe assigns last iter → X):
+    #   __lane (last) → X, blockDim.x=32 → threadIdx.x = lane, gridDim.x=1
+    #   __bfp_block (first) → Y, blockDim.y=8 → threadIdx.y = warp_in_block,
+    #                            gridDim.y = ceil(num_blocks/8)
+    # Each warp = 32 consecutive linear threads (y=fixed, x=0..31), so all
+    # 32 lanes of a warp share the same __bfp_block → warp shuffles work.
     map_entry, map_exit = state.add_map(
         f"bfp_encode_map_{gpu_name}",
-        {"__bfp_block": f"0:{n_blocks_str}"},
+        {"__bfp_block": f"0:{n_blocks_str}", "__lane": "0:32"},
         schedule=dtypes.ScheduleType.GPU_Device,
     )
+    map_entry.map.gpu_block_size = (32, 8, 1)
     n_expr_c = symbolic.symstr(total_elems)
-    tasklet_code = _bfp_pack_block_code(mantissa_bits).replace(
+    tasklet_code = _bfp_pack_warp_code(mantissa_bits).replace(
         "__bfp_N", f"((int64_t)({n_expr_c}))"
     )
     tasklet = state.add_tasklet(
@@ -808,6 +815,7 @@ def _add_gpu_bfp_encode_inplace(
         outputs={"_dst"},
         code=tasklet_code,
         language=dtypes.Language.CPP,
+        code_global="#include <cub/cub.cuh>",
     )
     src_in = f"IN_{gpu_name}"
     src_out = f"OUT_{gpu_name}"
