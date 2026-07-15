@@ -1,0 +1,11 @@
+--- /tmp/omod_orig.F90	2026-07-15 14:49:53.047020932 +0200
++++ source/cloudsc-dwarf/src/cloudsc_gpu/cloudsc_output_mod.F90	2026-07-13 15:06:12.000000000 +0200
+@@ -57,7 +57,7 @@
+     IF (.NOT. OUT_IS_OPEN) RETURN
+ 
+     ! Create group for this step
+-    WRITE(GRP_NAME, '(A,I4.4)') 'step_', JSTEP
++    WRITE(GRP_NAME, '(A,I8.8)') 'step_', JSTEP
+     CALL H5GCREATE_F(OUT_FILE_ID, TRIM(GRP_NAME), GRP_ID, IERR)
+ 
+     ! Write 3D fields (NPROMA, NLEV, NBLOCKS)
