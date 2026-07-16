@@ -49,6 +49,15 @@ python gen_fortran_wrapper.py --stage-dir codegen/stage8/fp16 --serde --output w
 calls inside `velocity_tendencies_gpu`. Without it the GPU path dumps
 nothing.
 
+`--stage-dir` must point at the **`--integration` codegen that built the `.so`
+you are integrating**. `codegen/stage8/<prec>/` is shared between build modes:
+the integration build emits flattened scalar arguments, while the standalone
+path (§6) overwrites the same directory with a struct-pointer interface
+(`__dace_init(..., t_patch* p_patch, t_nh_prog* p_prog, ...)`). Both generate a
+wrapper that compiles, but one built against the wrong mode mismatches the `.so`
+at the call boundary. If a standalone build has run since, re-run the
+`--integration` compile above before regenerating the wrapper.
+
 > **✅ Artifacts ready**
 >
 > - `libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so`
