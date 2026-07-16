@@ -303,12 +303,18 @@ def emit_call_args(params: list[dict], indent: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def generate(all_params: dict[str, list[dict]], *,
-             serde: bool = False, debug_prints: bool = False) -> str:
+             serde: bool = False, debug_prints: bool = False,
+             marshal_prog_diag_once: bool = True) -> str:
     """Generate the full Fortran wrapper module.
 
     Args:
         serde: Include serialization instrumentation (before/after DaCe calls).
         debug_prints: Include GPU pointer debug prints for troubleshooting.
+        marshal_prog_diag_once: Marshal p_prog/p_diag into the glue structs only
+            on the first call. DaCe reaches these through the device pointers
+            passed under HOST_DATA USE_DEVICE, so the glue host copies are never
+            read and re-copying them each call is wasted work (the glue is the
+            dominant per-call cost). Set False to copy them every call.
     """
     L: list[str] = []
 
@@ -476,6 +482,10 @@ def generate(all_params: dict[str, list[dict]], *,
     L.append("    CHARACTER(LEN=80) :: vt_tag")
     L.append("    ! First-call flag: constant structs marshal once (glue copy gating)")
     L.append("    LOGICAL, SAVE :: vt_first_call = .TRUE.")
+    if marshal_prog_diag_once:
+        L.append("    ! prog/diag reach DaCe as device pointers (HOST_DATA USE_DEVICE),")
+        L.append("    ! so their glue host copies are never read — marshal them once.")
+        L.append("    LOGICAL, SAVE :: vt_prog_diag_alloc = .TRUE.")
     L.append("")
     # Hook: before call
     L.append("    ! --- START INSTRUMENTATION ---")
@@ -559,14 +569,20 @@ def generate(all_params: dict[str, list[dict]], *,
     L.append("    g_global%nproma = INT(nproma, c_int)")
     L.append("")
     L.append("    ! Pack Fortran structs into C-compatible glue types.")
+    pd_flag = "vt_prog_diag_alloc" if marshal_prog_diag_once else ".TRUE."
     L.append("    ! Constant structs (patch/int/metrics) marshal once (vt_first_call);")
-    L.append("    ! mutable inputs (prog/diag) re-copy every call.")
+    if marshal_prog_diag_once:
+        L.append("    ! prog/diag likewise marshal once (vt_prog_diag_alloc).")
+    else:
+        L.append("    ! mutable inputs (prog/diag) re-copy every call.")
     L.append("    CALL ctor(p_patch, g_patch, vt_first_call)")
     L.append("    CALL ctor(p_int, g_int, vt_first_call)")
-    L.append("    CALL ctor(p_prog, g_prog, .TRUE.)")
+    L.append(f"    CALL ctor(p_prog, g_prog, {pd_flag})")
     L.append("    CALL ctor(p_metrics, g_metrics, vt_first_call)")
-    L.append("    CALL ctor(p_diag, g_diag, .TRUE.)")
+    L.append(f"    CALL ctor(p_diag, g_diag, {pd_flag})")
     L.append("    vt_first_call = .FALSE.")
+    if marshal_prog_diag_once:
+        L.append("    vt_prog_diag_alloc = .FALSE.")
     L.append("")
 
     # Convert scalars
@@ -717,6 +733,11 @@ def main():
                         help="Include serialization instrumentation hooks")
     parser.add_argument("--debug-prints", action="store_true",
                         help="Include GPU pointer debug prints")
+    parser.add_argument("--marshal-prog-diag-once",
+                        action=argparse.BooleanOptionalAction, default=True,
+                        help="Marshal p_prog/p_diag into the glue structs only on "
+                             "the first call; --no-marshal-prog-diag-once copies "
+                             "them every call")
     args = parser.parse_args()
 
     all_params: dict[str, list[dict]] = {}
@@ -727,13 +748,16 @@ def main():
         all_params[v] = params
         print(f"Parsed {v}: {len(params)} parameters")
 
-    fortran = generate(all_params, serde=args.serde, debug_prints=args.debug_prints)
+    fortran = generate(all_params, serde=args.serde, debug_prints=args.debug_prints,
+                       marshal_prog_diag_once=args.marshal_prog_diag_once)
     Path(args.output).write_text(fortran)
     flags = []
     if args.serde:
         flags.append("serde")
     if args.debug_prints:
         flags.append("debug-prints")
+    if not args.marshal_prog_diag_once:
+        flags.append("prog-diag-every-call")
     flag_str = f" [{', '.join(flags)}]" if flags else ""
     print(f"Generated {args.output} ({len(fortran.splitlines())} lines){flag_str}")
 
