@@ -2,8 +2,33 @@
 
 **Scope**: only **stage 8** is relevant for SC2026. Ignore everything else.
 
-## 1. Get the code
+## Prerequisites
+
+### Spack (one-time)
+
+Spack and its packages repo live in two clones. Pick any location; the example
+uses `$SCRATCH` (on CSCS Alps this resolves to `/capstor/scratch/cscs/$USER`, a
+purge-eligible fast tier — fine for a spack tree, not for anything you want to
+keep long-term).
+
+```bash
+export SPACK_TREE=$SCRATCH/spack-tree
+mkdir -p $SPACK_TREE && cd $SPACK_TREE
+git clone --depth=1 https://github.com/spack/spack.git
+git clone --depth=1 https://github.com/spack/spack-packages.git
+
+source $SPACK_TREE/spack/share/spack/setup-env.sh
+spack repo remove builtin 2>/dev/null || true   # drop any stale user-scoped entry
+spack repo add $SPACK_TREE/spack-packages/repos/spack_repo/builtin
+```
+
+Add the `source` + `spack repo add` lines to your shell rc so future shells see
+them.
+
+### Get the code (one-time)
+
 Sparse-checkout `velocity/` into `icon-vt-dace/`:
+
 ```bash
 git clone --depth 1 --filter=blob:none --sparse \
   --branch okbuddyicon git@github.com:pratyai/icon-artifacts.git _tmp_clone
@@ -13,17 +38,62 @@ mv velocity ../icon-vt-dace
 cd .. && rm -rf _tmp_clone && cd icon-vt-dace
 ```
 
-## 2. Prereqs
-- Python 3.12, CUDA 12+, `ncu`
-- On the cluster:
-  - `uenv image pull icon/25.2:v1@santis`  (one-time)
-  - `uenv start --view=default icon/25.2:v1@santis`  (each session)
-  - `spack` activated (`spack --version` should work)
-  - `spack load cuda sqlite zstd`
-- `python3 -m venv .venv && source .venv/bin/activate`
-- `pip install numpy h5py polars scipy netCDF4 tqdm zstandard git+https://github.com/spcl/dace.git@f2dace/staging`
+All subsequent commands assume you are in the `icon-vt-dace` directory.
 
-## 3. Build integration `.so` + wrapper
+### VT spack env (one-time)
+
+Externals in `arch/cscs/daint/spack.yaml` bind to paths under
+`/user-environment`, only mounted while the `icon/25.2:v1@santis` uenv is
+active. Every `spack` invocation that touches those externals (`concretize`,
+`install`, `load`) must therefore run inside a uenv shell.
+
+Enter one for the whole session:
+
+```bash
+uenv image pull icon/25.2:v1@santis             # one-time
+uenv start --view=default icon/25.2:v1@santis
+```
+
+Then, from inside the uenv shell, re-source spack (uenv resets `PATH`) and
+create + build the env:
+
+```bash
+source $SPACK_TREE/spack/share/spack/setup-env.sh
+spack env create vt-gpu ./arch/cscs/daint/spack.yaml
+spack -e vt-gpu concretize
+spack -e vt-gpu install
+spack env activate vt-gpu
+```
+
+The env pins CUDA to the uenv's 12.6 toolkit as an external, and provides the
+`sqlite3`, `zlib` and `libzstd` that the `.so` links against. Activating it is
+what puts them on `pkg-config`'s path for §1.
+
+For SLURM jobs, use `#SBATCH --uenv=icon/25.2:v1@santis` + `#SBATCH
+--view=default` in the script header — submitting `sbatch` from inside a uenv
+shell is blocked with `libslurm-uenv-mount rc=-3000`.
+
+### Python venv (one-time)
+
+Daint's system `python3` is 3.6 and lives on the frontend only; the uenv's is
+3.10. For a 3.12 interpreter that is also visible on compute nodes, let uv
+manage it (`--python-preference only-managed` keeps the venv off the system
+python):
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"            # add to shell rc too
+
+uv python install 3.12
+uv venv --python 3.12 --python-preference only-managed .venv
+source .venv/bin/activate
+uv pip install numpy h5py polars scipy netCDF4 tqdm zstandard \
+  git+https://github.com/spcl/dace.git@f2dace/staging
+```
+
+`ncu` is needed only for the profiling path (§4).
+
+## 1. Build integration `.so` + wrapper
 
 GH200:
 ```bash
@@ -37,6 +107,11 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp16
 # → libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so
 ```
+
+The compile finds `sqlite3`, `zlib` and `libzstd` through `pkg-config` — the
+activated `vt-gpu` env is what puts them there — and bakes their library
+directories into the `.so` as RUNPATH, so the runtime loader resolves them
+without `LD_LIBRARY_PATH`.
 
 Regenerate the Fortran wrapper (one file; later runs overwrite):
 ```bash
@@ -52,7 +127,7 @@ nothing.
 `--stage-dir` must point at the **`--integration` codegen that built the `.so`
 you are integrating**. `codegen/stage8/<prec>/` is shared between build modes:
 the integration build emits flattened scalar arguments, while the standalone
-path (§6) overwrites the same directory with a struct-pointer interface
+path (§4) overwrites the same directory with a struct-pointer interface
 (`__dace_init(..., t_patch* p_patch, t_nh_prog* p_prog, ...)`). Both generate a
 wrapper that compiles, but one built against the wrong mode mismatches the `.so`
 at the call boundary. If a standalone build has run since, re-run the
@@ -65,11 +140,11 @@ at the call boundary. If a standalone build has run since, re-run the
 > - `serde.f90` (already in-tree; mostly auto-generated, small hand-written
 >   API block — **TODO: fully auto-generate**)
 >
-> **Next: §4 hands off to icon-dace for data generation, §5 brings you
-> back here for analysis.** §6 is the standalone NCU-profiling path,
-> independent of §4–5 — skip unless regenerating the paper's NCU numbers.
+> **Next: §2 hands off to icon-dace for data generation, §3 brings you
+> back here for analysis.** §4 is the standalone NCU-profiling path,
+> independent of §2–3 — skip unless regenerating the paper's NCU numbers.
 
-## 4. Generate data (over in icon-dace)
+## 2. Generate data (over in icon-dace)
 
 Data generation — ICON build, submit, `.data` dumps — lives in
 **icon-dace's `SC2026_HOWTO.md`**. In short: copy `wrapper.f90` into
@@ -79,7 +154,7 @@ Data generation — ICON build, submit, `.data` dumps — lives in
 Follow it through §8 of icon-dace's HOWTO, then come back here for
 analysis.
 
-## 5. Analysis — SNR (come back from icon-dace)
+## 3. Analysis — SNR (come back from icon-dace)
 
 After jobs land their `.data` files under
 `icon-dace/build/verification/experiments/`, run from this tree:
@@ -140,12 +215,12 @@ reduced-precision noise has dipped below the temporal-discretization floor.
 
 One pivot is emitted per grid in the DB.
 
-## 6. Profile (standalone)
+## 4. Profile (standalone)
 
 Only needed to regenerate the paper's NCU numbers. Skip for ICON
 integration.
 
-### 6.1 Reference data
+### 4.1 Reference data
 All four grids available on polybox (folder `SC2026 Data Dumps`).
 Timestep is 2 for R02B03/04/05, 1 for R02B06 (R02B06 was too big to
 keep more steps):
@@ -162,7 +237,7 @@ done
 Extra timesteps beyond these remain only on Daint at
 `/capstor/scratch/cscs/pmazumde/gitspace/ico2/velocity/`.
 
-### 6.2 Build standalone
+### 4.2 Build standalone
 ```bash
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp64
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp32
@@ -170,7 +245,13 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 # → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16}
 ```
 
-### 6.3 Run standalone
+Omitting `--integration` here overwrites `codegen/stage8/<prec>/` with the
+standalone struct-pointer interface, which no longer describes any integration
+`.so` built from that directory. Before returning to §1 — regenerating
+`wrapper.f90` or rebuilding an integration `.so` — re-run the `--integration`
+compile so the directory matches again.
+
+### 4.3 Run standalone
 ```bash
 ./velocity_gpu_stage8_standalone_release.fp64 2 --reps=3 --data=data_r02b04
 #   2         : timestep
@@ -178,7 +259,7 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 #   --data    : reference-dump dir (defaults to data_nproma<NPROMA>)
 ```
 
-### 6.4 NCU — submit
+### 4.4 NCU — submit
 
 `profile_ncu.sh <precision> <timestep> <data_dir> <output_dir>` profiles
 one (precision, grid). Full 4×3 = 12-job sweep. Timestep is 2 for
@@ -207,7 +288,7 @@ sbatch profile_ncu.sh f16 1 data_r02b06 vt_profiles-r02b06
 # → vt_profiles-<grid>/vt.<precision>.ncu-rep  (12 files total)
 ```
 
-### 6.5 NCU — extract once, report many
+### 4.5 NCU — extract once, report many
 
 `extract_ncu.py` shells out to `ncu` to parse each `.ncu-rep` — slow
 (tens of seconds per file) and serial on NCU's side. Run it **once**
@@ -226,7 +307,7 @@ Re-run `extract_ncu.py` only when you add new `.ncu-rep` files.
 Inspect any single report directly: `ncu-ui <file.ncu-rep>` or
 `ncu --import <file.ncu-rep> --page details`.
 
-### 6.6 Metric mapping
+### 4.6 Metric mapping
 Paper table metrics (verified on NCU 2025.2):
 
 - duration: `gpu__time_duration.avg`

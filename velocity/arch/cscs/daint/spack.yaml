@@ -1,0 +1,31 @@
+spack:
+  specs:
+    - cuda@12.6.20
+    - sqlite
+    - zlib
+    - zstd
+
+  concretizer:
+    unify: true
+    reuse: true
+
+  # Externals bind to the CSCS Alps `icon/25.2:v1@santis` uenv view, so every
+  # spack command touching them must run with that uenv active. Every user on
+  # the system sees these paths; no per-user paths belong here.
+  #
+  # CUDA is declared external rather than built: the toolkit that matches the
+  # uenv's driver and compilers is the one the `.so` must be built against.
+  packages:
+    cuda:
+      externals:
+        - spec: cuda@12.6.20
+          prefix: /user-environment/env/default
+    gcc:
+      externals:
+        - spec: gcc@13.2.0 languages:='c,c++,fortran'
+          prefix: /user-environment/linux-sles15-neoverse_v2/gcc-12.3.0/gcc-13.2.0-iyisbcrs7nsbhcwcncsk52zmo3zjf33i
+          extra_attributes:
+            compilers:
+              c: /user-environment/linux-sles15-neoverse_v2/gcc-12.3.0/gcc-13.2.0-iyisbcrs7nsbhcwcncsk52zmo3zjf33i/bin/gcc
+              cxx: /user-environment/linux-sles15-neoverse_v2/gcc-12.3.0/gcc-13.2.0-iyisbcrs7nsbhcwcncsk52zmo3zjf33i/bin/g++
+              fortran: /user-environment/linux-sles15-neoverse_v2/gcc-12.3.0/gcc-13.2.0-iyisbcrs7nsbhcwcncsk52zmo3zjf33i/bin/gfortran
