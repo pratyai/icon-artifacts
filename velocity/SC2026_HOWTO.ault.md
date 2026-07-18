@@ -6,17 +6,15 @@ daint (GH200) — see `SC2026_HOWTO.daint.md`. On ault only the **standalone
 profiling path** (§4 of the daint HOWTO) is relevant; there is no ICON
 integration here.
 
-> ## ⚠️ Not yet exercised on ault — confirm, then delete the matching item
-> Setup and build are confirmed: the spack env concretizes and installs, and on
-> activation provides `nvcc` plus `sqlite3`/`zlib`/`libzstd` via pkg-config; all
-> three precisions compile for `sm_80`. What remains untested is everything that
-> needs the GPU node:
-> 1. **Running the standalone on `ault25`** — including whether the got/want
->    reference check passes on A100.
-> 2. **NCU submission flags** — §4 overrides the daint `#SBATCH` header with
->    `sbatch` CLI flags rather than forking the script; confirm
->    `--partition=total --nodelist=ault25 --gres=gpu:a100:1` are right.
-> 3. **`ncu` availability/version** (the daint metric mapping assumes NCU 2025.2).
+> ## Known limitations
+> - **R02B06 does not run.** It reads its dumps and initialises the GPU (only
+>   ~1.7 GB), then aborts with an uncaught C++ exception at the first timing
+>   iteration. Not a memory ceiling — host RSS peaks at 12–19 GB and the GPU is
+>   nearly idle. R02B03/04/05 are unaffected.
+> - **NCU 2023.1.1** is what the spack env provides, older than the 2025.2 the
+>   metric mapping in daint §4.6 was written against. Profiling and extraction
+>   both work, but some metrics come back `n/a` (coalescing %, sectors/request,
+>   warps launched). Re-check names before trusting those columns.
 
 ## Prerequisites
 
@@ -107,7 +105,7 @@ git clone --recursive -b f2dace/staging https://github.com/spcl/dace.git ../../d
 uv pip install -e ../../dace
 ```
 
-`ncu` is needed for §4 — ⚠️ confirm it is installed on ault.
+`ncu` comes from the spack env (2023.1.1); §4 needs the env active.
 
 ## Every login
 
@@ -143,6 +141,9 @@ ICON, and ICON is not built here.
 Same tarballs as daint §4.1 — polybox folder `SC2026 Data Dumps`, timestep 2
 for R02B03/04/05, 1 for R02B06:
 
+Extracted sizes grow ~4× per refinement: R02B03 780 MB, R02B04 3.1 GB,
+R02B05 13 GB, R02B06 40 GB.
+
 ```bash
 SHARE='https://polybox.ethz.ch/index.php/s/xfprBf6rYjY7EZD/download'
 for F in data_r02b03.tar.zst data_r02b04.tar.zst data_r02b05.tar.zst data_r02b06.tar.zst; do
@@ -154,32 +155,47 @@ done
 
 ## 3. Run standalone
 
+The GPU is not the constraint — even the largest grid peaks around 1.7 GB of
+the A100's memory. Host RAM is: reading the reference dumps needs far more than
+SLURM's 8 GB default, which otherwise oom-kills the job mid-read. Request
+memory to match the grid (R02B05 peaks ~12 GB, R02B06 ~19 GB).
+
 ```bash
-./velocity_gpu_stage8_standalone_release.fp64 2 --reps=3 --data=data_r02b04
-#   2       : timestep      --reps : timing repetitions      --data : reference-dump dir
+srun --partition=amda100 --nodelist=ault25 --gres=gpu:a100:1 --mem=64G \
+  ./velocity_gpu_stage8_standalone_release.fp64 2 --reps=10 --data=data_r02b04
+#   2       : timestep (1 for R02B06)   --reps : timing repetitions
+#   --data  : reference-dump dir
 ```
+
+Each rep prints `Timer … took N us`; the first is cold (JIT) and should be
+dropped before taking a median.
 
 ## 4. NCU — profile, extract, report
 
 `profile_ncu.sh` ships a daint SBATCH header. Rather than fork it, override the
-directives with `sbatch` CLI flags (they take precedence over `#SBATCH`):
+directives with `sbatch` CLI flags (they take precedence over `#SBATCH`).
+**Submit from a shell with the spack env activated** — the script sets up no
+environment of its own, so it inherits `PATH` from the submitter and otherwise
+dies instantly with `ncu: command not found`:
 
 ```bash
-sbatch --partition=total --nodelist=ault25 --gres=gpu:a100:1 --account=g34 \
-  profile_ncu.sh f64 2 data_r02b04 vt_profiles-r02b04    # ⚠️ confirm flags on ault
+spack env activate vt-gpu
+sbatch --partition=amda100 --nodelist=ault25 --gres=gpu:a100:1 --time=04:00:00 \
+  profile_ncu.sh fp64 2 data_r02b04 vt_profiles-r02b04
 ```
 
+`amda100` caps at 4 h, which `--set full` on the larger grids can approach.
+
 The sweep is otherwise identical to daint §4.4 — 3 precisions × the grids you
-keep (⚠️ A100 has 40 GB; the largest grids may OOM — start with R02B03/04).
-Extract and report exactly as daint §4.5–4.6:
+keep. Extract and report exactly as daint §4.5–4.6:
 
 ```bash
 python extract_ncu.py vt_profiles-r02b0*/vt.*.ncu-rep   # one-shot → 2 CSVs
 python report_ncu.py                                    # aggregate + dominant kernel
 ```
 
-The metric mapping (daint §4.6) is NCU-version-specific — re-check the names if
-ault's `ncu` differs from 2025.2.
+The metric mapping (daint §4.6) is NCU-version-specific; see the note on
+2023.1.1 at the top of this file.
 
 ## Key differences from daint
 
@@ -191,6 +207,6 @@ ault's `ncu` differs from 2025.2.
 | spack env | `arch/cscs/daint/spack.yaml` (uenv externals) | `arch/cscs/ault/spack.yaml` |
 | `$SCRATCH` | `/capstor/scratch/cscs/$USER` | `/scratch/$USER` |
 | Node runtime | `--uenv=… --view=default` | none |
-| SLURM | `-p debug/normal`, `--uenv` header | `-p total --nodelist=ault25 --gres=gpu:a100:1` ⚠️ |
+| SLURM | `-p debug/normal`, `--uenv` header | `-p amda100 --nodelist=ault25 --gres=gpu:a100:1`, 4 h cap |
 | Workflow | integration (numerical) + standalone (perf) | **standalone/NCU only** |
 | Integration/SNR | yes | no — use daint |
