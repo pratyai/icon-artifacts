@@ -1120,6 +1120,9 @@ def compile_if_propagated_sdfgs(
         ptx_dir = f"ptx_out/{lowprec_tag}"
         flags += f" --keep --keep-dir={ptx_dir}"
         flags += f' -DLOWPREC_TAG=\\"{lowprec_tag}\\"'
+        if lowprec_tag == "bf16":
+            # Retarget dace::float16 to __nv_bfloat16 in the DaCe headers.
+            flags += " -DDACE_FLOAT16_IS_BFLOAT16"
 
         out_file = output_name or ("libvelocity_gpu.so" if lib else "velocity_gpu")
         cmd = f"nvcc {' '.join(sources)} {base_inc} {flags} {extra_libs} {rpath_flags_nvcc} -lsqlite3 -lz -lzstd -o {out_file}"

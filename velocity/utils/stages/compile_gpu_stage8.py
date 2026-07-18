@@ -404,6 +404,9 @@ def optimization_action(sdfg):
         "fp64": dace.float64,
         "fp32": dace.float32,
         "fp16": dace.float16,
+        # bfloat16 reuses the float16 descriptor: same 2 bytes, so the SDFG
+        # is identical and only the C++ typedef behind dace::float16 differs.
+        "bf16": dace.float16,
         "f32": dace.float32,
         "f64": dace.float64,
         "f16": dace.float16,

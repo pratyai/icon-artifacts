@@ -114,13 +114,13 @@ void read_scalar(double &x, std::istream &s) {
   x = y;
 }
 
-void read_scalar(half &x, std::istream &s) {
+void read_scalar(dace::float16 &x, std::istream &s) {
   if (s.eof())
     return;
   scroll_space(s);
   long double y;
   s >> y;
-  x = static_cast<half>(static_cast<float>(y));
+  x = static_cast<dace::float16>(static_cast<float>(y));
 }
 
 void read_scalar(bool &x, std::istream &s) {
@@ -165,7 +165,7 @@ template <typename T> std::string serialize_array(T *arr);
 
 void deserialize(float *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(double *x, std::istream &s) { read_scalar(*x, s); }
-void deserialize(half *x, std::istream &s) { read_scalar(*x, s); }
+void deserialize(dace::float16 *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(long double *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(int *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(long *x, std::istream &s) { read_scalar(*x, s); }
@@ -173,7 +173,7 @@ void deserialize(long long *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(bool *x, std::istream &s) { read_scalar(*x, s); }
 void deserialize(float &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(double &x, std::istream &s) { read_scalar(x, s); }
-void deserialize(half &x, std::istream &s) { read_scalar(x, s); }
+void deserialize(dace::float16 &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(long double &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(int &x, std::istream &s) { read_scalar(x, s); }
 void deserialize(long &x, std::istream &s) { read_scalar(x, s); }
@@ -1372,7 +1372,7 @@ std::string serialize(long double x) {
   s << std::setprecision(20) << x;
   return s.str();
 }
-std::string serialize(half x) { return serialize(static_cast<float>(x)); }
+std::string serialize(dace::float16 x) { return serialize(static_cast<float>(x)); }
 std::string serialize(bool x) { return serialize(int(x)); }
 
 std::string serialize(const t_grid_domain_decomp_info *x) {

@@ -146,7 +146,7 @@ def standard_main(stage_id, optimization_action_func, compile_extra_kwargs=None)
         "--lowprec",
         type=str,
         default=None,
-        choices=["fp64", "fp32", "fp16", "f32", "f64", "f16", "half", "bfp8", "bfp16", "bfp32"],
+        choices=["fp64", "fp32", "fp16", "bf16", "f32", "f64", "f16", "half", "bfp8", "bfp16", "bfp32"],
     )
     argp.add_argument(
         "--integration", action=argparse.BooleanOptionalAction, default=None
