@@ -5,13 +5,22 @@
 // All mixed ops cast to float (not double) so GPU ALU stays in fp32.
 #pragma once
 
+#include <cmath>
+
 #include <dace/types.h>
 
 #ifdef __CUDACC__
 
 // --- abs ---
+// `__habs` is a device-only intrinsic, so the host path goes through fp32.
+// Some CUDA versions accept the unguarded call and others reject it outright
+// ("calling a __device__ function from a __host__ __device__ function").
 __device__ __host__ inline dace::float16 abs(dace::float16 a) {
+#ifdef __CUDA_ARCH__
     return __habs(a);
+#else
+    return static_cast<dace::float16>(std::fabs(static_cast<float>(a)));
+#endif
 }
 
 // --- Comparison: half <op> double ---

@@ -6,27 +6,17 @@ daint (GH200) — see `SC2026_HOWTO.daint.md`. On ault only the **standalone
 profiling path** (§4 of the daint HOWTO) is relevant; there is no ICON
 integration here.
 
-> ## ⚠️ Unverified on ault — confirm on a real run, then delete this box
-> Nothing below has been exercised on ault for VT yet (the daint HOWTO has;
-> the old `shared_libs/ault*` builds predate this workflow). The items marked
-> **⚠️** are best-guess, adapted from the cloudsc ault HOWTO and the A100
-> target:
-> 1. **`arch/cscs/ault/spack.yaml`** asks spack for `cuda@12.1.1` + `gcc@12`
->    (plus sqlite/zlib/zstd). Both version floors are **verified requirements**,
->    not guesses: nvcc accepts `-std=c++20` only from cuda 12 (11.x tops out at
->    c++17), and the serde headers include `<ranges>`, which needs libstdc++ from
->    gcc ≥ 10. What is unverified is the **build itself** — gcc@12 from source is
->    slow, and the concretization hasn't been run.
-> 2. **GENCODE** `arch=compute_80,code=sm_80` (A100 cc80) — standard, unverified
->    against this build.
-> 3. **`profile_ncu.sh` has a daint SBATCH header** (`--partition=normal
->    --gres=gpu:1`); §4 overrides it with `sbatch` CLI flags (which win over
->    `#SBATCH`) rather than forking the script — confirm the flags are right for
->    ault (`--partition=total --nodelist=ault25 --gres=gpu:a100:1`).
-> 4. **Whether the standalone builds/runs on A100** with the ault toolchain
->    (FP16 in particular may ICE on an older nvhpc, as it does for cloudsc 21.3).
-> 5. **`ncu` availability/version** on ault (the daint metric mapping assumes
->    NCU 2025.2).
+> ## ⚠️ Not yet exercised on ault — confirm, then delete the matching item
+> The spack env (§Prerequisites) is confirmed working: it concretizes, installs,
+> and on activation provides `nvcc` plus `sqlite3`/`zlib`/`libzstd` via
+> pkg-config. Everything downstream of it is still untested here:
+> 1. **GENCODE** `arch=compute_80,code=sm_80` (A100 cc80) — standard, but
+>    unverified against this build.
+> 2. **Whether the standalone compiles and runs on A100**, FP16 included.
+> 3. **NCU submission flags** — §4 overrides the daint `#SBATCH` header with
+>    `sbatch` CLI flags rather than forking the script; confirm
+>    `--partition=total --nodelist=ault25 --gres=gpu:a100:1` are right.
+> 4. **`ncu` availability/version** (the daint metric mapping assumes NCU 2025.2).
 
 ## Prerequisites
 
@@ -85,7 +75,7 @@ Both version floors are hard requirements, not preferences:
 ```bash
 spack env create vt-gpu ./arch/cscs/ault/spack.yaml
 spack -e vt-gpu concretize
-spack -e vt-gpu install        # ⚠️ gcc@12 from source is slow (~1 h+)
+spack -e vt-gpu install        # gcc@12 from source is the slow part
 spack env activate vt-gpu
 ```
 
@@ -147,8 +137,9 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 # → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16}
 ```
 
-No `--integration` (that path is daint-only). ⚠️ FP16 may ICE on an older ault
-nvhpc — if so, drop the fp16 line and profile fp64/fp32 only.
+No `--integration`: the integration `.so` is only useful `LD_PRELOAD`ed into
+ICON, and ICON is not built here. ⚠️ If FP16 fails to compile, drop that line
+and profile fp64/fp32 only.
 
 ## 2. Reference data
 
@@ -199,8 +190,8 @@ ault's `ncu` differs from 2025.2.
 |---|---|---|
 | GPU | GH200 (cc90) | A100 (cc80) |
 | GENCODE | `compute_90,code=sm_90` | `compute_80,code=sm_80` ⚠️ |
-| Toolchain | uenv `icon/25.2` (cuda 12.6) | spack nvhpc (no uenv) ⚠️ |
-| spack env | `arch/cscs/daint/spack.yaml` (uenv externals) | `arch/cscs/ault/spack.yaml` ⚠️ (to create) |
+| Toolchain | uenv `icon/25.2` (cuda 12.6) | spack `cuda@12.1.1` + `gcc@12`, no uenv |
+| spack env | `arch/cscs/daint/spack.yaml` (uenv externals) | `arch/cscs/ault/spack.yaml` |
 | `$SCRATCH` | `/capstor/scratch/cscs/$USER` | `/scratch/$USER` |
 | Node runtime | `--uenv=… --view=default` | none |
 | SLURM | `-p debug/normal`, `--uenv` header | `-p total --nodelist=ault25 --gres=gpu:a100:1` ⚠️ |
