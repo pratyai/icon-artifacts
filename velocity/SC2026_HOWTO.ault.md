@@ -11,10 +11,12 @@ integration here.
 > the old `shared_libs/ault*` builds predate this workflow). The items marked
 > **⚠️** are best-guess, adapted from the cloudsc ault HOWTO and the A100
 > target:
-> 1. **`arch/cscs/ault/spack.yaml`** is drafted (cuda + gcc + sqlite/zlib/zstd,
->    modeled on the cloudsc ault 21.3 env) but its **cuda external
->    (`11.2.142` at `/opt/nvidia/hpc_sdk/.../21.3/cuda`) is unverified** — the
->    path and whether 11.2's nvcc/CUB build the sm_80 kernels (daint uses 12.6).
+> 1. **`arch/cscs/ault/spack.yaml`** asks spack for `cuda@12.1.1` + `gcc@12`
+>    (plus sqlite/zlib/zstd). Both version floors are **verified requirements**,
+>    not guesses: nvcc accepts `-std=c++20` only from cuda 12 (11.x tops out at
+>    c++17), and the serde headers include `<ranges>`, which needs libstdc++ from
+>    gcc ≥ 10. What is unverified is the **build itself** — gcc@12 from source is
+>    slow, and the concretization hasn't been run.
 > 2. **GENCODE** `arch=compute_80,code=sm_80` (A100 cc80) — standard, unverified
 >    against this build.
 > 3. **`profile_ncu.sh` has a daint SBATCH header** (`--partition=normal
@@ -68,21 +70,27 @@ All subsequent commands assume you are in `icon-vt-dace/velocity`.
 ### VT spack env (one-time)
 
 No uenv on ault, so the daint `spack.yaml` (uenv `/user-environment` externals)
-does not apply. `arch/cscs/ault/spack.yaml` instead declares `cuda` + `gcc` as
-externals (from the site NVHPC 21.3 install, the same prefix the cloudsc ault
-env uses) plus `sqlite`/`zlib`/`zstd`. VT builds with nvcc + g++, so it needs no
-nvhpc/hdf5/cmake.
+does not apply. `arch/cscs/ault/spack.yaml` has spack provide everything —
+`cuda@12.1.1`, `gcc@12`, `sqlite`, `zlib`, `zstd` — with only a bootstrap gcc
+declared external. VT builds with nvcc + g++, so it needs no nvhpc/hdf5/cmake.
+
+Both version floors are hard requirements, not preferences:
+
+- **cuda ≥ 12** — the standalone compiles with `-std=c++20`, and nvcc only
+  accepts c++20 from 12.0 (11.x fails with `Value 'c++20' is not defined for
+  option 'std'`).
+- **gcc ≥ 10** — the serde headers `#include <ranges>`; older libstdc++ has no
+  such header (`fatal error: ranges: No such file or directory`).
 
 ```bash
 spack env create vt-gpu ./arch/cscs/ault/spack.yaml
 spack -e vt-gpu concretize
-spack -e vt-gpu install
+spack -e vt-gpu install        # ⚠️ gcc@12 from source is slow (~1 h+)
 spack env activate vt-gpu
 ```
 
-⚠️ Verify the cuda external (`11.2.142` prefix) resolves on ault, and that its
-nvcc/CUB build the sm_80 kernels (daint uses 12.6). If not, repoint `cuda:` at a
-newer site cuda or add `cuda@12` to the specs to spack-build it.
+Activating the env is what puts nvcc on `PATH` and `sqlite3`/`zlib`/`libzstd` on
+`pkg-config`'s path; without it the build fails on both.
 
 Activating the env is what puts `sqlite3`/`zlib`/`libzstd` on `pkg-config`'s
 path for the build (§1), which bakes their dirs into the binary as RUNPATH.

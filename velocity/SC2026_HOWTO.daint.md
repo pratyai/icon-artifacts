@@ -116,6 +116,22 @@ and keeps them.
 
 `ncu` is needed only for the profiling path (§4).
 
+## Every login
+
+```bash
+export SPACK_TREE=$SCRATCH/spack-tree
+export PATH="$HOME/.local/bin:$PATH"
+
+uenv start --view=default icon/25.2:v1@santis    # resets PATH — source spack after it
+source $SPACK_TREE/spack/share/spack/setup-env.sh
+spack env activate vt-gpu
+source .venv/bin/activate                        # from icon-vt-dace/velocity
+```
+
+Order matters: `uenv start` resets `PATH`, so spack has to be re-sourced inside
+the uenv shell. Submit SLURM jobs from a **plain** login shell instead (with the
+`#SBATCH --uenv` / `--view` header) — `sbatch` is blocked inside a uenv session.
+
 ## 1. Build integration `.so` + wrapper
 
 GH200:
