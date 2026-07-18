@@ -7,16 +7,16 @@ profiling path** (§4 of the daint HOWTO) is relevant; there is no ICON
 integration here.
 
 > ## ⚠️ Not yet exercised on ault — confirm, then delete the matching item
-> The spack env (§Prerequisites) is confirmed working: it concretizes, installs,
-> and on activation provides `nvcc` plus `sqlite3`/`zlib`/`libzstd` via
-> pkg-config. Everything downstream of it is still untested here:
-> 1. **GENCODE** `arch=compute_80,code=sm_80` (A100 cc80) — standard, but
->    unverified against this build.
-> 2. **Whether the standalone compiles and runs on A100**, FP16 included.
-> 3. **NCU submission flags** — §4 overrides the daint `#SBATCH` header with
+> Setup and build are confirmed: the spack env concretizes and installs, and on
+> activation provides `nvcc` plus `sqlite3`/`zlib`/`libzstd` via pkg-config; all
+> three precisions compile for `sm_80`. What remains untested is everything that
+> needs the GPU node:
+> 1. **Running the standalone on `ault25`** — including whether the got/want
+>    reference check passes on A100.
+> 2. **NCU submission flags** — §4 overrides the daint `#SBATCH` header with
 >    `sbatch` CLI flags rather than forking the script; confirm
 >    `--partition=total --nodelist=ault25 --gres=gpu:a100:1` are right.
-> 4. **`ncu` availability/version** (the daint metric mapping assumes NCU 2025.2).
+> 3. **`ncu` availability/version** (the daint metric mapping assumes NCU 2025.2).
 
 ## Prerequisites
 
@@ -80,10 +80,8 @@ spack env activate vt-gpu
 ```
 
 Activating the env is what puts nvcc on `PATH` and `sqlite3`/`zlib`/`libzstd` on
-`pkg-config`'s path; without it the build fails on both.
-
-Activating the env is what puts `sqlite3`/`zlib`/`libzstd` on `pkg-config`'s
-path for the build (§1), which bakes their dirs into the binary as RUNPATH.
+`pkg-config`'s path — the build fails on both without it, and the pkg-config
+hits are what get baked into the binary as RUNPATH.
 
 ### Python venv (one-time)
 
@@ -127,7 +125,7 @@ No uenv, so that covers everything.
 
 A100:
 ```bash
-export GENCODE_ARCH="arch=compute_80,code=sm_80"    # ⚠️ cc80
+export GENCODE_ARCH="arch=compute_80,code=sm_80"
 ```
 
 ```bash
@@ -138,8 +136,7 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 ```
 
 No `--integration`: the integration `.so` is only useful `LD_PRELOAD`ed into
-ICON, and ICON is not built here. ⚠️ If FP16 fails to compile, drop that line
-and profile fp64/fp32 only.
+ICON, and ICON is not built here.
 
 ## 2. Reference data
 
@@ -189,7 +186,7 @@ ault's `ncu` differs from 2025.2.
 | Aspect | daint | ault |
 |---|---|---|
 | GPU | GH200 (cc90) | A100 (cc80) |
-| GENCODE | `compute_90,code=sm_90` | `compute_80,code=sm_80` ⚠️ |
+| GENCODE | `compute_90,code=sm_90` | `compute_80,code=sm_80` |
 | Toolchain | uenv `icon/25.2` (cuda 12.6) | spack `cuda@12.1.1` + `gcc@12`, no uenv |
 | spack env | `arch/cscs/daint/spack.yaml` (uenv externals) | `arch/cscs/ault/spack.yaml` |
 | `$SCRATCH` | `/capstor/scratch/cscs/$USER` | `/scratch/$USER` |
