@@ -1,0 +1,33 @@
+spack:
+  # VT's .so / standalone are built with nvcc + g++ (not nvfortran), so this
+  # env provides cuda + gcc + the sqlite/zlib/zstd the binary links against.
+  # It does NOT need nvhpc/hdf5/cmake (that is the cloudsc build).
+  specs:
+    - cuda@11.2.142
+    - sqlite
+    - zlib
+    - zstd
+
+  concretizer:
+    unify: true
+    reuse: true
+
+  packages:
+    # CUDA from the site NVHPC 21.3 install (same prefix the cloudsc ault env
+    # uses). ⚠️ VERIFY on ault: the path, and that cuda 11.2's nvcc + CUB build
+    # the VT kernels for sm_80 (daint uses 12.6; if 11.2's CUB rejects them,
+    # point this at a newer site cuda or spack-install cuda).
+    cuda:
+      externals:
+        - spec: cuda@11.2.142
+          prefix: /opt/nvidia/hpc_sdk/Linux_x86_64/21.3/cuda
+    # System gcc as the host compiler (same as the cloudsc ault env).
+    gcc:
+      externals:
+        - spec: gcc@8.5.0 languages:='c,c++,fortran'
+          prefix: /usr
+          extra_attributes:
+            compilers:
+              c: /usr/bin/gcc
+              cxx: /usr/bin/g++
+              fortran: /usr/bin/gfortran
