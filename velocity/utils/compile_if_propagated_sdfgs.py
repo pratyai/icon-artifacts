@@ -1,6 +1,7 @@
 import dace
 import os
 import shutil
+import sys
 from pathlib import Path
 import typing
 import re
@@ -1077,7 +1078,16 @@ def compile_if_propagated_sdfgs(
                     if d and d not in rpath_dirs:
                         rpath_dirs.append(d)
         except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
+            # The link still passes -l<lib> below, so a miss here does not fail
+            # the build — it silently falls back to whatever the default search
+            # path holds, and drops the RUNPATH that lets the .so find the
+            # library at runtime.
+            print(
+                f"WARNING: pkg-config could not resolve '{lib_name}'. Linking will"
+                f" fall back to the default search path and bake no RUNPATH for it."
+                f" Activate the spack env that provides it (see SC2026_HOWTO).",
+                file=sys.stderr,
+            )
     # nvcc rejects `-Wl,...`; use `-Xlinker -rpath -Xlinker <dir>` for it.
     rpath_flags_nvcc = " ".join(f"-Xlinker -rpath -Xlinker {d}" for d in rpath_dirs)
     rpath_flags_cxx = " ".join(f"-Wl,-rpath,{d}" for d in rpath_dirs)
