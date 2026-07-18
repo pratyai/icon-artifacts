@@ -27,18 +27,22 @@ them.
 
 ### Get the code (one-time)
 
-Sparse-checkout `velocity/` into `icon-vt-dace/`:
+Sparse-checkout `velocity/`, keeping the clone so later updates are a `git
+pull` rather than a re-clone (which would take `.venv` and any build products
+with it):
 
 ```bash
 git clone --depth 1 --filter=blob:none --sparse \
-  --branch okbuddyicon git@github.com:pratyai/icon-artifacts.git _tmp_clone
-cd _tmp_clone
+  --branch okbuddyicon git@github.com:pratyai/icon-artifacts.git icon-vt-dace
+cd icon-vt-dace
 git sparse-checkout set velocity
-mv velocity ../icon-vt-dace
-cd .. && rm -rf _tmp_clone && cd icon-vt-dace
+cd velocity
 ```
 
-All subsequent commands assume you are in the `icon-vt-dace` directory.
+All subsequent commands assume you are in `icon-vt-dace/velocity`.
+
+`icon-dace` is then no longer a sibling of this directory, so §3 needs its
+`EXP_DIR` passed explicitly.
 
 ### VT spack env (one-time)
 
@@ -87,9 +91,28 @@ export PATH="$HOME/.local/bin:$PATH"            # add to shell rc too
 uv python install 3.12
 uv venv --python 3.12 --python-preference only-managed .venv
 source .venv/bin/activate
-uv pip install numpy h5py polars scipy netCDF4 tqdm zstandard \
-  git+https://github.com/spcl/dace.git@f2dace/staging
+uv pip install numpy h5py polars scipy netCDF4 tqdm zstandard
 ```
+
+DaCe must be installed from a clone, editable. Keep the clone outside the
+checkout, next to `icon-vt-dace`:
+
+```bash
+git clone --recursive -b f2dace/staging https://github.com/spcl/dace.git ../../dace
+uv pip install -e ../../dace
+```
+
+`--recursive` matters: DaCe carries its externals (`cub`, `rtllib`, `hlslib`,
+…) as submodules, and importing `dace.transformation` reaches
+`dace.external.rtllib.templates` through the codegen targets. Without them the
+import fails.
+
+Installing it straight from the URL (`uv pip install git+…dace.git@f2dace/staging`)
+builds a wheel instead, and `setup.py` selects modules with `find_packages()`,
+which skips subpackages that carry no `__init__.py` —
+`dace.transformation.passes.simplification` is one, so the import fails at
+`compile_gpu_stage8` time. An editable install maps the source tree directly
+and keeps them.
 
 `ncu` is needed only for the profiling path (§4).
 
