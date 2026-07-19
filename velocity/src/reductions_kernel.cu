@@ -1,6 +1,8 @@
 #include "gpu_mem.h"
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
+// Must precede cub: cub keys its 16-bit float traits off __CUDA_BF16_TYPES_EXIST__.
+#include <cuda_bf16.h>
 #include <cub/cub.cuh>
 
 ////////////////////////////////////////////////////
@@ -273,11 +275,21 @@ template __half reduce_maxZ_to_scalar_gpu<__half, __half>(const __half*, int, cu
 template double reduce_maxZ_to_scalar_gpu<float, double>(const float*, int, cudaStream_t);
 template double reduce_maxZ_to_scalar_gpu<__half, double>(const __half*, int, cudaStream_t);
 
+// bfloat16 mirrors of the __half set, for builds where dace::float16 is
+// retargeted to __nv_bfloat16. Both 16-bit types are instantiated regardless of
+// which one the rest of the build selects; the unused set costs only code size.
+template void reduce_maxZ_to_address_gpu<__nv_bfloat16, __nv_bfloat16>(const __nv_bfloat16*, __nv_bfloat16*, int, cudaStream_t);
+template void reduce_maxZ_to_address_gpu<__nv_bfloat16, double>(const __nv_bfloat16*, double*, int, cudaStream_t);
+template __nv_bfloat16 reduce_maxZ_to_scalar_gpu<__nv_bfloat16, __nv_bfloat16>(const __nv_bfloat16*, int, cudaStream_t);
+template double reduce_maxZ_to_scalar_gpu<__nv_bfloat16, double>(const __nv_bfloat16*, int, cudaStream_t);
+
 template void reduce_sum_to_address_gpu<double, double>(const double*, double*, int, cudaStream_t);
 template void reduce_sum_to_address_gpu<float, float>(const float*, float*, int, cudaStream_t);
 template void reduce_sum_to_address_gpu<__half, __half>(const __half*, __half*, int, cudaStream_t);
 template void reduce_sum_to_address_gpu<float, double>(const float*, double*, int, cudaStream_t);
 template void reduce_sum_to_address_gpu<__half, double>(const __half*, double*, int, cudaStream_t);
+template void reduce_sum_to_address_gpu<__nv_bfloat16, __nv_bfloat16>(const __nv_bfloat16*, __nv_bfloat16*, int, cudaStream_t);
+template void reduce_sum_to_address_gpu<__nv_bfloat16, double>(const __nv_bfloat16*, double*, int, cudaStream_t);
 
 
 // --- Non-templated int reductions ---
