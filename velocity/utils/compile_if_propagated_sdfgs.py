@@ -728,6 +728,7 @@ def compile_if_propagated_sdfgs(
             if os.getenv("_LOWPREC", "fp64").lower() in (
                 "fp16",
                 "f16",
+                "bf16",
                 "bfp8",
                 "bfp16",
             ):
