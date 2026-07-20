@@ -13,7 +13,8 @@
 #     BASELINE : which FP64 run is the reference (default: vanilla).
 #                `gpufp64` compares against the VT FP64 run instead, for
 #                sweeps that submitted no vanilla arm.
-#     PRECS    : lowered precisions to compare (default: fp32 fp16).
+#     PRECS    : lowered precisions to compare (default: fp32 fp16 bf16,
+#                matching the arms sbatch_all_sc2026.sh submits).
 #
 # Each precision yields an `OG_vs_<PREC>` tag, plus `ss10_vs_<PREC>` when the
 # ss10 reference exists; `ss5_vs_ss10` is the temporal noise floor (SNR_time in
@@ -28,7 +29,7 @@ GRID=${1:? "Usage: $0 <GRID> [EXP_DIR] [DB]  (e.g. 0010_R02B04)"}
 EXP=${2:-../icon-dace/build/verification/experiments}
 DB=${3:-./snr.db}
 BASELINE=${BASELINE:-vanilla}
-PRECS=${PRECS:-"fp32 fp16"}
+PRECS=${PRECS:-"fp32 fp16 bf16"}
 
 GRID_LABEL="${GRID##*_}"   # 0010_R02B04 -> R02B04
 

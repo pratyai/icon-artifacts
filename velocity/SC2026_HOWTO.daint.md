@@ -230,13 +230,12 @@ Writes a shared `snr.db` (SQLite), keyed by
 `OG_vs_F32`, `OG_vs_F16`, `OG_vs_BF16`, `ss5_vs_ss10`, `ss10_vs_F32`,
 `ss10_vs_F16`, `ss10_vs_BF16`.
 
-`PRECS` selects which lowered precisions to compare (default `"fp32 fp16"`;
-pass `"fp32 fp16 bf16"` to include bfloat16), and `BASELINE` picks the FP64
-reference run — `vanilla` by default, or `gpufp64` for a sweep that submitted
-no vanilla arm:
+`PRECS` selects which lowered precisions to compare, defaulting to the three
+`sbatch_all_sc2026.sh` submits. `BASELINE` picks the FP64 reference run —
+`vanilla` by default, or `gpufp64` for a sweep that submitted no vanilla arm:
 
 ```bash
-PRECS="fp32 fp16 bf16" ./run_snr_compare.sh 0010_R02B04
+PRECS="fp32 fp16" BASELINE=gpufp64 ./run_snr_compare.sh 0010_R02B04
 ```
 
 ### Paper table (first-step SNR)
