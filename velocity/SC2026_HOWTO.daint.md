@@ -33,7 +33,7 @@ with it):
 
 ```bash
 git clone --depth 1 --filter=blob:none --sparse \
-  --branch okbuddyicon git@github.com:pratyai/icon-artifacts.git icon-vt-dace
+  --branch okbuddyicon https://github.com/pratyai/icon-artifacts.git icon-vt-dace
 cd icon-vt-dace
 git sparse-checkout set velocity
 cd velocity
@@ -144,8 +144,14 @@ One `.so` per precision:
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp64
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp32
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec fp16
-# → libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so
+python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --integration --lower-all --lowprec bf16
+# → libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16,bf16}.so
 ```
+
+`bf16` and `fp16` share a wrapper: the type swap happens behind the
+`dace::float16` typedef, so the flattened argument list and every symbol name
+are identical and `gen_fortran_wrapper.py` emits a byte-identical `wrapper.f90`
+for both. Swapping the `.so` under a built ICON needs no Fortran-side change.
 
 The compile finds `sqlite3`, `zlib` and `libzstd` through `pkg-config` — the
 activated `vt-gpu` env is what puts them there — and bakes their library
@@ -174,7 +180,7 @@ at the call boundary. If a standalone build has run since, re-run the
 
 > **✅ Artifacts ready**
 >
-> - `libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16}.so`
+> - `libvelocity_gpu_stage8_solve_nh_integration_release.{fp64,fp32,fp16,bf16}.so`
 > - `wrapper.f90`
 > - `serde.f90` (already in-tree; mostly auto-generated, small hand-written
 >   API block — **TODO: fully auto-generate**)
@@ -221,8 +227,17 @@ may live under `sc2026-ad-test/` while icon-dace lives under
 
 Writes a shared `snr.db` (SQLite), keyed by
 `(grid, tag, phys, field, sub_field)`. Tags per grid:
-`FP32_vs_FP64`, `FP16_vs_FP64`, `FP64_vs_refined`, `FP32_vs_refined`,
-`FP16_vs_refined`.
+`OG_vs_F32`, `OG_vs_F16`, `OG_vs_BF16`, `ss5_vs_ss10`, `ss10_vs_F32`,
+`ss10_vs_F16`, `ss10_vs_BF16`.
+
+`PRECS` selects which lowered precisions to compare (default `"fp32 fp16"`;
+pass `"fp32 fp16 bf16"` to include bfloat16), and `BASELINE` picks the FP64
+reference run — `vanilla` by default, or `gpufp64` for a sweep that submitted
+no vanilla arm:
+
+```bash
+PRECS="fp32 fp16 bf16" ./run_snr_compare.sh 0010_R02B04
+```
 
 ### Paper table (first-step SNR)
 
@@ -234,23 +249,26 @@ polars pivot per grid, rows = paper's 5 fields (`vn`, `w`, `vt`,
 ```bash
 python -m utils.report_serde snr.db --phys 2 --cross-only
 # → PAPER SNR TABLE: grid=R02B04, phys=2
-#   field       │ FP32   │ FP16  │ FP64_vs_refined │ FP32_vs_refined │ FP16_vs_refined
-#   vn          │ 154.10 │ 75.80 │ 66.60           │ 66.60           │ 66.10
+#   field       │ OG_vs_F32 │ OG_vs_F16 │ ss5_vs_ss10 │ ss10_vs_F32 │ ss10_vs_F16
+#   vn          │ 154.10    │ 75.80     │ 66.60       │ 66.60       │ 66.10
 #   ...
 ```
 
 Column legend (REF → TEST):
 
-| Tag                 | REF                        | TEST                       | Interpretation                             |
-|---------------------|----------------------------|----------------------------|--------------------------------------------|
-| `FP32_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp32` (VT FP32)    | noise FP32 introduces                      |
-| `FP16_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp16` (VT FP16)    | noise FP16 introduces                      |
-| `FP64_vs_refined`   | `ss5_vanilla` (FP64 ref)   | `ss10_vanilla` (FP64 ref×2 substeps) | temporal-discretization floor    |
-| `FP32_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpufp32` (VT FP32)    | FP32 vs the refined reference              |
-| `FP16_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpufp16` (VT FP16)    | FP16 vs the refined reference              |
+| Tag             | REF                        | TEST                       | Interpretation                          |
+|-----------------|----------------------------|----------------------------|-----------------------------------------|
+| `OG_vs_F32`     | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp32` (VT FP32)    | noise FP32 introduces                   |
+| `OG_vs_F16`     | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp16` (VT FP16)    | noise FP16 introduces                   |
+| `OG_vs_BF16`    | `ss5_vanilla` (FP64 ref)   | `ss5_gpubf16` (VT BF16)    | noise BF16 introduces                   |
+| `ss5_vs_ss10`   | `ss5_vanilla` (FP64 ref)   | `ss10_vanilla` (FP64 ref×2 substeps) | temporal-discretization floor |
+| `ss10_vs_F32`   | `ss10_vanilla` (refined)   | `ss5_gpufp32` (VT FP32)    | FP32 vs the refined reference           |
+| `ss10_vs_F16`   | `ss10_vanilla` (refined)   | `ss5_gpufp16` (VT FP16)    | FP16 vs the refined reference           |
+| `ss10_vs_BF16`  | `ss10_vanilla` (refined)   | `ss5_gpubf16` (VT BF16)    | BF16 vs the refined reference           |
 
-Viability check (paper convention): FP32/FP16 must beat `FP64_vs_refined` — otherwise
-reduced-precision noise has dipped below the temporal-discretization floor.
+`ss5_vs_ss10` is the paper's SNR$_\text{time}$ column. Viability check (paper
+convention): a reduced-precision mode must beat `ss5_vs_ss10` — otherwise its
+noise has dipped below the temporal-discretization floor.
 
 One pivot is emitted per grid in the DB.
 
@@ -281,8 +299,18 @@ Extra timesteps beyond these remain only on Daint at
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp64
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp32
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp16
-# → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16}
+python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec bf16
+# → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16,bf16}
 ```
+
+`bf16` retargets `dace::float16` to `__nv_bfloat16` through
+`-DDACE_FLOAT16_IS_BFLOAT16`; the SDFG and every shape are identical to an
+`fp16` build, since both types are two bytes. It trades three mantissa bits for
+fp32's exponent range, which matters for the tendency outputs: `ddt_w_adv_pc`
+underflows half's smallest normal and scores below 0 dB SNR in `fp16`, against
+roughly 25 dB in `bf16`. Well-scaled intermediates such as `vt` and `vn_ie` go
+the other way, ~74 dB down to ~56 dB. See `SC2026_HOWTO.ault.md` for the full
+comparison.
 
 Omitting `--integration` here overwrites `codegen/stage8/<prec>/` with the
 standalone struct-pointer interface, which no longer describes any integration

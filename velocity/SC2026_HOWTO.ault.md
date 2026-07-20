@@ -47,7 +47,7 @@ rather than a re-clone:
 
 ```bash
 git clone --depth 1 --filter=blob:none --sparse \
-  --branch okbuddyicon git@github.com:pratyai/icon-artifacts.git icon-vt-dace
+  --branch okbuddyicon https://github.com/pratyai/icon-artifacts.git icon-vt-dace
 cd icon-vt-dace
 git sparse-checkout set velocity
 cd velocity
@@ -130,11 +130,49 @@ export GENCODE_ARCH="arch=compute_80,code=sm_80"
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp64
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp32
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp16
-# → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16}
+python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec bf16
+# → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16,bf16}
 ```
 
 No `--integration`: the integration `.so` is only useful `LD_PRELOAD`ed into
 ICON, and ICON is not built here.
+
+### bfloat16
+
+`bf16` reuses the `float16` data descriptor — same two bytes, so the SDFG,
+every shape and stride, and the Python side are identical to an `fp16` build.
+Only the C++ typedef behind `dace::float16` changes, via
+`-DDACE_FLOAT16_IS_BFLOAT16`, which retargets it to `__nv_bfloat16`. nvcc then
+emits native `HFMA2.BF16_V2` for the lowered arithmetic.
+
+Two consequences worth knowing before reading results:
+
+- **Relational operators promote to fp32.** `cuda_bf16.hpp` has no packed bf16
+  compare on sm_80, so comparisons cost extra `FSETP`. Against an fp16 build the
+  whole binary runs about 7% more instructions with byte-identical memory
+  traffic, so bf16 is not a throughput play — it buys exponent range.
+- **`abs` and the mixed `float16`/`double` operators come from
+  `include/fp16_operators.h`**, injected into generated `.cu` files. `bf16`
+  needs it more than `fp16` does: `__nv_bfloat16` converts implicitly from
+  `double`, so without the exact overloads an expression like `float16 * double`
+  is ambiguous between the built-in arithmetic path and `cuda_bf16.hpp`'s
+  operator.
+
+Accuracy splits by whether a field is range-limited or precision-limited.
+Against reference dumps at timestep 2, SNR in dB:
+
+| field | fp32 | fp16 | bf16 |
+|---|---|---|---|
+| `p_diag % ddt_w_adv_pc` | 121.5 | **−0.8** | **24.3** |
+| `p_diag % ddt_vn_apc_pc` | 146.6 | 50.4 | 51.8 |
+| `p_diag % vt` | 152.4 | 74.1 | 56.1 |
+| `p_metrics % ddqz_z_full_e` | 152.5 | 74.2 | 54.7 |
+
+The tendency outputs underflow half's smallest normal (~6e-5), which is why
+fp16 scores below 0 dB on `ddt_w_adv_pc` — error exceeding signal — while bf16
+carries fp32's exponent range and keeps it. Well-scaled intermediates go the
+other way by roughly 18 dB, which is precisely the three mantissa bits bf16
+gives up (11 → 8, ~6 dB per bit).
 
 ## 2. Reference data
 
@@ -186,7 +224,7 @@ sbatch --partition=amda100 --nodelist=ault25 --gres=gpu:a100:1 --time=04:00:00 \
 
 `amda100` caps at 4 h, which `--set full` on the larger grids can approach.
 
-The sweep is otherwise identical to daint §4.4 — 3 precisions × the grids you
+The sweep is otherwise identical to daint §4.4 — the precisions × the grids you
 keep. Extract and report exactly as daint §4.5–4.6:
 
 ```bash

@@ -24,10 +24,20 @@ import numpy as np
 import zstandard as zstd
 from tqdm import tqdm
 
-DEFAULT_WORKERS = int(
-    os.environ.get(
-        "SLURM_CPUS_PER_TASK", os.environ.get("SLURM_CPUS_ON_NODE", os.cpu_count() or 1)
-    )
+# Each worker holds a full field for both runs, so peak memory scales with the
+# worker count times the grid size. The cap keeps the default survivable on the
+# finest grids, where an unbounded count exhausts node memory and the pool is
+# OOM-killed; raise it with `-j` on coarse grids where the fields are small.
+MAX_DEFAULT_WORKERS = 16
+
+DEFAULT_WORKERS = min(
+    int(
+        os.environ.get(
+            "SLURM_CPUS_PER_TASK",
+            os.environ.get("SLURM_CPUS_ON_NODE", os.cpu_count() or 1),
+        )
+    ),
+    MAX_DEFAULT_WORKERS,
 )
 
 # ---------------------------------------------------------------------------
@@ -101,12 +111,23 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
+# Fortran list-directed output drops the exponent letter once the exponent
+# needs three digits, writing 1.0E-112 as "1.0-112". Values that small only
+# survive in formats with a wide exponent range, so bf16 dumps hit this where
+# fp16 ones have already flushed to zero.
+_FORTRAN_EXP_RE = re.compile(r"(?<=[0-9.])([+-])(\d{3,})(?=\s|$)")
+
+
 def _fast_parse_floats(block: str) -> np.ndarray:
     """Parse a block of newline-separated floats ~5-10x faster than np.fromstring."""
     lines = block.split()
     if not lines:
         return np.empty(0, dtype=np.float64)
-    return np.array(lines, dtype=np.float64)
+    try:
+        return np.array(lines, dtype=np.float64)
+    except ValueError:
+        repaired = [_FORTRAN_EXP_RE.sub(r"E\1\2", tok) for tok in lines]
+        return np.array(repaired, dtype=np.float64)
 
 
 def _parse_text(text: str) -> Dict[str, np.ndarray]:
@@ -393,14 +414,14 @@ def run_cross(args, conn: sqlite3.Connection):
     print(f"To do:   {len(tasks)}")
 
     if not tasks:
-        return
+        return 0
 
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
         futures = {
             ex.submit(partial(cross_worker, atol=args.atol, rtol=args.rtol), t): t
             for t in tasks
         }
-        _drain(conn, futures, desc=f"{args.grid}/{args.tag}")
+        return _drain(conn, futures, desc=f"{args.grid}/{args.tag}")
 
 
 def run_convergence(args, conn: sqlite3.Connection):
@@ -442,25 +463,32 @@ def run_convergence(args, conn: sqlite3.Connection):
     print(f"To do:   {total} pairs in {len(tasks)} groups")
 
     if not tasks:
-        return
+        return 0
 
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
         futures = {
             ex.submit(partial(convergence_worker, atol=args.atol, rtol=args.rtol), t): t
             for t in tasks
         }
-        _drain(conn, futures, desc=f"{args.grid}/convergence")
+        return _drain(conn, futures, desc=f"{args.grid}/convergence")
 
 
 def _drain(conn, futures, desc=""):
+    """Collect worker results into the DB. Returns the number that failed.
+
+    A failure here means the comparison it covered is absent from the DB, so
+    callers must not treat a partially-drained run as a complete one.
+    """
     pbar = tqdm(total=len(futures), desc=desc, unit="task")
     batch = []
+    failed = 0
     for fut in futures:
         pbar.update(1)
         try:
             rows = fut.result()
             batch.extend(rows)
         except Exception as e:
+            failed += 1
             tqdm.write(f"Error: {e}")
         if len(batch) >= 200:
             insert_rows(conn, batch)
@@ -468,6 +496,7 @@ def _drain(conn, futures, desc=""):
     if batch:
         insert_rows(conn, batch)
     pbar.close()
+    return failed
 
 
 # ---------------------------------------------------------------------------
@@ -572,15 +601,25 @@ def main():
     print(f"DB: {db_path}")
     print(f"Workers: {args.workers}\n")
 
+    failed = 0
     if args.mode == "cross":
-        run_cross(args, conn)
+        failed = run_cross(args, conn)
         print_summary(conn, grid=args.grid, tag=args.tag, phys=args.phys)
     elif args.mode == "convergence":
-        run_convergence(args, conn)
+        failed = run_convergence(args, conn)
         print_summary(conn, grid=args.grid, phys=args.phys)
     conn.close()
     print(f"\nResults in: {db_path}")
 
+    if failed:
+        # The DB is missing whatever those tasks covered. Workers dying en
+        # masse usually means the pool was OOM-killed — retry with a smaller
+        # `-j`. Exiting non-zero keeps a truncated DB from passing for a
+        # complete one.
+        print(f"\n{failed} comparison(s) failed — results are INCOMPLETE.")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
