@@ -27,9 +27,16 @@ TIMESTEP_RE = re.compile(r"Time step:\s+(\d+),")
 
 
 def extract_config_label(path: Path) -> str:
-    """Extract config from filename, e.g. LOG.SAVEME-F16.dt8_v5_g0008_R02B05.o -> F16."""
-    m = re.search(r"SAVEME-(\w+?)\.", path.name)
-    return m.group(1) if m else path.stem
+    """Extract config from filename.
+
+    LOG.SAVEME-F16.dt8_v5_g0008_R02B05.o            -> F16
+    LOG.SAVEME-SER-BF16.sc2026_dt8_ss5_....4242439.o -> BF16
+
+    Serialization-enabled runs carry a `SER-` segment before the precision, so
+    the label is the last hyphen-separated token before the first dot.
+    """
+    m = re.search(r"SAVEME-([\w-]+?)\.", path.name)
+    return m.group(1).rsplit("-", 1)[-1] if m else path.stem
 
 
 def extract_problem(path: Path) -> str:

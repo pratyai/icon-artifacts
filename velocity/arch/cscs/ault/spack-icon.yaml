@@ -1,0 +1,41 @@
+spack:
+  # ICON integration build on ault (A100). Separate from the VT env: the VT
+  # `.so` is built with nvcc + g++, while ICON itself needs the NVHPC Fortran
+  # compiler for its OpenACC GPU path, plus MPI, netCDF and BLAS/LAPACK.
+  #
+  # config/cscs/ault_ben_dace.gpu.a100.nvidia drives the build and expects
+  # `nvc`/`nvc++`/`nvfortran` through the MPI wrappers, `-arch=sm_80` /
+  # `-gpu=cc80`, and `netcdf-fortran` on pkg-config's path.
+  #
+  # The site module (`nvhpc/21.3` under /opt/nvidia/hpc_sdk) is from 2021 and
+  # bundles CUDA 11.2, which is below the cuda>=12 floor the rest of the
+  # toolchain needs, so NVHPC comes from spack instead.
+  specs:
+    - nvhpc@26.1
+    - openmpi %nvhpc
+    - netcdf-fortran %nvhpc
+    - netcdf-c %nvhpc
+    - openblas %nvhpc
+    - cuda@12.1.1
+
+  concretizer:
+    unify: true
+    reuse: true
+
+  packages:
+    all:
+      providers:
+        mpi: [openmpi]
+        blas: [openblas]
+        lapack: [openblas]
+    # Bootstrap compiler only — spack needs something to build NVHPC's
+    # dependencies with before nvhpc itself is available.
+    gcc:
+      externals:
+        - spec: gcc@8.5.0 languages:='c,c++,fortran'
+          prefix: /usr
+          extra_attributes:
+            compilers:
+              c: /usr/bin/gcc
+              cxx: /usr/bin/g++
+              fortran: /usr/bin/gfortran
