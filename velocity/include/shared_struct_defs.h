@@ -1988,10 +1988,7 @@ struct t_patch {
 };
 
 using z_kin_hor_e_t = double;
-using z_kin_hor_e_lowered_t = dace::float16;
 using z_vt_ie_t = double;
-using z_vt_ie_lowered_t = dace::float16;
 using z_w_concorr_me_t = double;
-using z_w_concorr_me_lowered_t = dace::float16;
 
 #endif // __SHARED_STRUCT_DEFS_H__
