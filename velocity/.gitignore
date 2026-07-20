@@ -25,10 +25,12 @@ build_*.log
 .venv/
 .python-version
 
-# SQLite dev dbs. snr_bf16.db is the exception: it backs the paper's Table II
-# and is small enough to travel with the source.
+# SQLite dev dbs. The exceptions back the paper's tables and are small enough
+# to travel with the source: snr_bf16.db holds the integration SNR
+# comparisons, perf_integration.db the per-call VT wrapper timings.
 *.db
 !snr_bf16.db
+!perf_integration.db
 *.db-shm
 *.db-wal
 
