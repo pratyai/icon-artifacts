@@ -16,10 +16,10 @@
 #     PRECS    : lowered precisions to compare (default: fp32 fp16 bf16,
 #                matching the arms sbatch_all_sc2026.sh submits).
 #
-# Each precision yields an `OG_vs_<PREC>` tag, plus `ss10_vs_<PREC>` when the
-# ss10 reference exists; `ss5_vs_ss10` is the temporal noise floor (SNR_time in
-# the paper's Table II). Missing runs are skipped with a notice rather than
-# aborting the sweep.
+# Each precision yields a `<PREC>_vs_FP64` tag, plus `<PREC>_vs_refined` when
+# the ss10 reference exists; `FP64_vs_refined` is the temporal noise floor
+# (SNR_time in the paper's Table II). Missing runs are skipped with a notice
+# rather than aborting the sweep.
 #
 # Run from the VT tree (icon-vt-dace), so `python -m utils.compare_serde`
 # resolves.
@@ -44,7 +44,7 @@ cmp() {
 
 run_dir() { echo "$EXP/sc2026_dt8_ss5_gpu${1}_$GRID"; }
 
-prec_tag() { echo "$1" | tr "[:lower:]" "[:upper:]" | sed "s/^FP/F/"; }
+prec_tag() { echo "$1" | tr "[:lower:]" "[:upper:]"; }
 
 for p in $PRECS; do
     RUN=$(run_dir "$p")
@@ -52,7 +52,7 @@ for p in $PRECS; do
         echo "skip ${p}: no run at $RUN" >&2
         continue
     fi
-    cmp "$V5" "$RUN" "OG_vs_$(prec_tag "$p")"
+    cmp "$V5" "$RUN" "$(prec_tag "$p")_vs_FP64"
 done
 
 if [ ! -d "$V10" ]; then
@@ -60,9 +60,9 @@ if [ ! -d "$V10" ]; then
     exit 0
 fi
 
-cmp "$V5" "$V10" ss5_vs_ss10
+cmp "$V5" "$V10" FP64_vs_refined
 for p in $PRECS; do
     RUN=$(run_dir "$p")
     [ -d "$RUN" ] || continue
-    cmp "$V10" "$RUN" "ss10_vs_$(prec_tag "$p")"
+    cmp "$V10" "$RUN" "$(prec_tag "$p")_vs_refined"
 done

@@ -227,8 +227,8 @@ may live under `sc2026-ad-test/` while icon-dace lives under
 
 Writes a shared `snr.db` (SQLite), keyed by
 `(grid, tag, phys, field, sub_field)`. Tags per grid:
-`OG_vs_F32`, `OG_vs_F16`, `OG_vs_BF16`, `ss5_vs_ss10`, `ss10_vs_F32`,
-`ss10_vs_F16`, `ss10_vs_BF16`.
+`FP32_vs_FP64`, `FP16_vs_FP64`, `BF16_vs_FP64`, `FP64_vs_refined`,
+`FP32_vs_refined`, `FP16_vs_refined`, `BF16_vs_refined`.
 
 `PRECS` selects which lowered precisions to compare, defaulting to the three
 `sbatch_all_sc2026.sh` submits. `BASELINE` picks the FP64 reference run —
@@ -248,28 +248,48 @@ polars pivot per grid, rows = paper's 5 fields (`vn`, `w`, `vt`,
 ```bash
 python -m utils.report_serde snr.db --phys 2 --cross-only
 # → PAPER SNR TABLE: grid=R02B04, phys=2
-#   field       │ OG_vs_F32 │ OG_vs_F16 │ ss5_vs_ss10 │ ss10_vs_F32 │ ss10_vs_F16
-#   vn          │ 154.10    │ 75.80     │ 66.60       │ 66.60       │ 66.10
+#   field       │ FP32_vs_FP64 │ FP16_vs_FP64 │ FP64_vs_refined │ FP32_vs_refined
+#   vn          │ 154.10       │ 75.80        │ 66.60           │ 66.60
 #   ...
 ```
 
 Column legend (REF → TEST):
 
-| Tag             | REF                        | TEST                       | Interpretation                          |
-|-----------------|----------------------------|----------------------------|-----------------------------------------|
-| `OG_vs_F32`     | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp32` (VT FP32)    | noise FP32 introduces                   |
-| `OG_vs_F16`     | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp16` (VT FP16)    | noise FP16 introduces                   |
-| `OG_vs_BF16`    | `ss5_vanilla` (FP64 ref)   | `ss5_gpubf16` (VT BF16)    | noise BF16 introduces                   |
-| `ss5_vs_ss10`   | `ss5_vanilla` (FP64 ref)   | `ss10_vanilla` (FP64 ref×2 substeps) | temporal-discretization floor |
-| `ss10_vs_F32`   | `ss10_vanilla` (refined)   | `ss5_gpufp32` (VT FP32)    | FP32 vs the refined reference           |
-| `ss10_vs_F16`   | `ss10_vanilla` (refined)   | `ss5_gpufp16` (VT FP16)    | FP16 vs the refined reference           |
-| `ss10_vs_BF16`  | `ss10_vanilla` (refined)   | `ss5_gpubf16` (VT BF16)    | BF16 vs the refined reference           |
+| Tag                 | REF                        | TEST                       | Interpretation                      |
+|---------------------|----------------------------|----------------------------|-------------------------------------|
+| `FP32_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp32` (VT FP32)    | noise FP32 introduces               |
+| `FP16_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpufp16` (VT FP16)    | noise FP16 introduces               |
+| `BF16_vs_FP64`      | `ss5_vanilla` (FP64 ref)   | `ss5_gpubf16` (VT BF16)    | noise BF16 introduces               |
+| `FP64_vs_refined`   | `ss5_vanilla` (FP64 ref)   | `ss10_vanilla` (FP64 ref×2 substeps) | temporal-discretization floor |
+| `FP32_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpufp32` (VT FP32)    | FP32 vs the refined reference       |
+| `FP16_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpufp16` (VT FP16)    | FP16 vs the refined reference       |
+| `BF16_vs_refined`   | `ss10_vanilla` (refined)   | `ss5_gpubf16` (VT BF16)    | BF16 vs the refined reference       |
 
-`ss5_vs_ss10` is the paper's SNR$_\text{time}$ column. Viability check (paper
-convention): a reduced-precision mode must beat `ss5_vs_ss10` — otherwise its
-noise has dipped below the temporal-discretization floor.
+`FP64_vs_refined` is the paper's SNR$_\text{time}$ column. Viability check
+(paper convention): a reduced-precision mode must beat `FP64_vs_refined` —
+otherwise its noise has dipped below the temporal-discretization floor.
 
 One pivot is emitted per grid in the DB.
+
+### Integration wall-clock
+
+The per-call VT timings come from the same ICON runs as the SNR data — the
+wrapper prints a timer line per call, which the run log captures. No extra jobs
+are needed:
+
+```bash
+R=/abs/path/to/icon-dace/build/verification/run
+python utils/extract_icon_timers.py $R/LOG.SAVEME-*.o
+# add -o vt_timers.csv to save rather than print
+```
+
+Output is one row per (grid, config, `lvn_only`, `istep`) with mean/median/min/
+max and percentiles, after dropping one outlier per group. The config label is
+taken from the filename: `LOG.SAVEME-F16.…` reads as `F16`, and a
+serialization-enabled run, `LOG.SAVEME-SER-BF16.…`, reads as `BF16`.
+
+Runs that serialize carry the dump cost inside the measured call, so compare
+timings only across runs with the same `SERDE_GEN_END` setting.
 
 ## 4. Profile (standalone)
 
