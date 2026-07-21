@@ -73,9 +73,8 @@ The env pins CUDA to the uenv's 12.6 toolkit as an external, and provides the
 `sqlite3`, `zlib` and `libzstd` that the `.so` links against. Activating it is
 what puts them on `pkg-config`'s path for §1.
 
-For SLURM jobs, use `#SBATCH --uenv=icon/25.2:v1@santis` + `#SBATCH
---view=default` in the script header — submitting `sbatch` from inside a uenv
-shell is blocked with `libslurm-uenv-mount rc=-3000`.
+SLURM jobs carry their own uenv: put `#SBATCH --uenv=icon/25.2:v1@santis` and
+`#SBATCH --view=default` in the script header.
 
 ### Python venv (one-time)
 
@@ -129,8 +128,7 @@ source .venv/bin/activate                        # from icon-vt-dace/velocity
 ```
 
 Order matters: `uenv start` resets `PATH`, so spack has to be re-sourced inside
-the uenv shell. Submit SLURM jobs from a **plain** login shell instead (with the
-`#SBATCH --uenv` / `--view` header) — `sbatch` is blocked inside a uenv session.
+the uenv shell.
 
 ## 1. Build integration `.so` + wrapper
 
@@ -287,6 +285,16 @@ Output is one row per (grid, config, `lvn_only`, `istep`) with mean/median/min/
 max and percentiles, after dropping one outlier per group. The config label is
 taken from the filename: `LOG.SAVEME-F16.…` reads as `F16`, and a
 serialization-enabled run, `LOG.SAVEME-SER-BF16.…`, reads as `BF16`.
+
+To persist rather than print, `ingest_icon_timers.py` writes the per-call
+measurements and a per-configuration summary into a SQLite database keyed by
+`(cluster, gpu, config, problem, lvn_only, istep, phys, vt_call)`, so runs from
+different machines share one file:
+
+```bash
+python utils/ingest_icon_timers.py -o perf_integration.db \
+  --cluster daint --gpu GH200 $R/LOG.SAVEME-*.o
+```
 
 Runs that serialize carry the dump cost inside the measured call, so compare
 timings only across runs with the same `SERDE_GEN_END` setting.

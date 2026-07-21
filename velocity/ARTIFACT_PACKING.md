@@ -20,6 +20,9 @@ Excluded from all of them:
   leak branch names and remotes that mean nothing outside the authors' accounts.
 - Editor, OS and Python scratch: `.DS_Store`, `._*` (macOS AppleDouble),
   `__pycache__/`, `*.pyc`, `.venv/`, `*.egg-info/`.
+- SQLite sidecars: `*.db-wal`, `*.db-shm`. They are transient write-ahead-log
+  files; shipping one next to its `.db` can leave the database inconsistent when
+  a reviewer opens it. Only A1-vt ships databases, so the exclusion lives there.
 - Products the HOWTOs regenerate: `codegen/`, `ptx_out/`, `*.o`, `*.so`.
 
 Do not exclude `build/` by name. Upstream trees ship directories with that name
@@ -141,6 +144,7 @@ tar --no-xattrs --no-mac-metadata \
     --exclude='__pycache__' --exclude='*.pyc' \
     --exclude='.venv' --exclude='*.egg-info' \
     --exclude='*.so' \
+    --exclude='*.db-wal' --exclude='*.db-shm' \
     --exclude='velocity_gpu_stage8_standalone_release.*' \
     --exclude='shared_libs' \
     --exclude='data_r02b0*' --exclude='gotwant' \
@@ -165,6 +169,7 @@ tar -tzf A1-vt-sc2026.tar.gz | awk -F/ '{print $1}' | sort -u        # icon-vt-d
 tar -tzf A1-vt-sc2026.tar.gz | grep -c '\.so$'                       # 0
 tar -tzf A1-vt-sc2026.tar.gz | grep -c 'standalone_release\.'         # 0
 tar -tzf A1-vt-sc2026.tar.gz | grep -c 'snr_bf16.db'                  # 1
+tar -tzf A1-vt-sc2026.tar.gz | grep -cE '\.db-(wal|shm)$'             # 0
 ```
 
 `shared_struct_defs.h` is generated from the committed `shared_struct_defs.h.in`

@@ -1,22 +1,22 @@
 spack:
   # ICON integration build on ault (A100). Separate from the VT env: the VT
-  # `.so` is built with nvcc + g++, while ICON itself needs the NVHPC Fortran
-  # compiler for its OpenACC GPU path, plus MPI, netCDF and BLAS/LAPACK.
+  # `.so` is built with nvcc + g++, while ICON needs the NVHPC Fortran compiler
+  # for its OpenACC GPU path.
   #
-  # config/cscs/ault_ben_dace.gpu.a100.nvidia drives the build and expects
-  # `nvc`/`nvc++`/`nvfortran` through the MPI wrappers, `-arch=sm_80` /
-  # `-gpu=cc80`, and `netcdf-fortran` on pkg-config's path.
+  # NVHPC ships its own MPI (comm_libs/mpi — HPCX/OpenMPI built with nvfortran),
+  # BLAS/LAPACK (compilers/lib) and CUDA, all prebuilt and matched to nvfortran.
+  # The ICON build uses those directly off the nvhpc prefix, so the only thing
+  # spack builds here is netcdf-fortran, whose `.mod` files ICON reads and which
+  # must therefore come from the same nvfortran. Its C half (netcdf-c, hdf5)
+  # stays on gcc — nvc cannot build several low-level C libraries (GNU
+  # symbol-versioning aliases it does not emit).
   #
   # The site module (`nvhpc/21.3` under /opt/nvidia/hpc_sdk) is from 2021 and
-  # bundles CUDA 11.2, which is below the cuda>=12 floor the rest of the
-  # toolchain needs, so NVHPC comes from spack instead.
+  # bundles CUDA 11.2, below the cuda>=12 floor, so NVHPC comes from spack.
   specs:
     - nvhpc@26.1
-    - openmpi %nvhpc
-    - netcdf-fortran %nvhpc
-    - netcdf-c %nvhpc
-    - openblas %nvhpc
-    - cuda@12.1.1
+    - netcdf-fortran %fortran=nvhpc
+    - cmake        # ICON's configure requires it; the daint uenv ships it, ault does not
 
   concretizer:
     unify: true
@@ -24,12 +24,10 @@ spack:
 
   packages:
     all:
-      providers:
-        mpi: [openmpi]
-        blas: [openblas]
-        lapack: [openblas]
-    # Bootstrap compiler only — spack needs something to build NVHPC's
-    # dependencies with before nvhpc itself is available.
+      # C on gcc everywhere; only the Fortran that ICON links comes from nvhpc.
+      require:
+        - '%c=gcc'
+    # Bootstrap compiler: spack builds the C dependencies with it.
     gcc:
       externals:
         - spec: gcc@8.5.0 languages:='c,c++,fortran'

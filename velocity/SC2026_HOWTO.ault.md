@@ -28,8 +28,10 @@ there).
 ```bash
 export SPACK_TREE=$SCRATCH/spack-tree
 mkdir -p $SPACK_TREE && cd $SPACK_TREE
-git clone --depth=1 https://github.com/spack/spack.git
-git clone --depth=1 https://github.com/spack/spack-packages.git
+git clone https://github.com/spack/spack.git
+git -C spack checkout 0fe003d0
+git clone https://github.com/spack/spack-packages.git
+git -C spack-packages checkout 334aeef7
 
 source $SPACK_TREE/spack/share/spack/setup-env.sh
 spack repo remove builtin 2>/dev/null || true   # drop any stale user-scoped entry
@@ -39,6 +41,11 @@ spack repo add $SPACK_TREE/spack-packages/repos/spack_repo/builtin
 Add the `source` + `spack repo add` lines to your shell rc. A site-wide spack
 lives at `/apps/ault/spack/` if you prefer to reuse it; the recipe assumes a
 fresh clone for reproducibility.
+
+Both repos are pinned. An unpinned `HEAD` pair drifts off the `nvhpc` versions
+the environments request — `26.1` for the ICON build (`icon-gpu`), `23.3` for
+CLOUDSC — which surfaces at concretize time as `No version exists that satisfies
+nvhpc@...`.
 
 ### Get the code (one-time)
 
