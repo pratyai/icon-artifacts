@@ -19,7 +19,10 @@ spack:
     - cmake        # ICON's configure requires it; the daint uenv ships it, ault does not
 
   concretizer:
-    unify: true
+    # when_possible (not true): nvhpc is built, then reused as the fortran
+    # compiler for netcdf-fortran in a later solve. unify:true forbids a
+    # from-source compiler for the fortran language and fails to concretize.
+    unify: when_possible
     reuse: true
 
   packages:

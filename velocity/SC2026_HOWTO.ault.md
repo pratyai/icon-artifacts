@@ -34,18 +34,17 @@ git clone https://github.com/spack/spack-packages.git
 git -C spack-packages checkout 334aeef7
 
 source $SPACK_TREE/spack/share/spack/setup-env.sh
-spack repo remove builtin 2>/dev/null || true   # drop any stale user-scoped entry
-spack repo add $SPACK_TREE/spack-packages/repos/spack_repo/builtin
+spack repo add --scope site $SPACK_TREE/spack-packages/repos/spack_repo/builtin
 ```
 
 Add the `source` + `spack repo add` lines to your shell rc. A site-wide spack
 lives at `/apps/ault/spack/` if you prefer to reuse it; the recipe assumes a
 fresh clone for reproducibility.
 
-Both repos are pinned. An unpinned `HEAD` pair drifts off the `nvhpc` versions
-the environments request — `26.1` for the ICON build (`icon-gpu`), `23.3` for
-CLOUDSC — which surfaces at concretize time as `No version exists that satisfies
-nvhpc@...`.
+Both repos are pinned to the commits the builds were validated against (the ICON
+env needs `nvhpc@26.1`). `--scope site` writes the repo mapping into the clone
+(`$SPACK_TREE/spack/etc/spack/repos.yaml`), not `~/.spack`, so it can't collide
+with a pre-existing user-scope entry.
 
 ### Get the code (one-time)
 
