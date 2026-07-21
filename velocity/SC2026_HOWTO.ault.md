@@ -34,6 +34,7 @@ git clone https://github.com/spack/spack-packages.git
 git -C spack-packages checkout 334aeef7
 
 source $SPACK_TREE/spack/share/spack/setup-env.sh
+spack repo remove builtin 2>/dev/null || true   # clear any stale user-scope entry (user > site)
 spack repo add --scope site $SPACK_TREE/spack-packages/repos/spack_repo/builtin
 ```
 
@@ -42,9 +43,9 @@ lives at `/apps/ault/spack/` if you prefer to reuse it; the recipe assumes a
 fresh clone for reproducibility.
 
 Both repos are pinned to the commits the builds were validated against (the ICON
-env needs `nvhpc@26.1`). `--scope site` writes the repo mapping into the clone
-(`$SPACK_TREE/spack/etc/spack/repos.yaml`), not `~/.spack`, so it can't collide
-with a pre-existing user-scope entry.
+env needs `nvhpc@26.1`). The `repo remove` clears any stale user-scope `builtin`
+(user scope overrides site), and `--scope site` writes the pinned mapping into
+the clone (`$SPACK_TREE/spack/etc/spack/repos.yaml`) rather than `~/.spack`.
 
 ### Get the code (one-time)
 
