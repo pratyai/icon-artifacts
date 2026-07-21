@@ -134,8 +134,11 @@ python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduc
 # → ./velocity_gpu_stage8_standalone_release.{fp64,fp32,fp16,bf16}
 ```
 
-No `--integration`: the integration `.so` is only useful `LD_PRELOAD`ed into
-ICON, and ICON is not built here.
+These are the standalone builds (perf/NCU). For the integration `.so` + wrapper
+used by the SNR path, run daint `SC2026_HOWTO.daint.md` §1 verbatim — same
+`--integration` compiles and `gen_fortran_wrapper.py` — but keep the `sm_80`
+`GENCODE_ARCH` above. Building ICON against those `.so` files and running the
+integration is covered in icon-dace `SC2026_HOWTO.md`, *Running on ault (A100)*.
 
 ### bfloat16
 
@@ -246,5 +249,5 @@ The metric mapping (daint §4.6) is NCU-version-specific; see the note on
 | `$SCRATCH` | `/capstor/scratch/cscs/$USER` | `/scratch/$USER` |
 | Node runtime | `--uenv=… --view=default` | none |
 | SLURM | `-p debug/normal`, `--uenv` header | `-p amda100 --nodelist=ault25 --gres=gpu:a100:1`, 4 h cap |
-| Workflow | integration (numerical) + standalone (perf) | **standalone/NCU only** |
-| Integration/SNR | yes | no — use daint |
+| Workflow | integration (numerical) + standalone (perf) | both — standalone/NCU here, integration in icon-dace |
+| Integration/SNR | yes | yes — icon-dace `SC2026_HOWTO.md`, *Running on ault (A100)* |
