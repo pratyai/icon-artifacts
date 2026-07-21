@@ -361,24 +361,24 @@ R02B03/04/05 and 1 for R02B06 (matches the polybox tarballs):
 
 ```bash
 # 320 km (R02B03) — timestep 2
-sbatch profile_ncu.sh f64 2 data_r02b03 vt_profiles-r02b03
-sbatch profile_ncu.sh f32 2 data_r02b03 vt_profiles-r02b03
-sbatch profile_ncu.sh f16 2 data_r02b03 vt_profiles-r02b03
+sbatch profile_ncu.sh fp64 2 data_r02b03 vt_profiles-r02b03
+sbatch profile_ncu.sh fp32 2 data_r02b03 vt_profiles-r02b03
+sbatch profile_ncu.sh fp16 2 data_r02b03 vt_profiles-r02b03
 
 # 160 km (R02B04) — timestep 2
-sbatch profile_ncu.sh f64 2 data_r02b04 vt_profiles-r02b04
-sbatch profile_ncu.sh f32 2 data_r02b04 vt_profiles-r02b04
-sbatch profile_ncu.sh f16 2 data_r02b04 vt_profiles-r02b04
+sbatch profile_ncu.sh fp64 2 data_r02b04 vt_profiles-r02b04
+sbatch profile_ncu.sh fp32 2 data_r02b04 vt_profiles-r02b04
+sbatch profile_ncu.sh fp16 2 data_r02b04 vt_profiles-r02b04
 
 # 80 km (R02B05) — timestep 2
-sbatch profile_ncu.sh f64 2 data_r02b05 vt_profiles-r02b05
-sbatch profile_ncu.sh f32 2 data_r02b05 vt_profiles-r02b05
-sbatch profile_ncu.sh f16 2 data_r02b05 vt_profiles-r02b05
+sbatch profile_ncu.sh fp64 2 data_r02b05 vt_profiles-r02b05
+sbatch profile_ncu.sh fp32 2 data_r02b05 vt_profiles-r02b05
+sbatch profile_ncu.sh fp16 2 data_r02b05 vt_profiles-r02b05
 
 # 40 km (R02B06) — timestep 1 (only step in the tarball)
-sbatch profile_ncu.sh f64 1 data_r02b06 vt_profiles-r02b06
-sbatch profile_ncu.sh f32 1 data_r02b06 vt_profiles-r02b06
-sbatch profile_ncu.sh f16 1 data_r02b06 vt_profiles-r02b06
+sbatch profile_ncu.sh fp64 1 data_r02b06 vt_profiles-r02b06
+sbatch profile_ncu.sh fp32 1 data_r02b06 vt_profiles-r02b06
+sbatch profile_ncu.sh fp16 1 data_r02b06 vt_profiles-r02b06
 # → vt_profiles-<grid>/vt.<precision>.ncu-rep  (12 files total)
 ```
 
