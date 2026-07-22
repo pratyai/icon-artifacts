@@ -121,17 +121,13 @@ export SPACK_TREE=$SCRATCH/spack-tree
 export PATH="$HOME/.local/bin:$PATH"
 source $SPACK_TREE/spack/share/spack/setup-env.sh
 spack env activate vt-gpu
+source arch/cscs/ault/ault-vt-build-env.sh   # nvcc, sqlite/zstd, GENCODE (sm_80)
 source .venv/bin/activate            # from icon-vt-dace/velocity
 ```
 
 No uenv, so that covers everything.
 
 ## 1. Build standalone
-
-A100:
-```bash
-export GENCODE_ARCH="arch=compute_80,code=sm_80"
-```
 
 ```bash
 python -m utils.stages.compile_gpu_stage8 --optimize --compile --release --reduce-bitwidth --lower-all --lowprec fp64
