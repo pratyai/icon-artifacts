@@ -18,10 +18,15 @@ spack:
     unify: true
     reuse: true
 
-  # zstd resolves to both +programs (root) and ~programs (dependency), which
-  # project to the same view prefix; the build uses `spack load` (per-package
-  # prefixes), not the view, so disabling it avoids the collision harmlessly.
-  view: false
+  # zstd appears twice: an explicit runtime dep (+programs) and a build-only
+  # dep of gcc/binutils/tar (~programs); both project to the same view prefix
+  # and collide. `link: run` keeps only run-type deps in the view, dropping the
+  # build-only copy, so `spack env activate` alone exposes nvcc, g++, sqlite3,
+  # and libzstd on PATH/pkg-config — no manual path exports needed.
+  view:
+    default:
+      root: .spack-env/view
+      link: run
 
   packages:
     # Bootstrap compiler only — spack needs something to build gcc@12 with.

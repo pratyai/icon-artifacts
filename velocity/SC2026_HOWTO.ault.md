@@ -120,8 +120,8 @@ uv pip install -e ../../dace
 export SPACK_TREE=$SCRATCH/spack-tree
 export PATH="$HOME/.local/bin:$PATH"
 source $SPACK_TREE/spack/share/spack/setup-env.sh
-spack env activate vt-gpu
-source arch/cscs/ault/ault-vt-build-env.sh   # nvcc, sqlite/zstd, GENCODE (sm_80)
+spack env activate vt-gpu             # puts nvcc, g++, sqlite/zstd on PATH
+export GENCODE_ARCH="arch=compute_80,code=sm_80"   # A100
 source .venv/bin/activate            # from icon-vt-dace/velocity
 ```
 
