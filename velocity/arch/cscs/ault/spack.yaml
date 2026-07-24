@@ -4,11 +4,13 @@ spack:
   # It does NOT need nvhpc/hdf5/cmake (that is the cloudsc build).
   #
   # cuda must be >= 12: the standalone is compiled with -std=c++20 and nvcc
-  # only accepts c++20 from 12.0 on (11.x caps at c++17).
+  # only accepts c++20 from 12.0 on (11.x caps at c++17). 12.9 matches the CUDA
+  # that the icon-gpu env's nvhpc defaults to, so the VT kernels and ICON are
+  # built against one toolkit instead of two.
   # gcc must be >= 10: the serde headers include <ranges>, which older
   # libstdc++ does not ship.
   specs:
-    - cuda@12.1.1
+    - cuda@12.9
     - gcc@12
     - sqlite
     - zlib
