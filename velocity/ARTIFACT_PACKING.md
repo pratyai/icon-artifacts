@@ -176,3 +176,37 @@ tar -tzf A1-vt-sc2026.tar.gz | grep -cE '\.db-(wal|shm)$'             # 0
 template by `utils/generate_storage_types.py`, and its field types follow
 whichever precision the generating build ran. Whatever it holds at pack time is
 overwritten on the reviewer's first compile.
+
+## A1-grids-sc2026.tar.gz
+
+The four ICON grid files the integration runs read. They are not part of any
+code tree: on daint they live in the Alps pool, which is unmounted on ault and
+unavailable off-cluster, and only R02B03 is Alps-only — so shipping them makes
+`$S_5$` platform-independent.
+
+The tarball's top directory is `icon-grids/`, the directory name `grids_folder`
+is pointed at, so a reviewer unpacks and exports without renaming.
+
+```bash
+cd <staging-dir>                      # holds icon-grids/
+GRIDS=/capstor/store/cscs/userlab/cws01/pool/data/ICON/input/icon/public/grids
+mkdir -p icon-grids
+shopt -s globstar
+for G in 0050_R02B03 0010_R02B04 0008_R02B05 0002_R02B06; do
+  cp "$GRIDS"/**/icon_grid_${G}_G.nc icon-grids/
+done
+
+tar --no-xattrs --no-mac-metadata \
+    --exclude='.DS_Store' --exclude='._*' \
+    -czf A1-grids-sc2026.tar.gz icon-grids/
+```
+
+Pack on daint, where the pool is mounted; the result is ~136 MB gzipped from
+~310 MB of NetCDF.
+
+Verify before upload:
+
+```bash
+tar -tzf A1-grids-sc2026.tar.gz | awk -F/ '{print $1}' | sort -u   # icon-grids
+tar -tzf A1-grids-sc2026.tar.gz | grep -c '_G\.nc$'                # 4
+```
