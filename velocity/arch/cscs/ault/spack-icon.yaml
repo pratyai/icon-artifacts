@@ -26,10 +26,12 @@ spack:
     reuse: true
 
   packages:
-    # C on gcc everywhere; only the Fortran that ICON links comes from nvhpc.
-    c:
+    all:
+      # C on gcc everywhere; only the Fortran that ICON links comes from nvhpc.
+      # Scoping this to the `c` virtual instead leaves dependencies on nvhpc's
+      # nvc, which cannot build numactl or libxcrypt (GNU symbol versioning).
       require:
-        - gcc
+        - '%c=gcc'
     # Bootstrap compiler: spack builds the C dependencies with it.
     gcc:
       externals:
