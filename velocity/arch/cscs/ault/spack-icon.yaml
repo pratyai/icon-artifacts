@@ -14,7 +14,11 @@ spack:
   # The site module (`nvhpc/21.3` under /opt/nvidia/hpc_sdk) is from 2021 and
   # bundles CUDA 11.2, below the cuda>=12 floor, so NVHPC comes from spack.
   specs:
-    - nvhpc@26.1
+    # NVHPC bundles CUDA 12.9 and 13.1 and points cuda/{include,bin,lib64} at
+    # whichever its installer picks. ICON's configure needs cub/device/
+    # device_select.cuh, which 13.1 does not ship at that path (CUB moved into
+    # CCCL), so pin the default to 12.9 rather than leave it to chance.
+    - nvhpc@26.1 default_cuda=12.9
     - netcdf-fortran %fortran=nvhpc
     - cmake        # ICON's configure requires it; the daint uenv ships it, ault does not
 
