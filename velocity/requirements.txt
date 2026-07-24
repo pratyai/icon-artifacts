@@ -1,5 +1,6 @@
 # Pinned Python environment for the VT (A1) build and analysis tooling.
-# Resolved with uv under Python 3.12 on aarch64, against DaCe 24b753ef0.
+# Resolved with uv under Python 3.12 on aarch64, in one pass together with the
+# bundled DaCe so its numpy<2 constraint bounds the rest.
 # DaCe is not listed here: install the bundled A1-dace editable
 #   (uv pip install -e ../dace)
 aenum==3.1.17
@@ -17,7 +18,7 @@ ply==3.11
 polars==1.43.0
 polars-runtime-32==1.43.0
 pyyaml==6.0.3
-scipy==1.18.0
+scipy==1.17.1
 six==1.17.0
 sympy==1.14.0
 tqdm==4.69.0
