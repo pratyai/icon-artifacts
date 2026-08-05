@@ -1,5 +1,7 @@
 #include <chrono>
+#include <cstdio>
 #include <cstring>
+#include <exception>
 #include <execinfo.h>
 #include <filesystem>
 #include <fstream>
@@ -261,6 +263,18 @@ void got_want_pair(const global_data_type &got, const global_data_type &want,
 
 int main(int argc, char *argv[]) {
   std::set_terminate([]() {
+    // Report the in-flight exception before the backtrace: a bare trace of
+    // addresses says where it unwound, not what went wrong, and the DaCe
+    // program reports CUDA failures as exception messages.
+    if (std::exception_ptr e = std::current_exception()) {
+      try {
+        std::rethrow_exception(e);
+      } catch (const std::exception &ex) {
+        std::fprintf(stderr, "terminate: %s\n", ex.what());
+      } catch (...) {
+        std::fprintf(stderr, "terminate: unknown exception type\n");
+      }
+    }
     void *bt[64];
     int n = backtrace(bt, 64);
     backtrace_symbols_fd(bt, n, STDERR_FILENO);
