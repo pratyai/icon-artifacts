@@ -1,4 +1,176 @@
 file,kernel,warmth,metric,value,unit
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Total duration [us],96.94,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Total FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Total GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM rd [GB],0.04653,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM total [GB],0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],480.03,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM total BW [GB/s],0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,L2 hit rate [%],54.11,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Global ld insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Global st insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Shared ld insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Shared st insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Total insns,"19,725,935",
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Int insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Conv insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,cold,Warps launched,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Total duration [us],96.80,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Total FLOPs,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Total GFLOP/s,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM rd [GB],0.04654,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM wr [GB],1.664e-05,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM total [GB],0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],480.76,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],0.1719,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM total BW [GB/s],0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,L2 hit rate [%],54.02,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Global ld insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Global st insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Shared ld insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Shared st insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Total insns,"19,725,935",
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Int insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Conv insns,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,AGGREGATE,warm,Warps launched,0,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Exec insns,"3,711,401",inst
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Total insns,3711401.000000,inst
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Global ld insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Global st insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shared ld insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shared st insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Int insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FP16 insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FP32 insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FP64 insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Conv insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Mem insns (thr),n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,HFMA,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,HMUL,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,HADD,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FFMA,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FMUL,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FADD,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DFMA,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DMUL,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DADD,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM total,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM rd,8.346112,Mbyte
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM wr,0.000000,Kbyte
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 hit bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 miss bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 hit sectors,448040.000000,sector
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 miss sectors,404196.000000,sector
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L1 hit bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L1 miss bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 global ld bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 global st bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Comp thru [%],52.77,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Mem thru,911.94,Gbyte/s
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM thru [%],22.79,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Duration,9.15,us
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 hit [%],53.45,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L1 hit [%],32.99,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Mem Busy [%],25.02,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,SM Busy [%],68.90,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Regs/thr,32,register/thread
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shmem static,0,byte/block
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shmem dynamic,0,byte/block
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Occ [%],77.48,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Theo Occ [%],100,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Block Size,256,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Grid Size,"1,800",
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Waves/SM,1.70,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warps active,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warps/cyc active,49.587567,warp
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warps launched,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Act Thr/Warp,31.00,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warp Cyc/Inst,18.04,cycle
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Warps/Sched,5.53,warp
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],30.07,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"3,711,401",inst
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,3711401.000000,inst
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global st insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shared ld insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shared st insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Int insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FP16 insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FP32 insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FP64 insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Conv insns,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Mem insns (thr),n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,HFMA,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,HMUL,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,HADD,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FFMA,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FMUL,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FADD,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DFMA,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DMUL,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DADD,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM total,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM rd,8.347648,Mbyte
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM wr,0.256000,Kbyte
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 hit bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 miss bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 hit sectors,448142.000000,sector
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 miss sectors,405252.000000,sector
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L1 hit bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L1 miss bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 global ld bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 global st bytes,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Comp thru [%],51.53,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Mem thru,912.14,Gbyte/s
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM thru [%],22.70,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Duration,9.15,us
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 hit [%],53.76,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L1 hit [%],32.91,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Mem Busy [%],24.83,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,SM Busy [%],68.70,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Regs/thr,32,register/thread
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shmem static,0,byte/block
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shmem dynamic,0,byte/block
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Occ [%],77.28,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Theo Occ [%],100,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Block Size,256,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Grid Size,"1,800",
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Waves/SM,1.70,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warps active,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warps/cyc active,49.458016,warp
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warps launched,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Act Thr/Warp,31.00,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warp Cyc/Inst,18.10,cycle
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Warps/Sched,5.48,warp
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],30.50,%
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,n/a,
+vt_profiles-r02b03/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,n/a,
 vt_profiles-r02b03/vt.f16.ncu-rep,AGGREGATE,cold,Total duration [us],109.55,
 vt_profiles-r02b03/vt.f16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"36,281,742",
 vt_profiles-r02b03/vt.f16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"5,433,648",
@@ -112,8 +284,8 @@ vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Wa
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],36.73,%
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],74.00,%
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,2.40,sector
-vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,1.99,sector
+vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,2.40,sector/1
+vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,1.99,sector/1
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"3,196,800",inst
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,"3,196,800",inst
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,"288,000",inst
@@ -171,8 +343,8 @@ vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Wa
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],39.42,%
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],74.00,%
 vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,2.40,sector
-vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,2.00,sector
+vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,2.40,sector/1
+vt_profiles-r02b03/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,2.00,sector/1
 vt_profiles-r02b03/vt.f32.ncu-rep,AGGREGATE,cold,Total duration [us],112.37,
 vt_profiles-r02b03/vt.f32.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"3,584,000",
 vt_profiles-r02b03/vt.f32.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"36,230,542",
@@ -286,8 +458,8 @@ vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Wa
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],38.39,%
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],80.62,%
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,3.91,sector
-vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,4,sector
+vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,3.91,sector/1
+vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,4,sector/1
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"2,894,400",inst
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,"2,894,400",inst
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,"288,000",inst
@@ -345,8 +517,8 @@ vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Wa
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],39.87,%
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],80.62,%
 vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,3.91,sector
-vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,4,sector
+vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,3.91,sector/1
+vt_profiles-r02b03/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,4,sector/1
 vt_profiles-r02b03/vt.f64.ncu-rep,AGGREGATE,cold,Total duration [us],126.84,
 vt_profiles-r02b03/vt.f64.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"911,360.00",
 vt_profiles-r02b03/vt.f64.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"1,382,400",
@@ -460,8 +632,8 @@ vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Wa
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],49.58,%
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],87.72,%
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,6.72,sector
-vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,8,sector
+vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,6.72,sector/1
+vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,8,sector/1
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"3,153,600",inst
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,"3,153,600",inst
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,"288,000",inst
@@ -519,8 +691,180 @@ vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Wa
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],51.18,%
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],87.72,%
 vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,6.72,sector
-vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,8,sector
+vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,6.72,sector/1
+vt_profiles-r02b03/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,8,sector/1
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Total duration [us],196.72,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Total FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Total GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM rd [GB],0.1813,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0.007076,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM total [GB],0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],921.56,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],35.97,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM total BW [GB/s],0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,L2 hit rate [%],55.08,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Global ld insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Global st insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Shared ld insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Shared st insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Total insns,"76,567,350",
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Int insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Conv insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,cold,Warps launched,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Total duration [us],197.05,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Total FLOPs,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Total GFLOP/s,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM rd [GB],0.1813,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM wr [GB],0.007102,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM total [GB],0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],919.99,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],36.04,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM total BW [GB/s],0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,L2 hit rate [%],55.15,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Global ld insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Global st insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Shared ld insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Shared st insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Total insns,"76,567,350",
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Int insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Conv insns,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,AGGREGATE,warm,Warps launched,0,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Exec insns,"14,744,705",inst
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Total insns,14744705.000000,inst
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Global ld insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Global st insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shared ld insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shared st insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Int insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FP16 insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FP32 insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FP64 insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Conv insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Mem insns (thr),n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,HFMA,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,HMUL,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,HADD,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FFMA,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FMUL,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,FADD,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DFMA,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DMUL,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DADD,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM total,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM rd,32.849920,Mbyte
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM wr,4.867584,Mbyte
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 hit bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 miss bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 hit sectors,1961393.000000,sector
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 miss sectors,1617199.000000,sector
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L1 hit bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L1 miss bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 global ld bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 global st bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Comp thru [%],69.82,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Mem thru,1.43,Tbyte/s
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,DRAM thru [%],35.46,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Duration,26.46,us
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L2 hit [%],56.33,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,L1 hit [%],28.95,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Mem Busy [%],35.73,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,SM Busy [%],76.36,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Regs/thr,32,register/thread
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shmem static,0,byte/block
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Shmem dynamic,0,byte/block
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Occ [%],87.34,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Theo Occ [%],100,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Block Size,256,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Grid Size,"7,200",
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Waves/SM,6.82,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warps active,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warps/cyc active,55.899987,warp
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warps launched,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Act Thr/Warp,31.11,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Warp Cyc/Inst,18.29,cycle
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Warps/Sched,6.81,warp
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],23.56,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"14,744,705",inst
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,14744705.000000,inst
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global st insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shared ld insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shared st insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Int insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FP16 insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FP32 insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FP64 insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Conv insns,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Mem insns (thr),n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,HFMA,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,HMUL,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,HADD,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FFMA,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FMUL,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,FADD,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DFMA,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DMUL,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DADD,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM total,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM rd,32.847616,Mbyte
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM wr,5.040640,Mbyte
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 hit bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 miss bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 hit sectors,1960709.000000,sector
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 miss sectors,1616749.000000,sector
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L1 hit bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L1 miss bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 global ld bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 global st bytes,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Comp thru [%],70.51,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Mem thru,1.44,Tbyte/s
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,DRAM thru [%],35.82,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Duration,26.30,us
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L2 hit [%],56.06,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,L1 hit [%],29.06,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Mem Busy [%],36.06,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,SM Busy [%],76.32,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Regs/thr,32,register/thread
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shmem static,0,byte/block
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Shmem dynamic,0,byte/block
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Occ [%],87.29,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Theo Occ [%],100,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Block Size,256,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Grid Size,"7,200",
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Waves/SM,6.82,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warps active,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warps/cyc active,55.868590,warp
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warps launched,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Act Thr/Warp,31.11,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Warp Cyc/Inst,18.30,cycle
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Warps/Sched,6.82,warp
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],23.31,%
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,n/a,
+vt_profiles-r02b04/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,n/a,
 vt_profiles-r02b04/vt.f16.ncu-rep,AGGREGATE,cold,Total duration [us],209.18,
 vt_profiles-r02b04/vt.f16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"141,961,102",
 vt_profiles-r02b04/vt.f16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"25,434,868",
@@ -634,8 +978,8 @@ vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Wa
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],26.59,%
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],72.15,%
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,2.49,sector
-vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,2.01,sector
+vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,2.49,sector/1
+vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,2.01,sector/1
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"12,787,200",inst
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,"12,787,200",inst
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,"1,152,000",inst
@@ -693,8 +1037,8 @@ vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Wa
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],27.18,%
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],72.15,%
 vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,2.49,sector
-vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,2.00,sector
+vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,2.49,sector/1
+vt_profiles-r02b04/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,2.00,sector/1
 vt_profiles-r02b04/vt.f32.ncu-rep,AGGREGATE,cold,Total duration [us],213.67,
 vt_profiles-r02b04/vt.f32.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"12,472,320",
 vt_profiles-r02b04/vt.f32.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"143,087,502",
@@ -808,8 +1152,8 @@ vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Wa
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],28.24,%
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],78.85,%
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,4.04,sector
-vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,4,sector
+vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,4.04,sector/1
+vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,4,sector/1
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"11,577,600",inst
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,"11,577,600",inst
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,"1,152,000",inst
@@ -867,8 +1211,8 @@ vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Wa
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],28.82,%
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],78.85,%
 vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,4.04,sector
-vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,4,sector
+vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,4.04,sector/1
+vt_profiles-r02b04/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,4,sector/1
 vt_profiles-r02b04/vt.f64.ncu-rep,AGGREGATE,cold,Total duration [us],266.52,
 vt_profiles-r02b04/vt.f64.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"3,645,440",
 vt_profiles-r02b04/vt.f64.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"5,529,600",
@@ -982,8 +1326,8 @@ vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Elig Wa
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,No Eligible [%],46.71,%
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal ld [%],86.18,%
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,6.94,sector
-vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,8,sector
+vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req ld,6.94,sector/1
+vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,cold,Sec/req st,8,sector/1
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Exec insns,"12,614,400",inst
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Total insns,"12,614,400",inst
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Global ld insns,"1,152,000",inst
@@ -1041,8 +1385,180 @@ vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Elig Wa
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,No Eligible [%],43.86,%
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal ld [%],86.18,%
 vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,6.94,sector
-vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,8,sector
+vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req ld,6.94,sector/1
+vt_profiles-r02b04/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_60_2_7,warm,Sec/req st,8,sector/1
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Total duration [us],609.43,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Total FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Total GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM rd [GB],0.7263,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0.1861,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM total [GB],0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],"1,191.72",
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],305.36,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,DRAM total BW [GB/s],0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,L2 hit rate [%],61.77,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Global ld insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Global st insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Shared ld insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Shared st insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Total insns,"306,089,979",
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Int insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP16 insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP32 insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,FP64 insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Conv insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,cold,Warps launched,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Total duration [us],612.64,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Total FLOPs,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Total GFLOP/s,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM rd [GB],0.7262,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM wr [GB],0.1874,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM total [GB],0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],"1,185.42",
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],305.83,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,DRAM total BW [GB/s],0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,L2 hit rate [%],61.77,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Global ld insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Global st insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Shared ld insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Shared st insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Total insns,"306,089,979",
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Int insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP16 insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP32 insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,FP64 insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Conv insns,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,AGGREGATE,warm,Warps launched,0,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Exec insns,"58,945,704",inst
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Total insns,58945704.000000,inst
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Global ld insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Global st insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Shared ld insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Shared st insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Int insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,FP16 insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,FP32 insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,FP64 insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Conv insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Mem insns (thr),n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,HFMA,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,HMUL,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,HADD,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,FFMA,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,FMUL,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,FADD,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DFMA,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DMUL,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DADD,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DRAM total,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DRAM rd,131.232256,Mbyte
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DRAM wr,50.281728,Mbyte
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 hit bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 miss bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 hit sectors,10027443.000000,sector
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 miss sectors,6464019.000000,sector
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L1 hit bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L1 miss bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 global ld bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 global st bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Comp thru [%],77.40,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Mem thru,1.78,Tbyte/s
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,DRAM thru [%],44.16,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Duration,102.21,us
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L2 hit [%],62.13,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,L1 hit [%],20.63,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Mem Busy [%],40.68,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,SM Busy [%],79.17,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Regs/thr,32,register/thread
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Shmem static,0,byte/block
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Shmem dynamic,0,byte/block
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Occ [%],90.29,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Theo Occ [%],100,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Block Size,256,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Grid Size,"28,800",
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Waves/SM,27.27,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Warps active,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Warps/cyc active,57.787091,warp
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Warps launched,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Act Thr/Warp,31.14,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Warp Cyc/Inst,18.22,cycle
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Elig Warps/Sched,7.09,warp
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,No Eligible [%],20.88,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal ld [%],n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal st [%],n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Exec insns,"58,945,704",inst
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Total insns,58945704.000000,inst
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Global ld insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Global st insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Shared ld insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Shared st insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Int insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,FP16 insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,FP32 insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,FP64 insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Conv insns,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Mem insns (thr),n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,HFMA,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,HMUL,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,HADD,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,FFMA,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,FMUL,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,FADD,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DFMA,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DMUL,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DADD,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DRAM total,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DRAM rd,131.198720,Mbyte
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DRAM wr,50.566400,Mbyte
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 hit bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 miss bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 hit sectors,10051530.000000,sector
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 miss sectors,6463695.000000,sector
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L1 hit bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L1 miss bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 global ld bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 global st bytes,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Comp thru [%],77.25,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Mem thru,1.77,Tbyte/s
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,DRAM thru [%],43.91,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Duration,102.94,us
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L2 hit [%],61.60,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,L1 hit [%],20.56,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Mem Busy [%],40.79,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,SM Busy [%],79.16,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Regs/thr,32,register/thread
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Shmem static,0,byte/block
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Shmem dynamic,0,byte/block
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Occ [%],90.41,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Theo Occ [%],100,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Block Size,256,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Grid Size,"28,800",
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Waves/SM,27.27,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Warps active,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Warps/cyc active,57.859482,warp
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Warps launched,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Act Thr/Warp,31.14,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Warp Cyc/Inst,18.20,cycle
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Elig Warps/Sched,7.13,warp
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,No Eligible [%],20.85,%
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal ld [%],n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal st [%],n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,n/a,
+vt_profiles-r02b05/vt.bf16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,n/a,
 vt_profiles-r02b05/vt.f16.ncu-rep,AGGREGATE,cold,Total duration [us],597.42,
 vt_profiles-r02b05/vt.f16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"567,832,462",
 vt_profiles-r02b05/vt.f16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"98,911,980",
@@ -1156,8 +1672,8 @@ vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Elig W
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,No Eligible [%],23.70,%
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal ld [%],78.17,%
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,2.78,sector
-vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,2.00,sector
+vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,2.78,sector/1
+vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,2.00,sector/1
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Exec insns,"51,148,800",inst
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Total insns,"51,148,800",inst
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Global ld insns,"4,608,000",inst
@@ -1215,8 +1731,8 @@ vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Elig W
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,No Eligible [%],23.43,%
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal ld [%],78.17,%
 vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,2.78,sector
-vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,2.00,sector
+vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,2.78,sector/1
+vt_profiles-r02b05/vt.f16.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,2.00,sector/1
 vt_profiles-r02b05/vt.f32.ncu-rep,AGGREGATE,cold,Total duration [us],619.04,
 vt_profiles-r02b05/vt.f32.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"49,889,280",
 vt_profiles-r02b05/vt.f32.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"572,338,062",
@@ -1330,8 +1846,8 @@ vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Elig W
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,No Eligible [%],25.20,%
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal ld [%],82.77,%
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,4.29,sector
-vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,4,sector
+vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,4.29,sector/1
+vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,4,sector/1
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Exec insns,"46,310,400",inst
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Total insns,"46,310,400",inst
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Global ld insns,"4,608,000",inst
@@ -1389,8 +1905,8 @@ vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Elig W
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,No Eligible [%],25.88,%
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal ld [%],82.77,%
 vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,4.29,sector
-vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,4,sector
+vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,4.29,sector/1
+vt_profiles-r02b05/vt.f32.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,4,sector/1
 vt_profiles-r02b05/vt.f64.ncu-rep,AGGREGATE,cold,Total duration [us],843.05,
 vt_profiles-r02b05/vt.f64.ncu-rep,AGGREGATE,cold,FP16 FLOPs,"14,581,760",
 vt_profiles-r02b05/vt.f64.ncu-rep,AGGREGATE,cold,FP32 FLOPs,"22,118,400",
@@ -1504,8 +2020,8 @@ vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Elig W
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,No Eligible [%],38.84,%
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal ld [%],88.52,%
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,7.11,sector
-vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,8,sector
+vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req ld,7.11,sector/1
+vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,cold,Sec/req st,8,sector/1
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Exec insns,"50,457,600",inst
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Total insns,"50,457,600",inst
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Global ld insns,"4,608,000",inst
@@ -1563,8 +2079,8 @@ vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Elig W
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,No Eligible [%],39.43,%
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal ld [%],88.52,%
 vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,7.11,sector
-vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,8,sector
+vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req ld,7.11,sector/1
+vt_profiles-r02b05/vt.f64.ncu-rep,DOMINANT:ss_body_0_map_1_1_123_2_7,warm,Sec/req st,8,sector/1
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Total duration [us],"3,161.70",
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP16 FLOPs,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP32 FLOPs,0,
@@ -1574,17 +2090,18 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP16 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP32 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP64 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Total GFLOP/s,0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM rd [GB],0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM rd [GB],2.60,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0.8594,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM total [GB],0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],823.83,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],271.81,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,DRAM total BW [GB/s],0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,L2 hit rate [%],68.57,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Global ld insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Global st insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Shared ld insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Shared st insns,0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Total insns,0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Total insns,"1,590,942,762",
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,Int insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP16 insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,cold,FP32 insns,0,
@@ -1600,17 +2117,18 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,FP16 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,FP32 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,FP64 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Total GFLOP/s,0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM rd [GB],0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM wr [GB],0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM rd [GB],2.61,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM wr [GB],0.8589,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM total [GB],0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],821.57,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],270.47,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,DRAM total BW [GB/s],0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,L2 hit rate [%],68.54,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Global ld insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Global st insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Shared ld insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Shared st insns,0,
-vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Total insns,0,
+vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Total insns,"1,590,942,762",
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Int insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,FP16 insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,FP32 insns,0,
@@ -1618,7 +2136,7 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,FP64 insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Conv insns,0,
 vt_profiles-r02b06/vt.fp16.ncu-rep,AGGREGATE,warm,Warps launched,"15,461,000",
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Exec insns,"204,595,200",inst
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Total insns,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Total insns,204595200.000000,inst
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Global ld insns,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Global st insns,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shared ld insns,n/a,
@@ -1639,12 +2157,12 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DFMA,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DMUL,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DADD,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM total,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM rd,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM wr,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM rd,361.695488,Mbyte
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM wr,57.698048,Mbyte
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss bytes,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit sectors,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss sectors,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit sectors,31705013.000000,sector
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss sectors,18543363.000000,sector
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 miss bytes,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 global ld bytes,n/a,
@@ -1658,15 +2176,15 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 hi
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Mem Busy [%],38.25,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,SM Busy [%],77.46,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Regs/thr,32,register/thread
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem static,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem dynamic,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem static,0,byte/block
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem dynamic,0,byte/block
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Occ [%],91.09,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Theo Occ [%],100,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Block Size,256,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Grid Size,"115,200",
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Waves/SM,109.09,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps active,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps/cyc active,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps/cyc active,58.296220,warp
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps launched,"921,600",warp
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Act Thr/Warp,32,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warp Cyc/Inst,18.76,cycle
@@ -1674,10 +2192,10 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Elig 
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,No Eligible [%],22.53,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Coal ld [%],78.20,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req ld,2.78,sector
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req st,2.00,sector
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req ld,2.78,sector/1
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req st,2.00,sector/1
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Exec insns,"204,595,200",inst
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Total insns,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Total insns,204595200.000000,inst
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Global ld insns,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Global st insns,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shared ld insns,n/a,
@@ -1698,12 +2216,12 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DFMA,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DMUL,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DADD,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM total,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM rd,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM wr,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM rd,367.298048,Mbyte
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM wr,58.406656,Mbyte
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss bytes,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit sectors,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss sectors,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit sectors,31589682.000000,sector
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss sectors,18944479.000000,sector
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 miss bytes,n/a,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 global ld bytes,n/a,
@@ -1717,15 +2235,15 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 hi
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Mem Busy [%],38.41,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,SM Busy [%],77.23,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Regs/thr,32,register/thread
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem static,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem dynamic,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem static,0,byte/block
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem dynamic,0,byte/block
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Occ [%],91.15,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Theo Occ [%],100,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Block Size,256,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Grid Size,"115,200",
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Waves/SM,109.09,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps active,n/a,
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps/cyc active,n/a,
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps/cyc active,58.338509,warp
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps launched,"921,600",warp
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Act Thr/Warp,32,
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warp Cyc/Inst,18.82,cycle
@@ -1733,8 +2251,8 @@ vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Elig 
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,No Eligible [%],22.80,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Coal ld [%],78.20,%
 vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req ld,2.78,sector
-vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req st,2.00,sector
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req ld,2.78,sector/1
+vt_profiles-r02b06/vt.fp16.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req st,2.00,sector/1
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Total duration [us],"3,416.63",
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP16 FLOPs,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP32 FLOPs,0,
@@ -1744,17 +2262,18 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP16 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP32 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP64 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Total GFLOP/s,0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM rd [GB],0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM rd [GB],5.21,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM wr [GB],1.85,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM total [GB],0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],"1,524.23",
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],542.27,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,DRAM total BW [GB/s],0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,L2 hit rate [%],61.44,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Global ld insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Global st insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Shared ld insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Shared st insns,0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Total insns,0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Total insns,"1,543,548,352",
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,Int insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP16 insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,cold,FP32 insns,0,
@@ -1770,17 +2289,18 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,FP16 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,FP32 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,FP64 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Total GFLOP/s,0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM rd [GB],0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM wr [GB],0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM rd [GB],5.23,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM wr [GB],1.85,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM total [GB],0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],"1,523.80",
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],540.58,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,DRAM total BW [GB/s],0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,L2 hit rate [%],61.31,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Global ld insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Global st insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Shared ld insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Shared st insns,0,
-vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Total insns,0,
+vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Total insns,"1,543,548,352",
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Int insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,FP16 insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,FP32 insns,0,
@@ -1788,7 +2308,7 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,FP64 insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Conv insns,0,
 vt_profiles-r02b06/vt.fp32.ncu-rep,AGGREGATE,warm,Warps launched,"15,475,400",
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Exec insns,"185,241,600",inst
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Total insns,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Total insns,185241600.000000,inst
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Global ld insns,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Global st insns,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shared ld insns,n/a,
@@ -1809,12 +2329,12 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DFMA,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DMUL,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DADD,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM total,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM rd,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM wr,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM rd,766.972672,Mbyte
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM wr,116.269568,Mbyte
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss bytes,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit sectors,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss sectors,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit sectors,45009739.000000,sector
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss sectors,40215487.000000,sector
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 miss bytes,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 global ld bytes,n/a,
@@ -1828,15 +2348,15 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 hi
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Mem Busy [%],54.13,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,SM Busy [%],75.76,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Regs/thr,32,register/thread
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem static,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem dynamic,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem static,0,byte/block
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem dynamic,0,byte/block
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Occ [%],89.82,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Theo Occ [%],100,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Block Size,256,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Grid Size,"115,200",
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Waves/SM,109.09,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps active,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps/cyc active,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps/cyc active,57.483015,warp
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps launched,"921,600",warp
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Act Thr/Warp,32,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warp Cyc/Inst,18.86,cycle
@@ -1844,10 +2364,10 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Elig 
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,No Eligible [%],24.14,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Coal ld [%],82.80,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req ld,4.29,sector
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req st,4,sector
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req ld,4.29,sector/1
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req st,4,sector/1
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Exec insns,"185,241,600",inst
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Total insns,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Total insns,185241600.000000,inst
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Global ld insns,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Global st insns,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shared ld insns,n/a,
@@ -1868,12 +2388,12 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DFMA,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DMUL,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DADD,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM total,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM rd,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM wr,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM rd,774.198016,Mbyte
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM wr,116.303616,Mbyte
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss bytes,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit sectors,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss sectors,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit sectors,44758788.000000,sector
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss sectors,40847548.000000,sector
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 miss bytes,n/a,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 global ld bytes,n/a,
@@ -1887,15 +2407,15 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 hi
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Mem Busy [%],53.74,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,SM Busy [%],75.59,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Regs/thr,32,register/thread
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem static,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem dynamic,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem static,0,byte/block
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem dynamic,0,byte/block
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Occ [%],89.85,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Theo Occ [%],100,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Block Size,256,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Grid Size,"115,200",
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Waves/SM,109.09,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps active,n/a,
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps/cyc active,n/a,
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps/cyc active,57.506541,warp
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps launched,"921,600",warp
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Act Thr/Warp,32,
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warp Cyc/Inst,18.90,cycle
@@ -1903,8 +2423,8 @@ vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Elig 
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,No Eligible [%],24.39,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Coal ld [%],82.80,%
 vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req ld,4.29,sector
-vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req st,4,sector
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req ld,4.29,sector/1
+vt_profiles-r02b06/vt.fp32.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req st,4,sector/1
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Total duration [us],"5,117.16",
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP16 FLOPs,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP32 FLOPs,0,
@@ -1914,17 +2434,18 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP16 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP32 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP64 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Total GFLOP/s,0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM rd [GB],0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM wr [GB],0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM rd [GB],11.28,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM wr [GB],3.85,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM total [GB],0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM rd BW [GB/s],"2,205.18",
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM wr BW [GB/s],751.73,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,DRAM total BW [GB/s],0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,L2 hit rate [%],53.37,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Global ld insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Global st insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Shared ld insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Shared st insns,0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Total insns,0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Total insns,"1,625,903,603",
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,Int insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP16 insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,cold,FP32 insns,0,
@@ -1940,17 +2461,18 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,FP16 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,FP32 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,FP64 GFLOP/s,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Total GFLOP/s,0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM rd [GB],0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM wr [GB],0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM rd [GB],11.30,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM wr [GB],3.85,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM total [GB],0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM rd BW [GB/s],"2,207.36",
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM wr BW [GB/s],751.39,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,DRAM total BW [GB/s],0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,L2 hit rate [%],53.30,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Global ld insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Global st insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Shared ld insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Shared st insns,0,
-vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Total insns,0,
+vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Total insns,"1,625,903,603",
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Int insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,FP16 insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,FP32 insns,0,
@@ -1958,7 +2480,7 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,FP64 insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Conv insns,0,
 vt_profiles-r02b06/vt.fp64.ncu-rep,AGGREGATE,warm,Warps launched,"15,475,400",
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Exec insns,"234,968,536",inst
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Total insns,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Total insns,234968536.000000,inst
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Global ld insns,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Global st insns,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shared ld insns,n/a,
@@ -1979,12 +2501,12 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DFMA,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DMUL,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DADD,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM total,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM rd,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM wr,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM rd,2.008454,Gbyte
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,DRAM wr,234.359808,Mbyte
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss bytes,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit sectors,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss sectors,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 hit sectors,57943215.000000,sector
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 miss sectors,104555395.000000,sector
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 miss bytes,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L2 global ld bytes,n/a,
@@ -1998,15 +2520,15 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,L1 hi
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Mem Busy [%],67.03,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,SM Busy [%],54.99,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Regs/thr,32,register/thread
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem static,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem dynamic,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem static,0,byte/block
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Shmem dynamic,0,byte/block
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Occ [%],89.19,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Theo Occ [%],100,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Block Size,256,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Grid Size,"115,200",
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Waves/SM,109.09,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps active,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps/cyc active,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps/cyc active,57.084508,warp
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warps launched,"921,600",warp
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Act Thr/Warp,32.00,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Warp Cyc/Inst,26.32,cycle
@@ -2014,10 +2536,10 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Elig 
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,No Eligible [%],45.95,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Coal ld [%],88.52,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Coal st [%],100,%
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req ld,7.11,sector
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req st,8,sector
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req ld,7.11,sector/1
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,cold,Sec/req st,8,sector/1
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Exec insns,"234,968,536",inst
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Total insns,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Total insns,234968536.000000,inst
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Global ld insns,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Global st insns,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shared ld insns,n/a,
@@ -2038,12 +2560,12 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DFMA,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DMUL,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DADD,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM total,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM rd,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM wr,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM rd,2.019459,Gbyte
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,DRAM wr,233.890560,Mbyte
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss bytes,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit sectors,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss sectors,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 hit sectors,57715303.000000,sector
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 miss sectors,105120149.000000,sector
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 hit bytes,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 miss bytes,n/a,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L2 global ld bytes,n/a,
@@ -2057,15 +2579,15 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,L1 hi
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Mem Busy [%],66.98,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,SM Busy [%],55.69,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Regs/thr,32,register/thread
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem static,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem dynamic,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem static,0,byte/block
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Shmem dynamic,0,byte/block
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Occ [%],89.16,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Theo Occ [%],100,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Block Size,256,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Grid Size,"115,200",
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Waves/SM,109.09,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps active,n/a,
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps/cyc active,n/a,
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps/cyc active,57.064257,warp
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warps launched,"921,600",warp
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Act Thr/Warp,32.00,
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Warp Cyc/Inst,26.38,cycle
@@ -2073,5 +2595,5 @@ vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Elig 
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,No Eligible [%],46.06,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Coal ld [%],88.52,%
 vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Coal st [%],100,%
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req ld,7.11,sector
-vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req st,8,sector
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req ld,7.11,sector/1
+vt_profiles-r02b06/vt.fp64.ncu-rep,DOMINANT:ss_body_0_map_0_0_139_2_7,warm,Sec/req st,8,sector/1
