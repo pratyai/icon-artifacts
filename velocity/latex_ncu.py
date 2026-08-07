@@ -10,8 +10,18 @@ Expected filename pattern: vt_profiles-<GRID>/vt.<PREC>.ncu-rep
 import csv, sys, os, re
 from collections import OrderedDict
 
-PREC_ORDER = ["f64", "f32", "f16"]
-PREC_LABEL = {"f64": "FP64", "f32": "FP32", "f16": "FP16"}
+# Reports are named vt.<prec>.ncu-rep, and the precision tag has been spelled
+# both ways (f64 and fp64) across sweeps; accept either, and carry bf16.
+PREC_ORDER = ["f64", "fp64", "f32", "fp32", "f16", "fp16", "bf16"]
+PREC_LABEL = {
+    "f64": "FP64",
+    "fp64": "FP64",
+    "f32": "FP32",
+    "fp32": "FP32",
+    "f16": "FP16",
+    "fp16": "FP16",
+    "bf16": "BF16",
+}
 
 # GH200 peak DRAM BW in GB/s
 PEAK_BW = 4000.0
@@ -26,7 +36,7 @@ def parse_filename(fname):
     """Extract (grid, prec) from filename like 'vt_profiles-r02b03/vt.f16.ncu-rep'."""
     m = re.search(r"(r\d+b\d+)", fname, re.IGNORECASE)
     grid = m.group(1).upper() if m else fname
-    m2 = re.search(r"\.(f(?:16|32|64))\.", fname, re.IGNORECASE)
+    m2 = re.search(r"\.((?:bf|fp|f)(?:16|32|64))\.", fname, re.IGNORECASE)
     prec = m2.group(1).lower() if m2 else "?"
     return grid, prec
 
