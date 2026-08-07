@@ -41,16 +41,24 @@ def parse_filename(fname):
     return grid, prec
 
 
+# Printed in place of a cell whose metric the report does not carry. A missing
+# metric must never render as a number: an uncollected counter would otherwise
+# be indistinguishable from a measured zero.
+MISSING = "--"
+
+
 def fval(s):
-    """Parse a numeric string, return float or 0."""
+    """Parse a numeric string; return None when it is absent or not a number."""
     try:
         return float(s.strip().replace(",", ""))
     except (ValueError, AttributeError):
-        return 0.0
+        return None
 
 
 def latex_num(v, fmt_spec):
     """Format a number for LaTeX, inserting {,} for thousands separator."""
+    if v is None:
+        return MISSING
     s = f"{v:{fmt_spec}}"
     # Insert LaTeX thousands separator
     if "," in s:
@@ -80,7 +88,7 @@ def build_table(agg_path):
     n_cols = n_grids * len(precs)
 
     def get(grid, prec, metric):
-        return fval(data.get((grid, prec), {}).get(metric, "0"))
+        return fval(data.get((grid, prec), {}).get(metric))
 
     # --- Build rows ---
     table_rows = []
@@ -98,7 +106,8 @@ def build_table(agg_path):
         vals = []
         for g in grids:
             for p in precs:
-                v = get(g, p, "Global ld insns") / 1e6
+                v = get(g, p, "Global ld insns")
+                v = v / 1e6 if v is not None else None
                 vals.append(latex_num(v, ".1f"))
         return "Global load instructions (M)", vals
 
@@ -115,8 +124,11 @@ def build_table(agg_path):
         vals = []
         for g in grids:
             for p in precs:
-                v = get(g, p, "DRAM rd [GB]") * 1e3
-                if v >= 100:
+                v = get(g, p, "DRAM rd [GB]")
+                v = v * 1e3 if v is not None else None
+                if v is None:
+                    vals.append(MISSING)
+                elif v >= 100:
                     vals.append(latex_num(v, ",.0f"))
                 else:
                     vals.append(latex_num(v, ".1f"))
@@ -127,8 +139,11 @@ def build_table(agg_path):
         vals = []
         for g in grids:
             for p in precs:
-                v = get(g, p, "DRAM wr [GB]") * 1e3
-                if v >= 100:
+                v = get(g, p, "DRAM wr [GB]")
+                v = v * 1e3 if v is not None else None
+                if v is None:
+                    vals.append(MISSING)
+                elif v >= 100:
                     vals.append(latex_num(v, ",.0f"))
                 elif v >= 1:
                     vals.append(latex_num(v, ".1f"))
@@ -144,7 +159,7 @@ def build_table(agg_path):
         for g in grids:
             for p in precs:
                 bw = get(g, p, "DRAM total BW [GB/s]")
-                pct = bw / PEAK_BW * 100
+                pct = bw / PEAK_BW * 100 if bw is not None else None
                 vals.append(latex_num(pct, ".1f"))
         return "BW utilization (\\% of peak)", vals
 
@@ -213,11 +228,13 @@ def build_table(agg_path):
             for p in precs:
                 total = get(g, p, "Total FLOPs")
                 part = get(g, p, metric)
-                pct = part / total * 100 if total > 0 else 0
-                if pct == 0:
+                if total is None or part is None:
+                    vals.append(MISSING)
+                elif total == 0:
                     vals.append("0")
                 else:
-                    vals.append(latex_num(pct, ".1f"))
+                    pct = part / total * 100
+                    vals.append("0" if pct == 0 else latex_num(pct, ".1f"))
         return label, vals
 
     table_rows.append(row_duration())

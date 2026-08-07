@@ -385,42 +385,58 @@ def aggregate(data):
             n_reps)
 
 def derive(sums):
-    """Derive ratios from summed raw counters."""
+    """Derive ratios from summed raw counters.
+
+    A counter the report does not carry yields None, and every quantity
+    derived from it is None as well: reporting an uncollected counter as 0
+    makes it indistinguishable from a measured zero.
+    """
     d = OrderedDict()
     dur = sums.get("Duration", 0)
 
+    def need(*keys):
+        """Sum of the named counters, or None if any of them is absent."""
+        vals = [sums.get(k) for k in keys]
+        return None if any(v is None for v in vals) else vals
+
+    def fma2(fma, mul, add):
+        v = need(fma, mul, add)
+        return None if v is None else 2 * v[0] + v[1] + v[2]
+
     # FLOPs
-    h = 2 * sums.get("smsp__sass_thread_inst_executed_op_hfma_pred_on.sum", 0) \
-        + sums.get("smsp__sass_thread_inst_executed_op_hmul_pred_on.sum", 0) \
-        + sums.get("smsp__sass_thread_inst_executed_op_hadd_pred_on.sum", 0)
-    f = 2 * sums.get("smsp__sass_thread_inst_executed_op_ffma_pred_on.sum", 0) \
-        + sums.get("smsp__sass_thread_inst_executed_op_fmul_pred_on.sum", 0) \
-        + sums.get("smsp__sass_thread_inst_executed_op_fadd_pred_on.sum", 0)
-    dd = 2 * sums.get("smsp__sass_thread_inst_executed_op_dfma_pred_on.sum", 0) \
-         + sums.get("smsp__sass_thread_inst_executed_op_dmul_pred_on.sum", 0) \
-         + sums.get("smsp__sass_thread_inst_executed_op_dadd_pred_on.sum", 0)
+    h = fma2("smsp__sass_thread_inst_executed_op_hfma_pred_on.sum",
+             "smsp__sass_thread_inst_executed_op_hmul_pred_on.sum",
+             "smsp__sass_thread_inst_executed_op_hadd_pred_on.sum")
+    f = fma2("smsp__sass_thread_inst_executed_op_ffma_pred_on.sum",
+             "smsp__sass_thread_inst_executed_op_fmul_pred_on.sum",
+             "smsp__sass_thread_inst_executed_op_fadd_pred_on.sum")
+    dd = fma2("smsp__sass_thread_inst_executed_op_dfma_pred_on.sum",
+              "smsp__sass_thread_inst_executed_op_dmul_pred_on.sum",
+              "smsp__sass_thread_inst_executed_op_dadd_pred_on.sum")
 
     d["Total duration [us]"] = dur * 1e6
     d["FP16 FLOPs"] = h
     d["FP32 FLOPs"] = f
     d["FP64 FLOPs"] = dd
-    d["Total FLOPs"] = h + f + dd
+    flop_total = None if None in (h, f, dd) else h + f + dd
+    d["Total FLOPs"] = flop_total
     if dur > 0:
-        d["FP16 GFLOP/s"] = h / dur / 1e9
-        d["FP32 GFLOP/s"] = f / dur / 1e9
-        d["FP64 GFLOP/s"] = dd / dur / 1e9
-        d["Total GFLOP/s"] = (h + f + dd) / dur / 1e9
+        d["FP16 GFLOP/s"] = None if h is None else h / dur / 1e9
+        d["FP32 GFLOP/s"] = None if f is None else f / dur / 1e9
+        d["FP64 GFLOP/s"] = None if dd is None else dd / dur / 1e9
+        d["Total GFLOP/s"] = None if flop_total is None else flop_total / dur / 1e9
 
-    dram_rd = sums.get("dram__bytes_read.sum", 0)
-    dram_wr = sums.get("dram__bytes_write.sum", 0)
-    dram_tot = sums.get("dram__bytes.sum", 0)
-    d["DRAM rd [GB]"] = dram_rd / 1e9
-    d["DRAM wr [GB]"] = dram_wr / 1e9
-    d["DRAM total [GB]"] = dram_tot / 1e9
+    dram_rd = sums.get("dram__bytes_read.sum")
+    dram_wr = sums.get("dram__bytes_write.sum")
+    dram_tot = sums.get("dram__bytes.sum")
+    scale = lambda v, k: None if v is None else v / k
+    d["DRAM rd [GB]"] = scale(dram_rd, 1e9)
+    d["DRAM wr [GB]"] = scale(dram_wr, 1e9)
+    d["DRAM total [GB]"] = scale(dram_tot, 1e9)
     if dur > 0:
-        d["DRAM rd BW [GB/s]"] = dram_rd / dur / 1e9
-        d["DRAM wr BW [GB/s]"] = dram_wr / dur / 1e9
-        d["DRAM total BW [GB/s]"] = dram_tot / dur / 1e9
+        d["DRAM rd BW [GB/s]"] = scale(dram_rd, dur * 1e9)
+        d["DRAM wr BW [GB/s]"] = scale(dram_wr, dur * 1e9)
+        d["DRAM total BW [GB/s]"] = scale(dram_tot, dur * 1e9)
 
     l2_hit = sums.get("lts__t_sectors_lookup_hit.sum", 0)
     l2_miss = sums.get("lts__t_sectors_lookup_miss.sum", 0)
@@ -447,6 +463,8 @@ def derive(sums):
     return d
 
 def fmt(val):
+    if val is None:
+        return "n/a"
     if isinstance(val, float):
         if abs(val) >= 1e6:
             return f"{val:,.0f}"
